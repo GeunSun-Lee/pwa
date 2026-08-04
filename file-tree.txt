@@ -1,0 +1,16 @@
+arithmetic_practice/
+├── index.html          # 메인 진입점 (HTML만)
+├── styles.css          # 스타일시트 (기존 CSS 전체)
+├── app.js              # 자바스크립트 로직 (기존 JS Part 1+2+3 합침)
+├── manifest.json       # PWA 메타데이터 (설치 정보)
+├── sw.js               # Service Worker (오프라인 캐싱)
+├── icons/              # 아이콘 폴더 (필수)
+│   ├── icon-72.png
+│   ├── icon-96.png
+│   ├── icon-128.png
+│   ├── icon-144.png
+│   ├── icon-152.png
+│   ├── icon-192.png
+│   ├── icon-384.png
+│   └── icon-512.png
+└── (선택) offline.html # 오프라인 전용 페이지 (sw.js에서 사용)

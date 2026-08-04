@@ -1,0 +1,33 @@
+{
+  "name": "초등 1학년 산수 연습장",
+  "short_name": "산수연습",
+  "description": "초등 1학년(7세) 맞춤 덧셈/뺄셈 연습 앱. 오프라인 지원, 배지, 캐릭터 성장 기능 포함.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f0f4f8",
+  "theme_color": "#4285f4",
+  "orientation": "portrait-primary",
+  "scope": "./",
+  "lang": "ko-KR",
+  "icons": [
+    { "src": "icons/icon-72.png", "sizes": "72x72", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/icon-96.png", "sizes": "96x96", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/icon-128.png", "sizes": "128x128", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/icon-144.png", "sizes": "144x144", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/icon-152.png", "sizes": "152x152", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/icon-384.png", "sizes": "384x384", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "categories": ["education", "kids"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "1단계 시작",
+      "short_name": "1단계",
+      "description": "10까지의 덧셈/뺄셈 바로 시작",
+      "url": "./index.html?level=1",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
