@@ -1,136 +1,251 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Projects</title>
 
-  <title>My GitHub Pages</title>
-  <meta name="description" content="GitHub Pages로 만든 웹사이트입니다." />
-  <meta name="author" content="Your Name" />
+    <meta name="description" content="A collection of personal software development projects for learning and experimentation.">
 
-  <!-- Open Graph -->
-  <meta property="og:title" content="My GitHub Pages" />
-  <meta property="og:description" content="GitHub Pages로 만든 웹사이트입니다." />
-  <meta property="og:type" content="website" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+        :root {
+            --primary: #2563eb;
+            --background: #f8fafc;
+            --surface: #ffffff;
+            --text: #1e293b;
+            --subtext: #64748b;
+            --border: #e2e8f0;
+        }
 
-    body {
-      font-family:
-        -apple-system,
-        BlinkMacSystemFont,
-        "Segoe UI",
-        Roboto,
-        "Noto Sans KR",
-        sans-serif;
-      background: #f5f7fa;
-      color: #333;
-      line-height: 1.6;
-    }
+        body {
+            font-family:
+                Inter,
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                Roboto,
+                sans-serif;
+            background: var(--background);
+            color: var(--text);
+            line-height: 1.7;
+        }
 
-    .container {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 3rem 1.5rem;
-    }
+        .container {
+            width: min(1000px, 90%);
+            margin: auto;
+            padding: 60px 0;
+        }
 
-    header {
-      text-align: center;
-      margin-bottom: 3rem;
-    }
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
 
-    h1 {
-      font-size: 2.5rem;
-      margin-bottom: 0.5rem;
-    }
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 16px;
+        }
 
-    p {
-      color: #666;
-    }
+        .subtitle {
+            color: var(--subtext);
+            font-size: 1.1rem;
+            max-width: 720px;
+            margin: auto;
+        }
 
-    section {
-      background: #fff;
-      padding: 2rem;
-      border-radius: 12px;
-      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
-      margin-bottom: 2rem;
-    }
+        section {
+            margin-bottom: 60px;
+        }
 
-    footer {
-      text-align: center;
-      color: #888;
-      font-size: 0.9rem;
-      margin-top: 2rem;
-    }
+        h2 {
+            margin-bottom: 20px;
+            border-left: 5px solid var(--primary);
+            padding-left: 12px;
+        }
 
-    a {
-      color: #0366d6;
-      text-decoration: none;
-    }
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+        }
 
-    a:hover {
-      text-decoration: underline;
-    }
+        ul {
+            padding-left: 24px;
+        }
 
-    button {
-      margin-top: 1rem;
-      padding: 10px 18px;
-      border: none;
-      border-radius: 8px;
-      background: #0366d6;
-      color: white;
-      cursor: pointer;
-      font-size: 1rem;
-    }
+        li {
+            margin: 10px 0;
+        }
 
-    button:hover {
-      background: #024ea2;
-    }
-  </style>
+        .projects {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 20px;
+        }
+
+        .project {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            transition: .2s;
+        }
+
+        .project:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px rgba(0,0,0,.08);
+        }
+
+        .project h3 {
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+
+        code {
+            background: #eef2ff;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        footer {
+            margin-top: 80px;
+            text-align: center;
+            color: var(--subtext);
+            font-size: .9rem;
+        }
+
+        a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width:600px) {
+            h1 {
+                font-size:2.2rem;
+            }
+        }
+    </style>
 </head>
 
 <body>
-  <div class="container">
-    <header>
-      <h1>🚀 GitHub Pages</h1>
-      <p>GitHub Pages 기본 템플릿</p>
-    </header>
 
-    <main>
-      <section>
-        <h2>환영합니다!</h2>
+<div class="container">
+
+<header>
+    <h1>🚀 Personal Projects</h1>
+
+    <p class="subtitle">
+        A collection of small personal projects built to strengthen software
+        development skills, explore new technologies, and experiment with new ideas.
+    </p>
+</header>
+
+<section>
+
+<h2>About</h2>
+
+<div class="card">
+
+<p>
+This repository serves as both a learning journal and a portfolio,
+documenting my continuous growth as a developer through hands-on practice.
+</p>
+
+</div>
+
+</section>
+
+<section>
+
+<h2>Purpose</h2>
+
+<div class="card">
+
+<ul>
+    <li>Practice software engineering principles and best practices.</li>
+    <li>Explore new frameworks, libraries, and technologies.</li>
+    <li>Build small, focused applications to solve real-world problems.</li>
+    <li>Continuously improve coding, testing, and project organization skills.</li>
+    <li>Maintain a record of personal learning and development.</li>
+</ul>
+
+</div>
+
+</section>
+
+<section>
+
+<h2>Projects</h2>
+
+<div class="projects">
+
+    <div class="project">
+        <h3>📋 todo-list</h3>
         <p>
-          이 페이지는 GitHub Pages에서 제공하는 정적 웹사이트입니다.
+            A basic Todo List application for learning application
+            architecture and CRUD operations.
         </p>
+    </div>
 
-        <button id="helloBtn">클릭해 보세요</button>
-      </section>
+    <div class="project">
+        <h3>📌 kanban_board</h3>
+        <p>
+            Tracks the progress of all projects using a Kanban workflow.
+        </p>
+    </div>
 
-      <section>
-        <h2>다음 단계</h2>
-        <ul>
-          <li>내용 수정하기</li>
-          <li>CSS 추가하기</li>
-          <li>JavaScript 기능 구현하기</li>
-          <li>GitHub에 Push하기</li>
-        </ul>
-      </section>
-    </main>
+    <div class="project">
+        <h3>🧮 arithmetic-practice</h3>
+        <p>
+            A simple application for practicing basic arithmetic operations.
+        </p>
+    </div>
 
-    <footer>
-      <p>&copy; 2026 Your Name. Powered by GitHub Pages.</p>
-    </footer>
-  </div>
+</div>
 
-  <script>
-    document.getElementById("helloBtn").addEventListener("click", () => {
-      alert("GitHub Pages가 정상적으로 동작합니다! 🎉");
-    });
-  </script>
+</section>
+
+<section>
+
+<h2>License</h2>
+
+<div class="card">
+
+<p>
+This repository is intended for educational and personal learning purposes.
+</p>
+
+<br>
+
+<p>
+Unless otherwise specified, all projects are available under the
+<strong>MIT License</strong>.
+</p>
+
+</div>
+
+</section>
+
+<footer>
+
+<p>
+Made with ❤️ using GitHub Pages
+</p>
+
+</footer>
+
+</div>
+
 </body>
 </html>
