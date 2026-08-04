@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PWA + Dexie.js 템플릿</title>
+    
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#4A90E2">
+
+    <!-- Dexie.js CDN 불러오기 -->
+    <script src="https://unpkg.com/dexie@3/dist/dexie.js"></script>
+    
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 30px;
+            background-color: #f4f7f6;
+            color: #333;
+        }
+        h1 { color: #4A90E2; text-align: center; }
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        input {
+            flex: 1;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #4A90E2;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover { background-color: #357abd; }
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        li {
+            background: white;
+            padding: 12px;
+            margin-bottom: 8px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .delete-btn {
+            background-color: #e74c3c;
+            padding: 5px 10px;
+            font-size: 14px;
+        }
+        .delete-btn:hover { background-color: #c0392b; }
+    </style>
+</head>
+<body>
+
+    <h1>오프라인 Todo 앱 📝</h1>
+    
+    <div class="input-group">
+        <input type="text" id="todoInput" placeholder="할 일을 입력하세요...">
+        <button onclick="addTodo()">추가</button>
+    </div>
+
+    <ul id="todoList"></ul>
+
+    <script>
+        // 1. Dexie DB 초기화 (이름: MyPWA_DB)
+        const db = new Dexie('MyPWA_DB');
+        
+        // 스키마 정의 (todos 테이블의 기본키는 id, 자동 증가)
+        db.version(1).stores({
+            todos: '++id, text'
+        });
+
+        // 화면에 할 일 목록 렌더링 함수
+        async function loadTodos() {
+            const listEl = document.getElementById('todoList');
+            listEl.innerHTML = '';
+
+            // Dexie로 데이터베이스에서 모든 데이터 가져오기
+            const allTodos = await db.todos.toArray();
+
+            allTodos.forEach(todo => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <span>${todo.text}</span>
+                    <button class="delete-btn" onclick="deleteTodo(${todo.id})">삭제</button>
+                `;
+                listEl.appendChild(li);
+            });
+        }
+
+        // 할 일 추가 함수
+        async function addTodo() {
+            const inputEl = document.getElementById('todoInput');
+            const text = inputEl.value.trim();
+
+            if (!text) {
+                alert('내용을 입력해주세요!');
+                return;
+            }
+
+            // Dexie에 데이터 추가
+            await db.todos.add({ text: text });
+            inputEl.value = '';
+            loadTodos(); // 목록 새로고침
+        }
+
+        // 할 일 삭제 함수
+        async function deleteTodo(id) {
+            await db.todos.delete(id);
+            loadTodos(); // 목록 새로고침
+        }
+
+        // 페이지 로드 시 데이터 불러오기
+        window.addEventListener('DOMContentLoaded', () => {
+            loadTodos();
+        });
+
+        // 2. Service Worker 등록
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('Service Worker 등록 성공:', reg.scope))
+                    .catch(err => console.log('Service Worker 등록 실패:', err));
+            });
+        }
+    </script>
+</body>
+</html>
