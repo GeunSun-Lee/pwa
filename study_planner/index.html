@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="중학생을 위한 심플하고 직관적인 스터디 플래너. 나만의 공부 루틴을 만들고 성취감을 기록하세요.">
+  <meta name="theme-color" content="#2563eb" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1e293b" media="(prefers-color-scheme: dark)">
+  
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="./manifest.json">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="./icons/icon-512.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="스터디플래너">
+
+  <title>나의 공부 루틴 📝</title>
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="./style.css">
+
+  <!-- Main Script (defer로 DOM 파싱 후 실행 보장) -->
+  <script src="./script.js" defer></script>
+</head>
+<body>
+  <!-- 화면 판독기용 건너뛰기 링크 -->
+  <a href="#main-content" class="skip-link">메인 콘텐츠로 바로가기</a>
+
+  <!-- ============================================================
+       헤더: 상단 고정 바 (날짜, 스트릭, 전역 액션)
+       ============================================================ -->
+  <header class="app-header" role="banner">
+    <div class="header-left">
+      <h1 class="app-title" aria-label="스터디 플래너 홈으로 이동">
+        <span class="title-icon" aria-hidden="true">📝</span>
+        <span class="title-text">나의 공부 루틴</span>
+      </h1>
+    </div>
+
+    <div class="header-center">
+      <time id="today-date" datetime="" class="today-date" aria-live="polite"></time>
+      <div id="streak-badge" class="streak-badge" aria-live="polite" aria-atomic="true">
+        <span class="streak-fire" aria-hidden="true">🔥</span>
+        <span id="streak-count">0</span>일 연속
+      </div>
+    </div>
+
+    <div class="header-right">
+      <button id="btn-export" class="icon-btn" type="button" aria-label="데이터 백업 (JSON 다운로드)" title="백업하기">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+      </button>
+      <button id="btn-import-trigger" class="icon-btn" type="button" aria-label="데이터 복구 (JSON 업로드)" title="복구하기">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/></svg>
+      </button>
+      <input type="file" id="input-import" accept=".json" hidden aria-hidden="true">
+      <button id="btn-settings" class="icon-btn" type="button" aria-label="설정 열기" title="설정" data-view="settings">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ============================================================
+       메인 콘텐츠 영역 (뷰 전환 컨테이너)
+       ============================================================ -->
+  <main id="main-content" class="main-content" role="main">
+    
+    <!-- ----------------------------------------------------------
+         View 1: 오늘 (대시보드 / 타임테이블)
+         ---------------------------------------------------------- -->
+    <section id="view-today" class="view-panel active" role="region" aria-label="오늘의 계획" aria-labelledby="view-today-heading">
+      <h2 id="view-today-heading" class="visually-hidden">오늘의 공부 계획</h2>
+      
+      <!-- 타임 그리드 (시간표) -->
+      <div class="time-grid-wrapper" role="grid" aria-label="시간별 공부 블록">
+        <div class="time-gutter" aria-hidden="true">
+          <!-- 시간 레이블(06:00~24:00)은 JS로 동적 생성 -->
+        </div>
+        <div id="time-grid" class="time-grid" role="rowgroup">
+          <!-- 
+            JS가 생성할 블록 구조 예시:
+            <div class="time-row" role="row" data-time="06:00">
+              <div class="time-label" role="rowheader">06:00</div>
+              <div class="time-cell" role="gridcell" data-time="06:00"></div>
+            </div>
+          -->
+        </div>
+      </div>
+
+      <!-- 일일 통계 요약 -->
+      <section class="daily-summary" aria-label="오늘의 통계">
+        <div class="summary-stats">
+          <div class="stat-item">
+            <span class="stat-label">목표 시간</span>
+            <time id="stat-target" class="stat-value" datetime="PT0H">0시간 0분</time>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">계획 시간</span>
+            <time id="stat-planned" class="stat-value" datetime="PT0H">0시간 0분</time>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">완료 시간</span>
+            <time id="stat-done" class="stat-value" datetime="PT0H">0시간 0분</time>
+          </div>
+        </div>
+        <div class="summary-chart" role="img" aria-label="과목별 공부 비율 차트">
+          <canvas id="chart-subject-donut" width="200" height="200" aria-hidden="true"></canvas>
+          <div id="chart-legend" class="chart-legend" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <!-- 플로팅 액션 버튼 (블록 추가) -->
+      <button id="btn-add-block" class="fab" type="button" aria-label="공부 블록 추가" title="공부 추가">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+      </button>
+    </section>
+
+    <!-- ----------------------------------------------------------
+         View 2: 주간 플래너
+         ---------------------------------------------------------- -->
+    <section id="view-week" class="view-panel" role="region" aria-label="주간 계획" aria-labelledby="view-week-heading" hidden>
+      <h2 id="view-week-heading" class="visually-hidden">주간 공부 계획</h2>
+      <div class="week-header">
+        <button id="btn-prev-week" class="nav-btn" type="button" aria-label="지난 주"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg></button>
+        <h3 id="week-range" class="week-title" aria-live="polite"></h3>
+        <button id="btn-next-week" class="nav-btn" type="button" aria-label="다음 주"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.59 16.59L10 18l6-6-6-6-1.41 1.41L13.17 12z"/></svg></button>
+      </div>
+      <div id="week-grid" class="week-grid" role="grid" aria-label="주간 시간표">
+        <!-- JS로 요일별 컬럼 생성 -->
+      </div>
+      <button id="btn-apply-routine" class="btn btn-secondary week-action" type="button" hidden>
+        루틴 템플릿 적용
+      </button>
+    </section>
+
+    <!-- ----------------------------------------------------------
+         View 3: 통계 & 뱃지 (기록)
+         ---------------------------------------------------------- -->
+    <section id="view-stats" class="view-panel" role="region" aria-label="학습 기록 및 뱃지" aria-labelledby="view-stats-heading" hidden>
+      <h2 id="view-stats-heading" class="visually-hidden">학습 통계</h2>
+      
+      <!-- 스트릭 캘린더 (GitHub Contribution 스타일) -->
+      <article class="stats-card streak-card">
+        <h3 class="card-title">연속 학습 <span id="streak-count-large" class="streak-large">0</span>일 🔥</h3>
+        <div id="streak-calendar" class="streak-calendar" role="img" aria-label="최근 7주간의 학습 활동 히트맵"></div>
+        <p class="streak-hint" id="streak-hint">오늘 공부하면 스트릭이 이어져요!</p>
+      </article>
+
+      <!-- 주간/월간 차트 -->
+      <article class="stats-card chart-card">
+        <div class="chart-header">
+          <h3 class="card-title">주간 공부 시간</h3>
+          <select id="chart-period" class="select-sm" aria-label="기간 선택">
+            <option value="week">최근 7일</option>
+            <option value="month">최근 30일</option>
+          </select>
+        </div>
+        <div class="chart-wrapper" role="img" aria-label="일별 공부 시간 막대 그래프">
+          <canvas id="chart-weekly-bar" width="320" height="160" aria-hidden="true"></canvas>
+        </div>
+        <dl id="weekly-stats-detail" class="stats-detail" aria-label="요일별 상세 시간"></dl>
+      </article>
+
+      <!-- 뱃지 컬렉션 -->
+      <article class="stats-card badges-card">
+        <h3 class="card-title">획득한 뱃지</h3>
+        <div id="badges-grid" class="badges-grid" role="list" aria-label="뱃지 목록">
+          <!-- JS로 뱃지 카드 렌더링 -->
+        </div>
+        <p class="empty-hint" id="badges-empty" hidden>아직 뱃지가 없어요. 첫 계획을 세워보세요!</p>
+      </article>
+    </section>
+
+    <!-- ----------------------------------------------------------
+         View 4: 설정
+         ---------------------------------------------------------- -->
+    <section id="view-settings" class="view-panel" role="region" aria-label="설정" aria-labelledby="view-settings-heading" hidden>
+      <h2 id="view-settings-heading" class="visually-hidden">설정</h2>
+      
+      <form id="settings-form" class="settings-form">
+        <!-- 과목 관리 -->
+        <fieldset class="setting-section">
+          <legend>📚 과목 관리</legend>
+          <p class="setting-desc">드래그하여 순서 변경, 색상/아이콘 수정 가능</p>
+          <ul id="subject-list" class="subject-list" role="list" aria-label="과목 리스트"></ul>
+          <button type="button" id="btn-add-subject" class="btn btn-outline">+ 과목 추가</button>
+        </fieldset>
+
+        <!-- 루틴 템플릿 -->
+        <fieldset class="setting-section">
+          <legend>⏰ 루틴 템플릿</legend>
+          <p class="setting-desc">자주 쓰는 시간표를 저장해 두고 '주간' 뷰에서 한 번에 적용하세요.</p>
+          <ul id="routine-list" class="routine-list" role="list" aria-label="루틴 템플릿 리스트"></ul>
+          <button type="button" id="btn-add-routine" class="btn btn-outline">+ 템플릿 만들기</button>
+        </fieldset>
+
+        <!-- 알림/기타 -->
+        <fieldset class="setting-section">
+          <legend>🔔 알림 및 기타</legend>
+          <div class="toggle-row">
+            <label for="toggle-notify">일일 알림 (오후 6시)</label>
+            <label class="switch">
+              <input type="checkbox" id="toggle-notify" role="switch">
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="toggle-row">
+            <label for="toggle-dark">다크 모드 강제 적용</label>
+            <label class="switch">
+              <input type="checkbox" id="toggle-dark" role="switch">
+              <span class="slider"></span>
+            </label>
+          </div>
+        </fieldset>
+
+        <!-- 데이터 관리 -->
+        <fieldset class="setting-section danger-zone">
+          <legend>💾 데이터 관리</legend>
+          <div class="btn-group">
+            <button type="button" id="btn-export-data" class="btn btn-secondary">JSON 백업 다운로드</button>
+            <label class="btn btn-secondary" for="input-import-data">JSON 복구하기
+              <input type="file" id="input-import-data" accept=".json" hidden>
+            </label>
+          </div>
+          <button type="button" id="btn-reset-data" class="btn btn-danger">모든 데이터 초기화</button>
+        </fieldset>
+      </form>
+    </section>
+
+  </main>
+
+  <!-- ============================================================
+       하단 네비게이션 바 (모바일 앱 스타일)
+       ============================================================ -->
+  <nav class="bottom-nav" role="navigation" aria-label="메인 메뉴" aria-orientation="horizontal">
+    <button class="nav-item active" data-view="today" type="button" aria-selected="true">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+      <span>오늘</span>
+    </button>
+    <button class="nav-item" data-view="week" type="button" aria-selected="false">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>
+      <span>주간</span>
+    </button>
+    <button class="nav-item" data-view="stats" type="button" aria-selected="false">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+      <span>기록</span>
+    </button>
+    <button class="nav-item" data-view="settings" type="button" aria-selected="false">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+      <span>설정</span>
+    </button>
+  </nav>
+
+  <!-- ============================================================
+       모달 다이얼로그 (블록 추가/수정, 과목 추가, 루틴 추가 공용)
+       ============================================================ -->
+  <dialog id="modal-block" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <form id="form-block" class="modal-form" method="dialog">
+      <header class="modal-header">
+        <h3 id="modal-title">공부 블록 추가</h3>
+        <button type="button" class="modal-close" aria-label="닫기" value="cancel">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </header>
+      <div class="modal-body">
+        <input type="hidden" name="blockId" id="input-block-id">
+        <input type="hidden" name="date" id="input-block-date">
+        
+        <div class="form-group">
+          <label for="select-subject">과목 <span class="required" aria-hidden="true">*</span></label>
+          <select name="subjectId" id="select-subject" required aria-required="true"></select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="input-start">시작 <span class="required" aria-hidden="true">*</span></label>
+            <input type="time" name="startTime" id="input-start" required aria-required="true">
+          </div>
+          <div class="form-group">
+            <label for="input-end">끝 <span class="required" aria-hidden="true">*</span></label>
+            <input type="time" name="endTime" id="input-end" required aria-required="true">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="input-memo">메모</label>
+          <textarea name="memo" id="input-memo" rows="2" placeholder="예: 1단원 연습문제 p.20, 단어장 Day 5"></textarea>
+        </div>
+
+        <div class="form-group checkbox-group">
+          <label class="checkbox-label">
+            <input type="checkbox" name="repeat" id="input-repeat" value="weekly">
+            <span class="checkmark"></span>
+            매주 같은 요일 반복
+          </label>
+        </div>
+      </div>
+      <footer class="modal-footer">
+        <button type="button" class="btn btn-secondary" value="cancel">취소</button>
+        <button type="button" class="btn btn-danger" id="btn-delete-block" hidden>삭제</button>
+        <button type="submit" class="btn btn-primary" id="btn-save-block">저장</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- 과목 추가/수정 모달 -->
+  <dialog id="modal-subject" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-subject-title">
+    <form id="form-subject" class="modal-form" method="dialog">
+      <header class="modal-header">
+        <h3 id="modal-subject-title">과목 추가</h3>
+        <button type="button" class="modal-close" aria-label="닫기" value="cancel"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
+      </header>
+      <div class="modal-body">
+        <input type="hidden" name="subjectId" id="input-subject-id">
+        <div class="form-group">
+          <label for="input-subject-name">과목명 <span class="required" aria-hidden="true">*</span></label>
+          <input type="text" name="name" id="input-subject-name" maxlength="10" required placeholder="예: 수학, 영어, 코딩">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>색상</label>
+            <div id="subject-color-picker" class="color-picker" role="radiogroup" aria-label="과목 색상 선택"></div>
+          </div>
+          <div class="form-group">
+            <label for="input-subject-icon">아이콘/이모지</label>
+            <input type="text" name="icon" id="input-subject-icon" maxlength="2" placeholder="📖" value="📖">
+          </div>
+        </div>
+      </div>
+      <footer class="modal-footer">
+        <button type="button" class="btn btn-secondary" value="cancel">취소</button>
+        <button type="submit" class="btn btn-primary">저장</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- 루틴 템플릿 추가/수정 모달 -->
+  <dialog id="modal-routine" class="modal modal-large" role="dialog" aria-modal="true" aria-labelledby="modal-routine-title">
+    <form id="form-routine" class="modal-form" method="dialog">
+      <header class="modal-header">
+        <h3 id="modal-routine-title">루틴 템플릿 만들기</h3>
+        <button type="button" class="modal-close" aria-label="닫기" value="cancel"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
+      </header>
+      <div class="modal-body">
+        <input type="hidden" name="routineId" id="input-routine-id">
+        <div class="form-group">
+          <label for="input-routine-name">템플릿 이름 <span class="required" aria-hidden="true">*</span></label>
+          <input type="text" name="name" id="input-routine-name" required placeholder="예: 평일 기본 루틴, 주말 몰입 루틴">
+        </div>
+        <fieldset class="form-group">
+          <legend>적용 요일</legend>
+          <div class="day-toggle" role="group" aria-label="반복 요일 선택">
+            <label><input type="checkbox" name="days" value="0" class="day-check"> 일</label>
+            <label><input type="checkbox" name="days" value="1" class="day-check"> 월</label>
+            <label><input type="checkbox" name="days" value="2" class="day-check"> 화</label>
+            <label><input type="checkbox" name="days" value="3" class="day-check"> 수</label>
+            <label><input type="checkbox" name="days" value="4" class="day-check"> 목</label>
+            <label><input type="checkbox" name="days" value="5" class="day-check"> 금</label>
+            <label><input type="checkbox" name="days" value="6" class="day-check"> 토</label>
+          </div>
+        </fieldset>
+        <div id="routine-blocks" class="routine-blocks" aria-label="루틴 구성 블록 목록">
+          <!-- JS로 블록 행 동적 추가 -->
+        </div>
+        <button type="button" id="btn-add-routine-block" class="btn btn-outline btn-sm">+ 시간 블록 추가</button>
+      </div>
+      <footer class="modal-footer">
+        <button type="button" class="btn btn-secondary" value="cancel">취소</button>
+        <button type="button" class="btn btn-danger" id="btn-delete-routine" hidden>삭제</button>
+        <button type="submit" class="btn btn-primary">저장</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- 토스트/알림 컨테이너 -->
+  <div id="toast-container" class="toast-container" role="status" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- Service Worker Registration (인라인 스크립트로 바로 등록) -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => { /* 무시 */ });
+      });
+    }
+  </script>
+</body>
+</html>
