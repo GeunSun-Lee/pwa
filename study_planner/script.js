@@ -1110,8 +1110,13 @@
 
       // 모달 외부 클릭/ESC 닫기
       $$('dialog.modal').forEach(d => {
-        d.addEventListener('click', (e) => { if (e.target === d) d.close(); });
-        d.addEventListener('cancel', (e) => { e.preventDefault(); d.close(); }); // ESC 키
+		// 1. 배경(Backdrop) 클릭 시 닫기 (유지)
+		d.addEventListener('click', (e) => { if (e.target === d) d.close(); });
+
+		// 2. ESC 키 취소 이벤트 (유지 - preventDefault 후 close로 커스텀 동작 가능)
+		d.addEventListener('cancel', (e) => { e.preventDefault(); d.close(); });
+
+		// 3. X버튼/취소버튼 클릭 리스너 -> **삭제 가능** (HTML에서 처리됨)
       });
 
       // 드래그 앤 드롭 (타임 그리드 위)
@@ -1189,29 +1194,34 @@
     },
 
     handleBlockSubmit(e, state) {
-      e.preventDefault();
-      const form = e.target;
-      const data = {
-        id: form.blockId.value || null,
-        date: form.date.value,
-        subjectId: form.subjectId.value,
-        start: form.startTime.value,
-        end: form.endTime.value,
-        memo: form.memo.value,
-        repeat: form.repeat.checked
-      };
-      const res = Logic.saveBlock(state, data);
-      if (res.success) {
-        toast('저장되었습니다.', 'success');
-        $(CONFIG.SELECTORS.modalBlock).close();
-        // 뷰 새로고침
-        if (state.ui.currentView === 'today') Render.today(state);
-        else if (state.ui.currentView === 'week') Render.week(state);
-        else if (state.ui.currentView === 'stats') Render.stats(state);
-      } else {
-        toast(res.error, 'error');
-      }
-    },
+    // 👇 [핵심 추가] 취소/X버튼 클릭 시 submit 이벤트 무시
+    const submitter = e.submitter; // 클릭된 버튼 요소
+    if (submitter && (submitter.value === 'cancel' || submitter.classList.contains('modal-close') || submitter.formMethod === 'dialog')) {
+      return; // 다이얼로그는 브라우저가 자동으로 닫아줌 (JS 개입 불필요)
+    }
+
+    e.preventDefault(); // 저장 버튼일 때만 기본 동작(페이지 리로드 등) 방지
+    const form = e.target;
+    const data = {
+      id: form.blockId.value || null,
+      date: form.date.value,
+      subjectId: form.subjectId.value,
+      start: form.startTime.value,
+      end: form.endTime.value,
+      memo: form.memo.value,
+      repeat: form.repeat.checked
+    };
+    const res = Logic.saveBlock(state, data);
+    if (res.success) {
+      toast('저장되었습니다.', 'success');
+      $(CONFIG.SELECTORS.modalBlock).close(); // 수동 닫기 (저장 버튼은 formmethod="dialog" 없으므로)
+      if (state.ui.currentView === 'today') Render.today(state);
+      else if (state.ui.currentView === 'week') Render.week(state);
+      else if (state.ui.currentView === 'stats') Render.stats(state);
+    } else {
+      toast(res.error, 'error');
+    }
+  },
 
     deleteCurrentBlock(state) {
       const form = $(CONFIG.SELECTORS.formBlock);
@@ -1272,22 +1282,28 @@
     },
 
     handleSubjectSubmit(e, state) {
-      e.preventDefault();
-      const form = e.target;
-      const color = form.querySelector('input[name="color"]:checked')?.value || '#757575';
-      const data = {
-        id: form.subjectId.value || null,
-        name: form.name.value,
-        color: color,
-        icon: form.icon.value || '📝'
-      };
-      const res = Logic.saveSubject(state, data);
-      if (res.success) {
-        toast('저장되었습니다.', 'success');
-        $(CONFIG.SELECTORS.modalSubject).close();
-        Render.settings(state); Render.today(state); Render.week(state);
-      } else toast(res.error, 'error');
-    },
+		// 👇 [핵심 추가] 취소/X버튼 클릭 시 즉시 리턴
+		const submitter = e.submitter;
+		if (submitter && (submitter.value === 'cancel' || submitter.classList.contains('modal-close') || submitter.formMethod === 'dialog')) {
+		  return;
+		}
+
+		e.preventDefault();
+		const form = e.target;
+		const color = form.querySelector('input[name="color"]:checked')?.value || '#757575';
+		const data = {
+		  id: form.subjectId.value || null,
+		  name: form.name.value,
+		  color: color,
+		  icon: form.icon.value || '📝'
+		};
+		const res = Logic.saveSubject(state, data);
+		if (res.success) {
+		  toast('저장되었습니다.', 'success');
+		  $(CONFIG.SELECTORS.modalSubject).close();
+		  Render.settings(state); Render.today(state); Render.week(state);
+		} else toast(res.error, 'error');
+	  },
 
     deleteSubject(subjectId) {
       const state = store.getState();
@@ -1341,28 +1357,34 @@
     },
 
     handleRoutineSubmit(e, state) {
-      e.preventDefault();
-      const form = e.target;
-      const days = Array.from(form.querySelectorAll('input[name="days"]:checked')).map(c => c.value);
-      const blocks = Array.from(form.querySelectorAll('.routine-block-row')).map(row => ({
-        subjectId: row.querySelector('[name="subjectId"]').value,
-        start: row.querySelector('[name="start"]').value,
-        end: row.querySelector('[name="end"]').value
-      })).filter(b => b.subjectId && b.start && b.end);
+		// 👇 [핵심 추가] 취소/X버튼 클릭 시 즉시 리턴
+		const submitter = e.submitter;
+		if (submitter && (submitter.value === 'cancel' || submitter.classList.contains('modal-close') || submitter.formMethod === 'dialog')) {
+		  return;
+		}
 
-      const data = {
-        id: form.routineId.value || null,
-        name: form.name.value,
-        days: days,
-        blocks: blocks
-      };
-      const res = Logic.saveRoutine(state, data);
-      if (res.success) {
-        toast('저장되었습니다.', 'success');
-        $(CONFIG.SELECTORS.modalRoutine).close();
-        Render.settings(state);
-      } else toast(res.error, 'error');
-    },
+		e.preventDefault();
+		const form = e.target;
+		const days = Array.from(form.querySelectorAll('input[name="days"]:checked')).map(c => c.value);
+		const blocks = Array.from(form.querySelectorAll('.routine-block-row')).map(row => ({
+		  subjectId: row.querySelector('[name="subjectId"]').value,
+		  start: row.querySelector('[name="start"]').value,
+		  end: row.querySelector('[name="end"]').value
+		})).filter(b => b.subjectId && b.start && b.end);
+
+		const data = {
+		  id: form.routineId.value || null,
+		  name: form.name.value,
+		  days: days,
+		  blocks: blocks
+		};
+		const res = Logic.saveRoutine(state, data);
+		if (res.success) {
+		  toast('저장되었습니다.', 'success');
+		  $(CONFIG.SELECTORS.modalRoutine).close();
+		  Render.settings(state);
+		} else toast(res.error, 'error');
+	  },
 
     deleteCurrentRoutine(state) {
       const id = $('#input-routine-id').value;

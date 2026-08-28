@@ -547,10 +547,26 @@ table { border-collapse: collapse; }
 
 
 /* ============================================================
-   12. Modals (Shared Styles)
+   12. Modals (Shared Styles) - 수정된 버전
    ============================================================ */
-.modal { border: none; border-radius: var(--radius-lg); box-shadow: 0 20px 40px var(--color-shadow-strong); max-width: 90vw; width: 100%; max-height: 90vh; overflow: hidden; }
-.modal::backdrop { background: var(--color-overlay); backdrop-filter: blur(2px); animation: fadeIn 0.2s ease; }
+.modal { 
+  border: none; 
+  border-radius: var(--radius-lg); 
+  box-shadow: 0 20px 40px var(--color-shadow-strong); 
+  max-width: 90vw; 
+  width: 100%; 
+  max-height: 90vh; 
+  overflow: hidden;
+  /* 👇 추가: 수직/수평 중앙 정렬 강제 지정 */
+  margin: auto; 
+  /* 👇 추가: inset 속성으로 위치 고정 방지 (일부 브라우저 대비) */
+  inset: 0; 
+}
+.modal::backdrop { 
+  background: var(--color-overlay); 
+  backdrop-filter: blur(2px); 
+  animation: fadeIn 0.2s ease; 
+}
 .modal-large { max-width: 480px; }
 .modal-form { display: flex; flex-direction: column; background: var(--color-bg-panel); }
 .modal-header {
