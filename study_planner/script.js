@@ -106,7 +106,11 @@
     compareTime: (a,b) => fmt.timeToMins(a) - fmt.timeToMins(b)
   };
 
-  const uid = (p='id') => `${p}_${Date.now()}_${Math.random().toString(36).slice(2,7)}`;
+  let _uidCounter = 0;
+  const uid = (prefix = 'id') => {
+    // 타임스탬프 + 랜덤 + 증가하는 카운터 = 사실상 충돌 불가능
+    return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 9)}_${++_uidCounter}`;
+  };
   const debounce = (fn, ms=150) => { let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a),ms); }; };
 
   // ============================================================
@@ -171,19 +175,63 @@
   // 7. Core Business Logic (핵심 로직: CRUD, 루틴, 과목)
   // ============================================================
   const Logic = {
-    validateBlock(b) { if(!b.subjectId) return '과목 선택'; if(!b.start||!b.end) return '시간 입력'; if(fmt.compareTime(b.start,b.end)>=0) return '끝 시간이 시작보다 늦어야 함'; return null; },
+    validateBlock(b) {
+    if(!b.subjectId) return '과목을 선택하세요.';
+    if(!b.start || !b.end) return '시작/끝 시간을 입력하세요.';
+    if(fmt.compareTime(b.start, b.end) >= 0) return '끝 시간은 시작 시간보다 늦어야 합니다.';
+    
+    // 👇 [신규] 그리드 표시 범위 제한 (06:00 ~ 24:00)
+    const startM = fmt.timeToMins(b.start);
+    const endM = fmt.timeToMins(b.end);
+    const minM = CONFIG.DAY_START_HOUR * 60;      // 360 (06:00)
+    const maxM = CONFIG.DAY_END_HOUR * 60;        // 1440 (24:00)
+    
+    if (startM < minM || startM >= maxM) return `시작 시간은 ${CONFIG.DAY_START_HOUR}:00 ~ ${CONFIG.DAY_END_HOUR}:00 사이여야 합니다.`;
+    if (endM > maxM || endM <= minM) return `끝 시간은 ${CONFIG.DAY_START_HOUR}:00 ~ ${CONFIG.DAY_END_HOUR}:00 사이여야 합니다.`;
+    
+    return null;
+  },
 
     saveBlock(state, data) {
-      const err = Logic.validateBlock(data); if(err) return {ok:false, err};
-      const key = data.date || Selectors.todayKey(state);
-      const list = state.schedule[key] || [];
-      const payload = { id: data.id||uid('blk'), ...data, date:key, done:false, createdAt:Date.now() };
-      const idx = list.findIndex(b=>b.id===data.id);
-      if(idx>-1) list[idx] = {...list[idx], ...data}; else list.push(payload);
-      list.sort((a,b)=>fmt.compareTime(a.start,b.start));
-      state.schedule[key] = list;
-      return {ok:true};
-    },
+	  const err = Logic.validateBlock(data); 
+	  if (err) return { success: false, error: err };
+
+	  const key = data.date || Selectors.todayKey(state);
+	  const list = state.schedule[key] || [];
+	  
+	  // 👇 [핵심] 새 블록 생성 시 무조건 새로운 고유 ID 발급
+	  // data.id가 있더라도(수정 모드에서 넘어옴) 기존 리스트에 없으면 새 ID로 간주
+	  const isEditing = data.id && list.some(b => b.id === data.id);
+	  
+	  let targetId = data.id;
+	  if (!isEditing) {
+		// 새 블록: 중복되지 않는 ID 강제 생성
+		let newId;
+		const existingIds = new Set(Object.values(state.schedule).flat().map(b => b.id));
+		do { newId = uid('blk'); } while (existingIds.has(newId)); // 극히 드문 충돌 방지 루프
+		targetId = newId;
+	  }
+
+	  const payload = { 
+		id: targetId, 
+		...data, 
+		id: targetId, // 확정된 ID 덮어쓰기
+		date: key, 
+		done: false, 
+		createdAt: Date.now() 
+	  };
+
+	  if (isEditing) {
+		const idx = list.findIndex(b => b.id === data.id);
+		if (idx > -1) list[idx] = { ...list[idx], ...data, id: targetId, date: key };
+	  } else {
+		list.push(payload);
+	  }
+	  
+	  list.sort((a, b) => fmt.compareTime(a.start, b.start));
+	  state.schedule[key] = list;
+	  return { success: true };
+	},
 
     deleteBlock(state, id, dateKey) {
       const key = dateKey || Selectors.todayKey(state);
@@ -194,11 +242,19 @@
       return key;
     },
 
-    toggleDone(state, id, dateKey) {
-      const key = dateKey || Selectors.todayKey(state);
-      const b = (state.schedule[key]||[]).find(x=>x.id===id);
-      if(b){ b.done=!b.done; b.updatedAt=Date.now(); if(b.done) window.dispatchEvent(new CustomEvent('block-completed',{detail:{block:b,dateKey:key}})); }
-    },
+    toggleDone(state, blockId, dateKey) {
+	  const key = dateKey || Selectors.todayKey(state);
+	  const list = state.schedule[key] || [];
+	  
+	  // 👇 find 대신 findIndex + splice/직접 수정으로 안전하게 (동일 ID 여러 개일 때 첫 번째만 수정 방지)
+	  // 하지만 ID 유니크 보장했으므로 find 써도 무방. 단, 날짜 키로 범위 한정함.
+	  const block = list.find(b => b.id === blockId);
+	  if (block) {
+		block.done = !block.done;
+		block.updatedAt = Date.now();
+		if (block.done) window.dispatchEvent(new CustomEvent('block-completed', { detail: { block, dateKey: key } }));
+	  }
+	},
 
     saveRoutine(state, data) {
       if(!data.name) return {ok:false,err:'템플릿 이름 필요'};
@@ -345,11 +401,106 @@
     // --- Today View ---
     today(state) { this.timeGrid(state); this.dailySummary(state); },
 
-    timeGrid(state) {
-      const gutter=$(CONFIG.SELECTORS.timeGutter), grid=$(CONFIG.SELECTORS.timeGrid); const blocks=Selectors.todayBlocks(state); const subs=Selectors.subjectMap(state); const nowMins=new Date().getHours()*60+new Date().getMinutes(); const rowH=CONFIG.TIME_ROW_HEIGHT; const slots=(CONFIG.DAY_END_HOUR-CONFIG.DAY_START_HOUR)*2;
-      gutter.innerHTML=''; grid.innerHTML='';
-      for(let i=0;i<=slots;i++){ const tm=CONFIG.DAY_START_HOUR*60+i*CONFIG.TIME_SLOT_MINUTES; const h=Math.floor(tm/60), m=tm%60, label=fmt.minsToTime(tm); gutter.appendChild(el('div',{class:'time-label',style:m? 'visibility:hidden':''}, m? '':`${h.toString().padStart(2,'0')}:00`)); const row=el('div',{class:'time-row','data-time':label}); const cell=el('div',{class:'time-cell','data-time':label,'data-date':Selectors.todayKey(state)}); if(tm===nowMins) cell.classList.add('today-now'); row.appendChild(cell); grid.appendChild(row); }
-      blocks.forEach(b=>{ const st=fmt.timeToMins(b.start), et=fmt.timeToMins(b.end); const top=((st-CONFIG.DAY_START_HOUR*60)/CONFIG.TIME_SLOT_MINUTES)*rowH; const h=((et-st)/CONFIG.TIME_SLOT_MINUTES)*rowH; const sub=subs[b.subjectId]||{color:'#757575',name:'?',icon:'❓'}; const elB=el('div',{class:`study-block ${b.done?'done':''} ${b.repeat?'repeat':''}`,style:`top:${top}px;height:${h}px;background:${sub.color}`,dataset:{blockId:b.id,date:b.date||Selectors.todayKey(state)}},[el('div',{class:'block-check',onclick:e=>{e.stopPropagation();Controller.toggleBlock(b.id);},'aria-label':b.done?'완료취소':'완료'}),el('div',{class:'block-title'},`${sub.icon} ${sub.name}`),b.memo?el('div',{class:'block-memo'},b.memo):null,el('div',{class:'block-time'},`${b.start} ~ ${b.end}`)]); elB.draggable=true; elB.addEventListener('dragstart',Controller.onDragStart); elB.addEventListener('dragend',Controller.onDragEnd); elB.addEventListener('click',e=>{if(e.target!==elB.querySelector('.block-check'))Controller.openBlockModal(b.id);}); grid.appendChild(elB); });
+     timeGrid(state) {
+      console.log('[Render] timeGrid 시작');
+      
+      const gutter = $(CONFIG.SELECTORS.timeGutter);
+      const grid = $(CONFIG.SELECTORS.timeGrid);
+      
+      // 1. 요소 존재 검사
+      if (!gutter || !grid) {
+        console.error('[Render] ❌ DOM 요소를 찾을 수 없음:', { 
+          gutterSel: CONFIG.SELECTORS.timeGutter, gutter: !!gutter,
+          gridSel: CONFIG.SELECTORS.timeGrid, grid: !!grid 
+        });
+        toast('화면 구성 오류: 시간표 영역을 찾을 수 없습니다. 새로고침 해보세요.', 'error');
+        return;
+      }
+
+      // 2. 데이터 준비 (👇 subjectMap 정의 필수!)
+      const blocks = Selectors.todayBlocks(state);
+      const subjectMap = Selectors.subjectMap(state); // 👈 여기가 핵심! 누락되면 ReferenceError 발생
+      const now = new Date();
+      const nowMins = now.getHours() * 60 + now.getMinutes();
+      const isToday = true;
+      const rowHeight = CONFIG.TIME_ROW_HEIGHT; // 48
+      const totalSlots = (CONFIG.DAY_END_HOUR - CONFIG.DAY_START_HOUR) * (60 / CONFIG.TIME_SLOT_MINUTES); // 36
+
+      try {
+        // 3. 초기화
+        gutter.innerHTML = '';
+        grid.innerHTML = '';
+
+        // 4. 행 생성 루프 (0 ~ 36, 총 37개: 06:00 ~ 24:00)
+        for (let i = 0; i <= totalSlots; i++) {
+          const totalMins = CONFIG.DAY_START_HOUR * 60 + i * CONFIG.TIME_SLOT_MINUTES;
+          const h = Math.floor(totalMins / 60);
+          const m = totalMins % 60;
+          const timeLabel = fmt.minsToTime(totalMins);
+
+          // 거터 라벨 (정시만 텍스트 표시)
+          const labelText = (m === 0) ? `${h.toString().padStart(2,'0')}:00` : '';
+          const labelStyle = (m === 0) ? '' : 'visibility:hidden';
+          const labelEl = el('div', { class: 'time-label', style: labelStyle }, labelText);
+          labelEl.style.height = rowHeight + 'px'; 
+          labelEl.style.boxSizing = 'border-box';
+          gutter.appendChild(labelEl);
+
+          // 그리드 행
+          const row = el('div', { class: 'time-row', 'data-time': timeLabel, style: `height:${rowHeight}px` });
+          const cell = el('div', { class: 'time-cell', 'data-time': timeLabel, 'data-date': Selectors.todayKey(state) });
+          if (isToday && totalMins === nowMins) cell.classList.add('today-now');
+          row.appendChild(cell);
+          grid.appendChild(row);
+        }
+        console.log('[Render] 그리드 행 생성 완료:', totalSlots + 1, '행');
+
+        // 5. 블록 렌더링
+        blocks.forEach(block => {
+          const startM = fmt.timeToMins(block.start);
+          const endM = fmt.timeToMins(block.end);
+          
+          // 방어: 유효한 시간 범위인지 확인
+          if (startM < CONFIG.DAY_START_HOUR * 60 || endM > CONFIG.DAY_END_HOUR * 60) {
+            console.warn('[Render] 블록 시간 범위 초과, 스킵:', block);
+            return;
+          }
+
+          const startSlotIndex = (startM - CONFIG.DAY_START_HOUR * 60) / CONFIG.TIME_SLOT_MINUTES;
+          const durationSlots = (endM - startM) / CONFIG.TIME_SLOT_MINUTES;
+          
+          if (durationSlots <= 0) return;
+
+          const top = startSlotIndex * rowHeight;
+          const height = durationSlots * rowHeight;
+          
+          // 👇 여기서 subjectMap 사용 (위에 정의되어 있어야 함)
+          const subj = subjectMap[block.subjectId] || { color: '#757575', name: '미분류', icon: '❓' };
+          
+          const blkEl = el('div', {
+            class: `study-block ${block.done ? 'done' : ''} ${block.repeat ? 'repeat' : ''}`,
+            style: `top:${top}px; height:${height}px; background:${subj.color};`,
+            dataset: { blockId: block.id, date: block.date || Selectors.todayKey(state) }
+          }, [
+            el('div', { class: 'block-check', 'aria-label': block.done ? '완료 취소' : '완료 처리', onclick: (e)=>{e.stopPropagation(); Controller.toggleBlock(block.id);} }),
+            el('div', { class: 'block-title' }, `${subj.icon} ${subj.name}`),
+            block.memo ? el('div', { class: 'block-memo' }, block.memo) : null,
+            el('div', { class: 'block-time' }, `${block.start} ~ ${block.end}`)
+          ]);
+          
+          blkEl.draggable = true;
+          blkEl.addEventListener('dragstart', Controller.onDragStart);
+          blkEl.addEventListener('dragend', Controller.onDragEnd);
+          blkEl.addEventListener('click', (e) => { if(e.target !== blkEl.querySelector('.block-check')) Controller.openBlockModal(block.id); });
+          
+          grid.appendChild(blkEl);
+        });
+        console.log('[Render] 블록 렌더링 완료:', blocks.length, '개');
+
+      } catch (err) {
+        console.error('[Render] timeGrid 실행 중 오류:', err);
+        toast('시간표 그리기 중 오류 발생', 'error');
+      }
     },
 
     dailySummary(state) { const p=Selectors.todayPlannedMinutes(state), d=Selectors.todayDoneMinutes(state), t=240; $(CONFIG.SELECTORS.statTarget).textContent=fmt.durationLabel(t); $(CONFIG.SELECTORS.statPlanned).textContent=fmt.durationLabel(p); $(CONFIG.SELECTORS.statDone).textContent=fmt.durationLabel(d); const dist=Selectors.todaySubjectDist(state), subs=Selectors.subjectMap(state); Charts.donut($(CONFIG.SELECTORS.chartDonut),dist,subs); Charts.legend($(CONFIG.SELECTORS.chartLegend),dist,subs); },
@@ -540,17 +691,64 @@
       $(CONFIG.SELECTORS.modalBlock).showModal();
     },
 
-    handleBlockSubmit(e,state) {
-      const sub=e.submitter; if(sub&&(sub.value==='cancel'||sub.formMethod==='dialog'||sub.classList.contains('modal-close'))) return;
-      e.preventDefault(); const f=e.target; const data={id:f.blockId.value||null,date:f.date.value,subjectId:f.subjectId.value,start:f.startTime.value,end:f.endTime.value,memo:f.memo.value,repeat:f.repeat.checked};
-      const res=Logic.saveBlock(state,data);
-      if(res.ok){ store.commit('schedule'); StatsEngine.recomputeAll(state); toast('저장됨','success'); $(CONFIG.SELECTORS.modalBlock).close(); Render.today(state); Render.week(state); Render.stats(state); }
-      else toast(res.err,'error');
-    },
+    handleBlockSubmit(e, state) {
+	  const submitter = e.submitter;
+	  // 취소/X버튼 클릭 시 네이티브 다이얼로그 닫기 처리 후 리턴
+	  if (submitter && (submitter.value === 'cancel' || submitter.formMethod === 'dialog' || submitter.classList.contains('modal-close'))) {
+		return; 
+	  }
+
+	  e.preventDefault(); 
+	  const form = e.target;
+	  const data = {
+		id: form.blockId.value || null,
+		date: form.date.value,
+		subjectId: form.subjectId.value,
+		start: form.startTime.value,
+		end: form.endTime.value,
+		memo: form.memo.value,
+		repeat: form.repeat.checked
+	  };
+	  
+	  const res = Logic.saveBlock(state, data);
+	  
+	  // 👇 res.ok -> res.success 로 수정
+	  if (res.success) {
+		store.commit('schedule');
+		StatsEngine.recomputeAll(state);
+		toast('저장되었습니다.', 'success');
+		$(CONFIG.SELECTORS.modalBlock).close(); // 👈 성공 시 모달 명시적 닫기
+		Render.today(state); 
+		Render.week(state); 
+		Render.stats(state);
+	  } else {
+		toast(res.error || '저장 실패', 'error');
+	  }
+	},
 
     deleteCurrentBlock(state) { const f=$(CONFIG.SELECTORS.formBlock); const id=f.blockId.value, date=f.date.value; if(!id||!confirm('삭제하시겠습니까?')) return; Logic.deleteBlock(state,id,date); store.commit('schedule'); StatsEngine.recomputeAll(state); toast('삭제됨','success'); $(CONFIG.SELECTORS.modalBlock).close(); Render.today(state); Render.week(state); Render.stats(state); },
 
-    toggleBlock(id){ const state=store.getState(); Logic.toggleDone(state,id); const el=document.querySelector(`.study-block[data-block-id="${id}"]`); if(el) el.classList.toggle('done'); Render.dailySummary(state); Render.stats(state); },
+    toggleBlock(blockId) { 
+	  const state = store.getState();
+	  const todayKey = Selectors.todayKey(state); // 현재 보고 있는 날짜 기준
+	  
+	  // 1. 상태(State) 업데이트 - Logic에서 날짜 키 포함하여 토글
+	  Logic.toggleDone(state, blockId, todayKey); 
+	  
+	  // 2. 즉시 UI 피드백 - 해당 날짜 그리드 내의 특정 블록만 선택
+	  // document.querySelectorAll로 모든 매칭 요소를 가져와 날짜 속성으로 필터링
+	  const blocks = document.querySelectorAll(`.study-block[data-block-id="${blockId}"]`);
+	  blocks.forEach(el => {
+		// data-date가 오늘 날짜인 것만 토글 (다른 날짜 중복 ID 방지)
+		if (el.dataset.date === todayKey) {
+		  el.classList.toggle('done');
+		}
+	  });
+	  
+	  // 3. 통계/요약 리렌더링
+	  Render.dailySummary(state); 
+	  Render.stats(state); 
+	},
 
     // --- 과목 모달 ---
     openSubjectModal(id) {

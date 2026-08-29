@@ -1,14 +1,50 @@
 {
   "name": "나의 공부 루틴",
   "short_name": "스터디플래너",
-  "description": "중학생을 위한 심플한 공부 습관 플래너",
+  "description": "중학생을 위한 심플하고 직관적인 공부 습관 플래너. 나만의 루틴을 만들고 성취감을 기록하세요.",
+  "id": "/",
   "start_url": ".",
+  "scope": ".",
   "display": "standalone",
+  "orientation": "portrait-primary",
   "background_color": "#f8fafc",
   "theme_color": "#2563eb",
-  "orientation": "portrait-primary",
+  "dir": "ltr",
+  "lang": "ko-KR",
+  "categories": ["education", "productivity", "lifestyle"],
+  
   "icons": [
-    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
-    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
-  ]
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+
+  "shortcuts": [
+    {
+      "name": "오늘 공부 추가",
+      "short_name": "추가",
+      "description": "바로 오늘의 공부 블록을 추가합니다.",
+      "url": "/?action=add",
+      "icons": [{ "src": "icons/shortcut-add.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "이번 주 통계 보기",
+      "short_name": "통계",
+      "description": "주간 학습 시간과 스트릭을 확인합니다.",
+      "url": "/?view=stats",
+      "icons": [{ "src": "icons/shortcut-stats.png", "sizes": "192x192" }]
+    }
+  ],
+
+  "prefer_related_applications": false,
+  "related_applications": []
 }
