@@ -638,43 +638,67 @@
 
     // --- 초기화 및 전역 바인딩 ---
     init(state) {
-      // 뷰 전환 (하단 네비)
-      $$(CONFIG.SELECTORS.navItems).forEach(btn=>btn.addEventListener('click',()=>this.switchView(btn.dataset.view,state)));
-      // 헤더 버튼
-      $(CONFIG.SELECTORS.btnAddBlock).addEventListener('click',()=>this.openBlockModal(null,Selectors.todayKey(state)));
-      $(CONFIG.SELECTORS.btnExport).addEventListener('click',()=>Storage.exportJSON(state));
-      $(CONFIG.SELECTORS.btnImportTrigger).addEventListener('click',()=>$(CONFIG.SELECTORS.inputImport).click());
-      $(CONFIG.SELECTORS.inputImport).addEventListener('change',e=>this.handleImport(e,state));
-      $(CONFIG.SELECTORS.btnSettings).addEventListener('click',()=>this.switchView('settings',state));
-      // 주간 네비
-      $(CONFIG.SELECTORS.btnPrevWeek).addEventListener('click',()=>this.navigateWeek(state,-1));
-      $(CONFIG.SELECTORS.btnNextWeek).addEventListener('click',()=>this.navigateWeek(state,1));
-      $(CONFIG.SELECTORS.btnApplyRoutine).addEventListener('click',()=>this.openRoutinePicker(state));
-      // 통계 기간
-      $(CONFIG.SELECTORS.chartPeriod).addEventListener('change',()=>Render.stats(state));
-      // 설정 폼
-      $(CONFIG.SELECTORS.btnAddSubject).addEventListener('click',()=>this.openSubjectModal(null));
-      $(CONFIG.SELECTORS.btnAddRoutine).addEventListener('click',()=>this.openRoutineModal(null));
-      $(CONFIG.SELECTORS.toggleNotify).addEventListener('change',e=>{state.settings.notifyEnabled=e.target.checked;this.requestNotificationPermission();});
-      $(CONFIG.SELECTORS.toggleDark).addEventListener('change',e=>this.setDarkMode(e.target.checked,state));
-      $(CONFIG.SELECTORS.btnExportData).addEventListener('click',()=>Storage.exportJSON(state));
-      $(CONFIG.SELECTORS.inputImportData).addEventListener('change',e=>this.handleImport(e,state));
-      $(CONFIG.SELECTORS.btnResetData).addEventListener('click',()=>this.confirmReset(state));
-      // 모달 폼 제출
-      $(CONFIG.SELECTORS.formBlock).addEventListener('submit',e=>this.handleBlockSubmit(e,state));
-      $(CONFIG.SELECTORS.formSubject).addEventListener('submit',e=>this.handleSubjectSubmit(e,state));
-      $(CONFIG.SELECTORS.formRoutine).addEventListener('submit',e=>this.handleRoutineSubmit(e,state));
-      // 모달 삭제 버튼
-      $(CONFIG.SELECTORS.btnDeleteBlock).addEventListener('click',()=>this.deleteCurrentBlock(state));
-      $(CONFIG.SELECTORS.btnDeleteRoutine).addEventListener('click',()=>this.deleteCurrentRoutine(state));
-      // 모달 공통: 백드랍/ESC 닫기 방지(필수 완료 강제용) - 온보딩 제외
-      $$('dialog.modal:not(#modal-onboarding)').forEach(d=>{d.addEventListener('click',e=>{if(e.target===d)d.close();});d.addEventListener('cancel',e=>{e.preventDefault();d.close();});});
-      // 드래그 앤 드롭 (데스크탑)
-      const grid=$(CONFIG.SELECTORS.timeGrid); grid.addEventListener('dragover',this.onDragOver); grid.addEventListener('dragleave',this.onDragLeave); grid.addEventListener('drop',e=>this.onDrop(e,state));
-      // 터치 드래그 (모바일)
-      this.bindTouchDrag(grid,state);
-      // 색상 피커 라디오 버튼 변경 감지 (설정 모달 열릴 때 동적 바인딩 불필요, 폼 제출시 쿼리셀렉터로 처리)
-    },
+		try {
+			// 1. 뷰 전환 (하단 네비)
+			$$(CONFIG.SELECTORS.navItems).forEach(btn => 
+				btn.addEventListener('click', () => this.switchView(btn.dataset.view, state))
+			);
+
+			// 2. 헤더 버튼
+			$(CONFIG.SELECTORS.btnAddBlock)?.addEventListener('click', () => this.openBlockModal(null, Selectors.todayKey(state)));
+			$(CONFIG.SELECTORS.btnExport)?.addEventListener('click', () => Storage.exportJSON(state));
+			$(CONFIG.SELECTORS.btnImportTrigger)?.addEventListener('click', () => $(CONFIG.SELECTORS.inputImport)?.click());
+			$(CONFIG.SELECTORS.inputImport)?.addEventListener('change', (e) => this.handleImport(e, state));
+			$(CONFIG.SELECTORS.btnSettings)?.addEventListener('click', () => this.switchView('settings', state));
+
+			// 3. 주간 네비
+			$(CONFIG.SELECTORS.btnPrevWeek)?.addEventListener('click', () => this.navigateWeek(state, -1));
+			$(CONFIG.SELECTORS.btnNextWeek)?.addEventListener('click', () => this.navigateWeek(state, 1));
+			$(CONFIG.SELECTORS.btnApplyRoutine)?.addEventListener('click', () => this.openRoutinePicker(state));
+
+			// 4. 통계 기간
+			$(CONFIG.SELECTORS.chartPeriod)?.addEventListener('change', () => Render.stats(state));
+
+			// 5. 설정 폼
+			$(CONFIG.SELECTORS.btnAddSubject)?.addEventListener('click', () => this.openSubjectModal(null));
+			$(CONFIG.SELECTORS.btnAddRoutine)?.addEventListener('click', () => this.openRoutineModal(null));
+			$(CONFIG.SELECTORS.toggleNotify)?.addEventListener('change', (e) => { state.settings.notifyEnabled = e.target.checked; this.requestNotificationPermission(); });
+			$(CONFIG.SELECTORS.toggleDark)?.addEventListener('change', (e) => this.setDarkMode(e.target.checked, state));
+			$(CONFIG.SELECTORS.btnExportData)?.addEventListener('click', () => Storage.exportJSON(state));
+			$(CONFIG.SELECTORS.inputImportData)?.addEventListener('change', (e) => this.handleImport(e, state));
+			$(CONFIG.SELECTORS.btnResetData)?.addEventListener('click', () => this.confirmReset(state));
+
+			// 6. 모달 폼 제출
+			$(CONFIG.SELECTORS.formBlock)?.addEventListener('submit', (e) => this.handleBlockSubmit(e, state));
+			$(CONFIG.SELECTORS.formSubject)?.addEventListener('submit', (e) => this.handleSubjectSubmit(e, state));
+			$(CONFIG.SELECTORS.formRoutine)?.addEventListener('submit', (e) => this.handleRoutineSubmit(e, state));
+
+			// 7. 모달 삭제 버튼
+			$(CONFIG.SELECTORS.btnDeleteBlock)?.addEventListener('click', () => this.deleteCurrentBlock(state));
+			$(CONFIG.SELECTORS.btnDeleteRoutine)?.addEventListener('click', () => this.deleteCurrentRoutine(state));
+
+			// 8. 모달 공통: 백드랍/ESC 닫기 방지 (온보딩 제외)
+			$$('dialog.modal:not(#modal-onboarding)').forEach(d => {
+				d.addEventListener('click', (e) => { if (e.target === d) d.close(); });
+				d.addEventListener('cancel', (e) => { e.preventDefault(); d.close(); });
+			});
+
+			// 9. 드래그 앤 드롭 (데스크탑)
+			const grid = $(CONFIG.SELECTORS.timeGrid);
+			if (grid) {
+				grid.addEventListener('dragover', this.onDragOver);
+				grid.addEventListener('dragleave', this.onDragLeave);
+				grid.addEventListener('drop', (e) => this.onDrop(e, state));
+			}
+			
+			// 10. 터치 드래그 (모바일)
+			if (grid) this.bindTouchDrag(grid, state);
+
+		} catch (err) {
+			console.error('[Controller.init] 초기화 중 치명적 에러:', err);
+			toast('앱 초기화 오류 발생. 콘솔 확인.', 'error');
+		}
+	},
 
     switchView(view,state){ Render.switchView(view,state); $(CONFIG.SELECTORS.mainContent).scrollTop=0; },
     navigateWeek(state,delta){ const d=fmt.parseDate(state.ui.currentWeekStart); d.setDate(d.getDate()+delta*7); const diff=d.getDay()===0?-6:1-d.getDay(); d.setDate(d.getDate()+diff); state.ui.currentWeekStart=fmt.dateKey(d); Render.week(state); },
@@ -770,13 +794,57 @@
     deleteSubject(id){ const state=store.getState(); if(confirm('과목 삭제 시 관련 일정은 "자율"로 변경됩니다. 계속?')){ const res=Logic.deleteSubject(state,id); if(res.ok){toast('삭제됨','success');Render.settings(state);Render.today(state);}else toast(res.err,'error');} },
 
     // --- 루틴 모달 ---
-    openRoutineModal(id) {
-      const state=store.getState(); const f=$(CONFIG.SELECTORS.formRoutine); f.reset(); const c=$(CONFIG.SELECTORS.routineBlocks); c.innerHTML=''; $$('#modal-routine .day-check').forEach(ch=>ch.checked=false);
-      const addRow=b=>{const opts=Selectors.activeSubjects(state).map(s=>el('option',{value:s.id},`${s.icon} ${s.name}`)).join(''); c.appendChild(el('div',{class:'routine-block-row'},[el('select',{name:'subjectId',required:true},opts),el('input',{type:'time',name:'start',required:true,value:b.start||'19:00'}),el('input',{type:'time',name:'end',required:true,value:b.end||'20:00'}),el('button',{type:'button',class:'btn btn-sm btn-danger',onclick:e=>e.target.closest('.routine-block-row').remove()},'삭제')]));};
-      if(id){ const t=state.settings.routineTemplates.find(x=>x.id===id); $('#modal-routine-title').textContent='루틴 수정'; $(CONFIG.SELECTORS.inputRoutineId).value=t.id; $(CONFIG.SELECTORS.inputRoutineName).value=t.name; t.days.forEach(d=>$(`#modal-routine input[value="${d}"]`).checked=true); t.blocks.forEach(b=>addRow(b)); $(CONFIG.SELECTORS.btnDeleteRoutine).hidden=false; }
-      else{ $('#modal-routine-title').textContent='루틴 템플릿 만들기'; $(CONFIG.SELECTORS.inputRoutineId).value=''; addRow(); $(CONFIG.SELECTORS.btnDeleteRoutine).hidden=true; }
-      $(CONFIG.SELECTORS.modalRoutine).showModal();
-    },
+    openRoutineModal(routineId) {
+		const state = store.getState(); 
+		const form = $(CONFIG.SELECTORS.formRoutine); 
+		form.reset(); 
+		const container = $(CONFIG.SELECTORS.routineBlocks); 
+		container.innerHTML = '';
+		
+		// 요일 체크박스 초기화
+		$$('#modal-routine .day-check').forEach(c => c.checked = false);
+
+		const addRow = (block = {}) => {
+			const startVal = block?.start || '19:00';
+			const endVal = block?.end || '20:00';
+			const subjectVal = block?.subjectId || '';
+
+			const subjects = Selectors.activeSubjects(state);
+			
+			// 👇 [핵심 수정] 문자열 join 대신 el() 호출 배열로 직접 생성
+			const optionElements = subjects.map(s => 
+				el('option', { 
+					value: s.id, 
+					selected: s.id === subjectVal 
+				}, `${s.icon} ${s.name}`)
+			);
+
+			const row = el('div', { class: 'routine-block-row' }, [
+				// 👇 스프레드 연산자(...)로 배열 풀어서 전달
+				el('select', { name: 'subjectId', required: true }, ...optionElements),
+				el('input', { type: 'time', name: 'start', required: true, value: startVal }),
+				el('input', { type: 'time', name: 'end', required: true, value: endVal }),
+				el('button', { type: 'button', class: 'btn btn-sm btn-danger', onclick: (e) => e.target.closest('.routine-block-row').remove() }, '삭제')
+			]);
+			container.appendChild(row);
+		};
+
+		if (routineId) {
+			const tpl = state.settings.routineTemplates.find(t => t.id === routineId);
+			$('#modal-routine-title').textContent = '루틴 템플릿 수정';
+			$(CONFIG.SELECTORS.inputRoutineId).value = tpl?.id || '';
+			$(CONFIG.SELECTORS.inputRoutineName).value = tpl?.name || '';
+			tpl?.days?.forEach(d => { const el = $(`#modal-routine input[value="${d}"]`); if(el) el.checked = true; });
+			(tpl?.blocks || []).forEach(b => addRow(b)); 
+			$(CONFIG.SELECTORS.btnDeleteRoutine).hidden = false;
+		} else {
+			$('#modal-routine-title').textContent = '루틴 템플릿 만들기';
+			$(CONFIG.SELECTORS.inputRoutineId).value = '';
+			addRow(); 
+			$(CONFIG.SELECTORS.btnDeleteRoutine).hidden = true;
+		}
+		$(CONFIG.SELECTORS.modalRoutine).showModal();
+	},
 
     handleRoutineSubmit(e,state) {
       const sub=e.submitter; if(sub&&(sub.value==='cancel'||sub.formMethod==='dialog'||sub.classList.contains('modal-close'))) return;
@@ -809,7 +877,89 @@
     async requestNotificationPermission(){ if(!('Notification' in window)) return; if(Notification.permission==='default'){ const p=await Notification.requestPermission(); if(p!=='granted') toast('알림 권한 차단됨','warning'); } },
 
     // 과목 정렬
-    bindSubjectSortable(list){ let dragItem=null; list.querySelectorAll('.subject-item').forEach(it=>{it.draggable=true; it.addEventListener('dragstart',e=>{dragItem=it; it.classList.add('dragging'); e.dataTransfer.effectAllowed='move';}); it.addEventListener('dragend',()=>{it.classList.remove('dragging'); dragItem=null;}); it.addEventListener('dragover',e=>e.preventDefault()); it.addEventListener('drop',e=>{e.preventDefault(); if(dragItem&&dragItem!==it){ const items=[...list.querySelectorAll('.subject-item')]; const from=items.indexOf(dragItem), to=items.indexOf(it); if(from<to) it.after(dragItem); else it.before(dragItem); const state=store.getState(); items.forEach((i,idx)=>{const s=state.settings.subjects.find(x=>x.id===i.dataset.subjectId); if(s) s.order=idx;}); Render.subjectList(state);} }); }); },
+    bindSubjectSortable(list) {
+		let dragItem = null;
+		
+		// 기존 리스너 중복 방지를 위해 복제본으로 교체 (안전장치)
+		const newList = list.cloneNode(true);
+		list.parentNode.replaceChild(newList, list);
+		list = newList;
+
+		list.querySelectorAll('.subject-item').forEach(item => {
+			item.draggable = true;
+			
+			item.addEventListener('dragstart', (e) => {
+				dragItem = item;
+				item.classList.add('dragging');
+				e.dataTransfer.effectAllowed = 'move';
+				// 드래그 고스트 이미지 커스텀 (선택적)
+				e.dataTransfer.setData('text/plain', ''); // Firefox 호환용
+			});
+
+			item.addEventListener('dragend', () => {
+				item.classList.remove('dragging');
+				dragItem = null;
+				// 드래그 종료 후 저장 및 UI 동기화 (선택적: 시각적 초기화용)
+				// 여기선 DOM 이동이 이미 되었으므로 상태만 저장하면 됨.
+				const state = store.getState();
+				Storage.save(state); // 로컬스토리지 즉시 저장
+			});
+
+			item.addEventListener('dragover', (e) => {
+				e.preventDefault(); // 드랍 허용 필수!
+				e.dataTransfer.dropEffect = 'move';
+				
+				// 시각적 피드백: 드랍 가능 위치 표시
+				const afterElement = getDragAfterElement(list, e.clientY);
+				const draggable = document.querySelector('.dragging');
+				if (draggable) {
+					if (afterElement == null) {
+						list.appendChild(draggable);
+					} else {
+						list.insertBefore(draggable, afterElement);
+					}
+				}
+			});
+
+			item.addEventListener('drop', (e) => {
+				e.preventDefault();
+				// 실제 순서 변경 로직은 dragover에서 실시간으로 DOM 이동했으므로 
+				// 여기서는 상태(State) 업데이트만 수행
+				
+				const items = [...list.querySelectorAll('.subject-item')];
+				const state = store.getState();
+				
+				// 새로운 DOM 순서대로 state.settings.subjects의 order 업데이트
+				items.forEach((it, idx) => {
+					const subj = state.settings.subjects.find(s => s.id === it.dataset.subjectId);
+					if (subj) subj.order = idx;
+				});
+				
+				// 상태 변경 알림 및 저장
+				store.commit('settings');
+				Storage.save(state);
+				
+				// 👇 [핵심] 여기선 Render.subjectList(state) 호출 안 함! 
+				// DOM은 이미 dragover에서 이동해 있음. 재렌더링 시 드래그 깨짐.
+			});
+		});
+
+		// 헬퍼: 마우스 Y 위치 기준으로 드랍 위치 계산
+		function getDragAfterElement(container, y) {
+			const draggableElements = [...container.querySelectorAll('.subject-item:not(.dragging)')];
+			
+			return draggableElements.reduce((closest, child) => {
+				const box = child.getBoundingClientRect();
+				const offset = y - box.top - box.height / 2;
+				
+				if (offset < 0 && offset > closest.offset) {
+					return { offset: offset, element: child };
+				} else {
+					return closest;
+				}
+			}, { offset: Number.NEGATIVE_INFINITY }).element;
+		}
+	},
 
     // ============ [신규] Onboarding Logic ============
     Onboarding: {
@@ -819,11 +969,45 @@
       open(state){ this.currentStep=1; this.selectedSubjects=[]; this.routineBlocks=[]; this.renderStep1Subjects(state); this.updateUI(); $(CONFIG.SELECTORS.modalOnboarding).showModal(); },
       renderStep1Subjects(state){ const c=$(CONFIG.SELECTORS.obSubjectList); c.innerHTML=''; Selectors.activeSubjects(state).forEach(s=>{ const btn=el('button',{type:'button',class:'ob-subject-btn','data-id':s.id,onclick:()=>this.toggleSubject(s,btn)},[el('span',{class:'icon'},s.icon),el('span',{class:'name'},s.name)]); btn.style.setProperty('--subj-color',s.color); c.appendChild(btn); }); },
       toggleSubject(s,btn){ const i=this.selectedSubjects.findIndex(x=>x.id===s.id); if(i>-1){this.selectedSubjects.splice(i,1);btn.classList.remove('selected');}else{if(this.selectedSubjects.length>=8){toast('최대 8개','warning');return;} this.selectedSubjects.push(s);btn.classList.add('selected');} $(CONFIG.SELECTORS.obSelectedCount).textContent=this.selectedSubjects.length; },
-      addRoutineBlockRow(b={}){ const c=$(CONFIG.SELECTORS.obRoutineForm); const opts=this.selectedSubjects.map(s=>el('option',{value:s.id},`${s.icon} ${s.name}`)).join(''); c.appendChild(el('div',{class:'ob-routine-row'},[el('select',{name:'subjectId',required:true},opts),el('input',{type:'time',name:'start',required:true,value:b.start||'16:00'}),el('input',{type:'time',name:'end',required:true,value:b.end||'17:30'}),el('button',{type:'button',class:'btn btn-danger btn-sm',onclick:e=>e.target.closest('.ob-routine-row').remove()},'삭제')])); },
+      addRoutineBlockRow(block = {}) { 
+			const container = $(CONFIG.SELECTORS.obRoutineForm);
+			const startVal = block?.start || '16:00';
+			const endVal = block?.end || '17:30';
+			const subjectVal = block?.subjectId || '';
+
+			const subjects = this.selectedSubjects.length ? this.selectedSubjects : Selectors.activeSubjects(store.getState());
+			
+			// 👇 동일하게 배열로 직접 전달
+			const optionElements = subjects.map(s => 
+				el('option', { value: s.id, selected: s.id === subjectVal }, `${s.icon} ${s.name}`)
+			);
+
+			const row = el('div', { class: 'ob-routine-row' }, [
+				el('select', { name: 'subjectId', required: true }, ...optionElements),
+				el('input', { type: 'time', name: 'start', required: true, value: startVal }),
+				el('input', { type: 'time', name: 'end', required: true, value: endVal }),
+				el('button', { type: 'button', class: 'btn btn-danger btn-sm', onclick: (e) => e.target.closest('.ob-routine-row').remove() }, '삭제')
+			]);
+			container.appendChild(row);
+		},
       nextStep(state){ if(this.currentStep===1){if(this.selectedSubjects.length<3){toast('과목 3개 이상 선택','warning');return;} this.currentStep=2; this.renderStep2Routine();} else if(this.currentStep===2){if(!this.validateRoutine()) return; this.currentStep=3;} this.updateUI(); },
       prevStep(state){ if(this.currentStep>1){this.currentStep--;this.updateUI();} },
       updateUI(){ $$(CONFIG.SELECTORS.obSteps).forEach(el=>el.hidden=parseInt(el.dataset.step)!==this.currentStep); $$(CONFIG.SELECTORS.obProgressSteps).forEach((el,i)=>{el.classList.toggle('active',i+1===this.currentStep);el.classList.toggle('completed',i+1<this.currentStep);}); $(CONFIG.SELECTORS.obPrev).hidden=this.currentStep===1; $(CONFIG.SELECTORS.obNext).hidden=this.currentStep===3; $(CONFIG.SELECTORS.obFinish).hidden=this.currentStep!==3; },
-      renderStep2Routine(){ const c=$(CONFIG.SELECTORS.obRoutineForm); c.innerHTML=''; this.selectedSubjects.slice(0,3).forEach((s,i)=>{ const sh=16+i*1.5; const st=`${Math.floor(sh).toString().padStart(2,'0')}:${sh%1?'30':'00'}`; const eh=sh+1; const et=`${Math.floor(eh).toString().padStart(2,'0')}:${eh%1?'30':'00'}`; this.addRoutineBlockRow({subjectId:s.id,start:st,end:et}); }); if(!this.selectedSubjects.length) this.addRoutineBlockRow(); },
+      renderStep2Routine() {
+			const container = $(CONFIG.SELECTORS.obRoutineForm);
+			container.innerHTML = '';
+			// 선택된 과목이 있으면 처음 3개만 기본 행 생성
+			this.selectedSubjects.slice(0, 3).forEach((subj, i) => {
+				const startH = 16 + i * 1.5;
+				const start = `${Math.floor(startH).toString().padStart(2,'0')}:${startH%1?'30':'00'}`;
+				const endH = startH + 1;
+				const end = `${Math.floor(endH).toString().padStart(2,'0')}:${endH%1?'30':'00'}`;
+				// 객체로 넘김
+				this.addRoutineBlockRow({ subjectId: subj.id, start, end });
+			});
+			// 선택된 과목 없으면 빈 행 하나 추가 (인자 없이 호출 -> 기본값 사용)
+			if (!this.selectedSubjects.length) this.addRoutineBlockRow();
+		},
       validateRoutine(){ const rows=$$('.ob-routine-row',$(CONFIG.SELECTORS.obRoutineForm)); if(!rows.length){toast('시간 1개 이상','warning');return false;} this.routineBlocks=[]; for(const r of rows){ const sub=r.querySelector('[name="subjectId"]').value, st=r.querySelector('[name="start"]').value, et=r.querySelector('[name="end"]').value; if(!sub||!st||!et){toast('빈칸 채우기','warning');return false;} if(fmt.compareTime(st,et)>=0){toast('끝시간 늦게','warning');return false;} this.routineBlocks.push({subjectId:sub,start:st,end:et});} return true; },
       finish(state){ const map=Object.fromEntries(this.selectedSubjects.map((s,i)=>[s.id,i+1])); state.settings.subjects.forEach(s=>{s.order=map[s.id]||100+s.order;}); state.settings.subjects.sort((a,b)=>a.order-b.order); if(this.routineBlocks.length){Logic.saveRoutine(state,{id:null,name:'평일 기본 루틴',days:['1','2','3','4','5'],blocks:this.routineBlocks});} const today=Selectors.todayKey(state); const first=this.routineBlocks[0]; if(first){Logic.saveBlock(state,{id:null,date:today,...first,memo:'첫 공부! 🎉',repeat:false});} store.commit('settings'); store.commit('schedule'); StatsEngine.recomputeAll(state); localStorage.setItem('onboardingCompleted','true'); $(CONFIG.SELECTORS.modalOnboarding).close(); toast('환영해요! 첫 루틴 저장 🎉','success'); Render.header(state); Render.today(state); }
     }
