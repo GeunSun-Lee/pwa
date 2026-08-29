@@ -14,6 +14,7 @@
     TIME_SLOT_MINUTES: 30,           // 타임 그리드 간격
     DAY_START_HOUR: 6,               // 그리드 시작 시간
     DAY_END_HOUR: 24,                // 그리드 종료 시간 (예: 24시 = 자정)
+	TIME_ROW_HEIGHT: 48, // 👈 [추가] CSS 변수(--time-row-h) 대신 사용할 고정값 (px)
     DEFAULT_SUBJECTS: [
       { id: 'kor', name: '국어', color: '#e53935', icon: '📖', order: 1 },
       { id: 'eng', name: '영어', color: '#1e88e5', icon: '🔤', order: 2 },
@@ -194,7 +195,7 @@
       subjects: [...CONFIG.DEFAULT_SUBJECTS],
       routineTemplates: [],
       notifyEnabled: false,
-      darkModeForced: null // null:, true: dark, false: light
+      darkModeForced: false // 👈 [수정] null -> false (기본: 라이트 모드 강제)
     },
     // Schedule: { "YYYY-MM-DD": [ {id, subjectId, start, end, memo, done, repeat}, ... ] }
     schedule: {},
@@ -368,8 +369,12 @@
     deleteBlock(state, blockId, dateKey) {
       const key = dateKey || Selectors.todayKey(state);
       if (state.schedule[key]) {
-        state.schedule[key] = state.schedule[key].filter(b => b.id !== blockId);
-        if (state.schedule[key].length === 0) delete state.schedule[key];
+        const filtered = state.schedule[key].filter(b => b.id !== blockId);
+        if (filtered.length === 0) {
+          delete state.schedule[key];
+        } else {
+          state.schedule[key] = filtered;
+        }
       }
     },
 
@@ -797,7 +802,7 @@
       Render.dailySummary(state);
     },
 
-    // 타임 그리드 (거터 + 셀 + 블록)
+    // 타임 그리드 (거터 + 셀 + 블록) - 수정된 버전
     timeGrid(state) {
       const gutter = $(CONFIG.SELECTORS.timeGutter);
       const grid = $(CONFIG.SELECTORS.timeGrid);
@@ -805,56 +810,47 @@
       const subjectMap = Selectors.subjectMap(state);
       const now = new Date();
       const nowMins = now.getHours() * 60 + now.getMinutes();
-      const isToday = true; // 오늘 뷰이므로 항상 true
+      const isToday = true;
 
-      // 1. 거터(시간 레이블) 생성
-      gutter.innerHTML = '';
-      for (let h = CONFIG.DAY_START_HOUR; h <= CONFIG.DAY_END_HOUR; h++) {
-        const label = el('div', { class: 'time-label' }, 
-          h === CONFIG.DAY_END_HOUR ? '24:00' : `${h.toString().padStart(2,'0')}:00`
-        );
-        // 30분 간격이므로 1시간에 2개 행 생성 -> 거터도 2개 필요? 
-        // 요구사항: 30분 단위 행. 거터 레이블은 1시간마다.
-        // CSS에서 .time-row 높이가 30분 기준이라면 거터도 30분마다 row 생성해야 정렬됨.
-        // 여기서는 간단히 1시간 단위 라벨, CSS grid-auto-rows로 30분 행 처리 가정.
-        // 실제로는 30분마다 row 생성하는 게 정확함.
-      }
-      // 수정: 30분 단위로 행 생성 루프 통일
+      // 1. 거터(시간 레이블) & 그리드 행 생성
       gutter.innerHTML = '';
       grid.innerHTML = '';
-      const rows = (CONFIG.DAY_END_HOUR - CONFIG.DAY_START_HOUR) * 2; // 30분 단위 행 수
-      
-      for (let i = 0; i <= rows; i++) { // 0 ~ 36 (6시~24시 30분 간격 = 36개 슬롯 + 1개 라벨용?)
+      const totalSlots = (CONFIG.DAY_END_HOUR - CONFIG.DAY_START_HOUR) * (60 / CONFIG.TIME_SLOT_MINUTES); // 36
+      const rowHeight = CONFIG.TIME_ROW_HEIGHT; // 👈 [수정] 고정값 사용
+
+      for (let i = 0; i <= totalSlots; i++) {
         const totalMins = CONFIG.DAY_START_HOUR * 60 + i * CONFIG.TIME_SLOT_MINUTES;
         const h = Math.floor(totalMins / 60);
         const m = totalMins % 60;
-        
+        const timeLabel = fmt.minsToTime(totalMins);
+
         // Gutter Label (정시만 표시)
-        if (m === 0) {
-          gutter.appendChild(el('div', { class: 'time-label' }, `${h.toString().padStart(2,'0')}:00`));
-        } else {
-          gutter.appendChild(el('div', { class: 'time-label', style: 'visibility:hidden' }, ''));
-        }
+        const labelEl = el('div', { class: 'time-label' }, m === 0 ? `${h.toString().padStart(2,'0')}:00` : '');
+        if (m !== 0) labelEl.style.visibility = 'hidden';
+        gutter.appendChild(labelEl);
 
         // Grid Row
-        const row = el('div', { class: 'time-row', 'data-time': fmt.minsToTime(totalMins) });
-        const cell = el('div', { class: 'time-cell', 'data-time': fmt.minsToTime(totalMins) });
-        // 현재 시간 표시선
+        const row = el('div', { class: 'time-row', 'data-time': timeLabel });
+        const cell = el('div', { class: 'time-cell', 'data-time': timeLabel, 'data-date': Selectors.todayKey(state) });
         if (isToday && totalMins === nowMins) cell.classList.add('today-now');
         row.appendChild(cell);
         grid.appendChild(row);
       }
 
-      // 2. 블록 절대 배치 (CSS top/height 계산)
-      // grid는 relative, cell은 상대적. 블록은 grid 위에 absolute로 올리기 위해 wrapper 필요.
-      // 현재 HTML 구조: .time-grid-wrapper > .time-gutter + .time-grid(rows)
-      // 블록은 .time-grid 안에 position:absolute; left: var(--time-gutter-w); 로 배치.
-      
+      // 2. 블록 절대 배치
       blocks.forEach(block => {
         const startM = fmt.timeToMins(block.start);
         const endM = fmt.timeToMins(block.end);
-        const top = (startM - CONFIG.DAY_START_HOUR * 60) / CONFIG.TIME_SLOT_MINUTES * parseInt(getComputedStyle(document.documentElement).getPropertyValue('--time-row-h'));
-        const height = (endM - startM) / CONFIG.TIME_SLOT_MINUTES * parseInt(getComputedStyle(document.documentElement).getPropertyValue('--time-row-h'));
+        
+        // 시작 행 인덱스 계산 (0부터 시작)
+        const startSlotIndex = (startM - CONFIG.DAY_START_HOUR * 60) / CONFIG.TIME_SLOT_MINUTES;
+        const durationSlots = (endM - startM) / CONFIG.TIME_SLOT_MINUTES;
+
+        // 방어 코드: 유효한 슬롯 범위 내에 있는지 확인
+        if (startSlotIndex < 0 || durationSlots <= 0 || startSlotIndex > totalSlots) return;
+
+        const top = startSlotIndex * rowHeight;
+        const height = durationSlots * rowHeight;
         
         const subj = subjectMap[block.subjectId] || { color: '#757575', name: '미분류', icon: '❓' };
         
@@ -869,13 +865,16 @@
           el('div', { class: 'block-time' }, `${block.start} ~ ${block.end}`)
         ]);
         
-        // 드래그 이벤트 바인딩
+        // 드래그 이벤트
         blkEl.draggable = true;
         blkEl.addEventListener('dragstart', Controller.onDragStart);
         blkEl.addEventListener('dragend', Controller.onDragEnd);
-        blkEl.addEventListener('click', (e) => { if(e.target !== blkEl.querySelector('.block-check')) Controller.openBlockModal(block.id); });
+        // 클릭 시 수정 모달 (체크박스 제외)
+        blkEl.addEventListener('click', (e) => { 
+          if (e.target !== blkEl.querySelector('.block-check')) Controller.openBlockModal(block.id); 
+        });
         
-        grid.appendChild(blkEl); // grid(container)에 직접 추가 (position: relative 가정)
+        grid.appendChild(blkEl); // grid(container)에 직접 추가
       });
     },
 
@@ -1272,38 +1271,47 @@
         $('#input-subject-icon').value = subj.icon;
         const radio = picker.querySelector(`input[value="${subj.color}"]`);
         if (radio) radio.checked = true;
-        $('#btn-delete-subject').hidden = false; // HTML에 버튼 추가 필요 시
+        // 👇 [삭제] $('#btn-delete-subject').hidden = false;  <-- 이 줄 제거 (버튼 없음)
       } else {
         $('#modal-subject-title').textContent = '과목 추가';
         $('#input-subject-id').value = '';
-        $('#btn-delete-subject').hidden = true;
+        // 👇 [삭제] $('#btn-delete-subject').hidden = true;   <-- 이 줄 제거 (버튼 없음)
       }
       $(CONFIG.SELECTORS.modalSubject).showModal();
     },
 
     handleSubjectSubmit(e, state) {
-		// 👇 [핵심 추가] 취소/X버튼 클릭 시 즉시 리턴
-		const submitter = e.submitter;
-		if (submitter && (submitter.value === 'cancel' || submitter.classList.contains('modal-close') || submitter.formMethod === 'dialog')) {
-		  return;
-		}
+      const submitter = e.submitter;
+      // 👇 [강화] value="cancel" 이거나 formmethod="dialog" 이거나 modal-close 클래스면 무조건 무시
+      const isCancelAction = submitter && (
+        submitter.value === 'cancel' || 
+        submitter.formMethod === 'dialog' || 
+        submitter.classList.contains('modal-close')
+      );
 
-		e.preventDefault();
-		const form = e.target;
-		const color = form.querySelector('input[name="color"]:checked')?.value || '#757575';
-		const data = {
-		  id: form.subjectId.value || null,
-		  name: form.name.value,
-		  color: color,
-		  icon: form.icon.value || '📝'
-		};
-		const res = Logic.saveSubject(state, data);
-		if (res.success) {
-		  toast('저장되었습니다.', 'success');
-		  $(CONFIG.SELECTORS.modalSubject).close();
-		  Render.settings(state); Render.today(state); Render.week(state);
-		} else toast(res.error, 'error');
-	  },
+      if (isCancelAction) {
+        return; // 브라우저 네이티브로 다이얼로그 닫힘 (유효성 검사 안 함)
+      }
+
+      // --- 저장 버튼 클릭 시만 아래 로직 실행 ---
+      e.preventDefault(); // 기본 다이얼로그 닫기 방지 (JS에서 수동 close)
+      const form = e.target;
+      const color = form.querySelector('input[name="color"]:checked')?.value || '#757575';
+      const data = {
+        id: form.subjectId.value || null,
+        name: form.name.value,
+        color: color,
+        icon: form.icon.value || '📝'
+      };
+      const res = Logic.saveSubject(state, data);
+      if (res.success) {
+        toast('저장되었습니다.', 'success');
+        $(CONFIG.SELECTORS.modalSubject).close();
+        Render.settings(state); Render.today(state); Render.week(state);
+      } else {
+        toast(res.error, 'error');
+      }
+    },
 
     deleteSubject(subjectId) {
       const state = store.getState();
@@ -1713,7 +1721,6 @@
   function initApp() {
     const saved = Storage.load();
     if (saved) {
-      // 저장된 상태 병합 (깊은 병합 필요 시 별도 함수, 여기선 얕은 병합 후 하위 객체 재할당)
       Object.assign(store.getState().settings, saved.settings);
       Object.assign(store.getState().schedule, saved.schedule);
       Object.assign(store.getState().stats, saved.stats);
@@ -1722,11 +1729,11 @@
     
     const state = store.getState();
 
-    // 다크모드 적용
-    if (state.settings.darkModeForced !== null) {
-      Controller.setDarkMode(state.settings.darkModeForced, state);
-      $(CONFIG.SELECTORS.toggleDark).checked = state.settings.darkModeForced;
-    }
+	// 👇 [수정] darkModeForced 값이 boolean(false/true)이므로 무조건 적용
+    // 저장된 값이 null(구 버전)이라도 false로 폴백 처리
+	const darkModeVal = state.settings.darkModeForced === true; 
+    Controller.setDarkMode(darkModeVal, state);
+    $(CONFIG.SELECTORS.toggleDark).checked = darkModeVal;
     
     // 알림 권한 상태 동기화
     $(CONFIG.SELECTORS.toggleNotify).checked = state.settings.notifyEnabled;
