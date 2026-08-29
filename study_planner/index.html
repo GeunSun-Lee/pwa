@@ -227,7 +227,52 @@
         </fieldset>
       </form>
     </section>
+	  <!-- ============================================================
+       온보딩 모달 (최초 실행 1회만 표시)
+       ============================================================ -->
+  <dialog id="modal-onboarding" class="modal modal-large" role="dialog" aria-modal="true" aria-labelledby="onboarding-title">
+    <div class="onboarding-content">
+      <!-- 진행 표시기 -->
+      <div class="onboarding-progress" role="status" aria-live="polite">
+        <div class="progress-step active" data-step="1"><span>1</span> 과목 선택</div>
+        <div class="progress-step" data-step="2"><span>2</span> 첫 루틴</div>
+        <div class="progress-step" data-step="3"><span>3</span> 시작하기</div>
+      </div>
 
+      <!-- Step 1: 과목 선택 -->
+      <div class="onboarding-step active" data-step="1">
+        <h3 id="onboarding-title">🎒 나만의 과목 꾸미기</h3>
+        <p class="onboarding-desc">공부할 과목을 골라보세요. (최소 3개 이상 권장)</p>
+        <div id="onboarding-subject-list" class="onboarding-subject-grid" role="group" aria-label="과목 선택"></div>
+        <div class="onboarding-selected-count">선택됨: <strong id="ob-selected-count">0</strong>/8</div>
+      </div>
+
+      <!-- Step 2: 루틴 만들기 -->
+      <div class="onboarding-step" data-step="2" hidden>
+        <h3>⏰ 첫 공부 루틴 만들기</h3>
+        <p class="onboarding-desc">평일 방과 후 시간을 예약해봐요. (나중에 수정 가능)</p>
+        <div id="onboarding-routine-form" class="onboarding-routine-form">
+          <!-- JS로 동적 생성: 과목별 시간 입력란 -->
+        </div>
+        <button type="button" id="btn-ob-add-routine-block" class="btn btn-outline btn-sm">+ 시간 추가</button>
+      </div>
+
+      <!-- Step 3: 완료 -->
+      <div class="onboarding-step" data-step="3" hidden>
+        <div class="onboarding-success">🎉</div>
+        <h3>준비 완료!</h3>
+        <p>이제 <strong>'오늘'</strong> 탭에서 공부를 기록해보세요.</p>
+        <p class="onboarding-hint">💡 화면 아래 <strong>+ 버튼</strong>으로 바로 계획을 추가할 수 있어요.</p>
+      </div>
+
+      <!-- 네비게이션 버튼 -->
+      <div class="onboarding-nav">
+        <button type="button" id="btn-ob-prev" class="btn btn-secondary" hidden>이전</button>
+        <button type="button" id="btn-ob-next" class="btn btn-primary">다음</button>
+        <button type="button" id="btn-ob-finish" class="btn btn-primary" hidden>시작하기</button>
+      </div>
+    </div>
+  </dialog>
   </main>
 
   <!-- ============================================================

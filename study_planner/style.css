@@ -896,3 +896,75 @@ table { border-collapse: collapse; }
   .study-block { background: #3b82f6; }
   .btn-primary { background: #3b82f6; }
 }
+/* ============================================================
+   21. Onboarding Modal Styles
+   ============================================================ */
+.modal-large { max-width: 520px; }
+.onboarding-content { padding: var(--spacing-lg); text-align: center; }
+
+/* 진행바 */
+.onboarding-progress { 
+  display: flex; justify-content: center; gap: var(--spacing-md); 
+  margin-bottom: var(--spacing-xl); position: relative;
+}
+.onboarding-progress::before {
+  content: ""; position: absolute; top: 14px; left: 10%; right: 10%;
+  height: 3px; background: var(--color-border); z-index: 0; border-radius: 2px;
+}
+.progress-step { 
+  position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  font-size: 0.75rem; color: var(--color-text-muted); font-weight: 500; width: 80px;
+}
+.progress-step span { 
+  width: 28px; height: 28px; border-radius: 50%; background: var(--color-bg-hover); 
+  border: 3px solid var(--color-border); display: flex; align-items: center; justify-content: center;
+  font-weight: 700; color: var(--color-text-muted); transition: all var(--transition-base);
+}
+.progress-step.active span { 
+  background: var(--color-primary); border-color: var(--color-primary); color: white; 
+  box-shadow: 0 0 0 4px var(--color-primary-light);
+}
+.progress-step.completed span { background: var(--color-success); border-color: var(--color-success); color: white; }
+.progress-step.completed span::after { content: "✓"; font-size: 14px; }
+
+/* 스텝 컨텐츠 */
+.onboarding-step { animation: fadeIn 0.3s ease; }
+.onboarding-desc { color: var(--color-text-secondary); font-size: 0.85rem; margin-bottom: var(--spacing-lg); line-height: 1.6; }
+
+/* 과목 선택 그리드 */
+.onboarding-subject-grid { 
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--spacing-sm); 
+  margin-bottom: var(--spacing-md); text-align: center;
+}
+.ob-subject-btn { 
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: var(--spacing-md) var(--spacing-sm); border: 2px solid var(--color-border);
+  border-radius: var(--radius-md); background: var(--color-bg); cursor: pointer;
+  transition: all var(--transition-fast); color: var(--color-text);
+}
+.ob-subject-btn:hover { border-color: var(--color-primary); transform: translateY(-2px); }
+.ob-subject-btn.selected { 
+  border-color: var(--color-primary); background: var(--color-primary-light); color: var(--color-primary);
+  box-shadow: 0 4px 12px var(--color-primary-light);
+}
+.ob-subject-btn .icon { font-size: 1.8rem; line-height: 1; }
+.ob-subject-btn .name { font-size: 0.75rem; font-weight: 600; }
+.onboarding-selected-count { font-size: 0.85rem; color: var(--color-text-secondary); margin-top: var(--spacing-sm); }
+
+/* 루틴 폼 */
+.onboarding-routine-form { display: flex; flex-direction: column; gap: var(--spacing-sm); margin-bottom: var(--spacing-md); text-align: left; }
+.ob-routine-row { 
+  display: grid; grid-template-columns: 1fr 80px 80px 40px; gap: 8px; align-items: center;
+  padding: 8px; background: var(--color-bg); border-radius: var(--radius-sm); border: 1px solid var(--color-border);
+}
+.ob-routine-row select, .ob-routine-row input { padding: 10px; font-size: 0.85rem; }
+.ob-routine-row .btn { height: 40px; }
+
+/* 성공 화면 */
+.onboarding-success { font-size: 4rem; line-height: 1; margin-bottom: var(--spacing-md); animation: pop-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.onboarding-step h3 { margin-bottom: var(--spacing-sm); }
+.onboarding-hint { font-size: 0.8rem; color: var(--color-text-muted); margin-top: var(--spacing-lg); }
+
+/* 네비게이션 */
+.onboarding-nav { display: flex; justify-content: space-between; margin-top: var(--spacing-xl); padding-top: var(--spacing-md); border-top: 1px solid var(--color-border); }
+.onboarding-nav .btn { min-width: 80px; }
