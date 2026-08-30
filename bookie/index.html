@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0,-scalable=no">
+  <meta name="theme-color" content="#4A90E2">
+  <meta name="description" content="초등 저학년을 위한 첫 독서록 - 책읽기 친구">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="독서록">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>">
+
+  <!-- PWA Manifest (인라인 Data URI) -->
+  <link rel="manifest" href='data:application/manifest+json,{"name":"책읽기 친구","short_name":"독서록","description":"초등 1학년을 위한 첫 독서록","start_url":".","display":"standalone","background_color":"#fafafa","theme_color":"#4A90E2","orientation":"portrait-primary","icons":[{"src":"data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%F0%9F%93%9A%3C%2Ftext%3E%3C%2Fsvg%3E","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]}'>
+
+  <!-- 외부 리소스 (CDN) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  
+  <!-- 로컬 CSS -->
+  <link rel="stylesheet" href="style.css">
+
+  <title>책읽기 친구 📚</title>
+</head>
+<body>
+
+  <!-- ============================================================
+       1. 공통 헤더 (모든 화면 상단 고정)
+       ============================================================ -->
+  <header class="app-bar" role="banner">
+    <div class="app-bar__left">
+      <button id="btnBack" class="icon-btn icon-btn--back" aria-label="뒤로 가기" hidden>
+        <i class="bi bi-chevron-left" aria-hidden="true"></i>
+      </button>
+      <h1 class="app-bar__title">책읽기 친구</h1>
+    </div>
+    <div class="app-bar__right">
+      <button id="btnParent" class="icon-btn" aria-label="보호자 메뉴" title="보호자 메뉴">
+        <i class="bi bi-person-badge-fill" aria-hidden="true"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- ============================================================
+       2. 메인 콘텐츠 영역 (View가 여기에 동적 렌더링)
+       ============================================================ -->
+  <main id="app" role="main" class="view-container">
+    <!-- 여기가 Hash Router에 의해 템플릿으로 채워집니다 -->
+  </main>
+
+  <!-- ============================================================
+       3. 플로팅 액션 버튼 (목록 화면에서만 표시)
+       ============================================================ -->
+  <button id="fabAdd" class="fab fab--add" aria-label="새 책 추가" hidden>
+    <i class="bi bi-plus-lg" aria-hidden="true"></i>
+  </button>
+
+  <!-- ============================================================
+       4. 토스트/알림 컨테이너
+       ============================================================ -->
+  <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- ============================================================
+       5. HTML 템플릿들 (JS에서 cloneNode로 사용)
+       ============================================================ -->
+
+  <!-- 5-1. 책 목록 화면 -->
+  <template id="tpl-list">
+    <section class="view view--list" data-view="list" aria-label="독서록 목록">
+      <!-- 통계 요약 카드 -->
+      <section class="stats-summary" aria-label="이번 달 독서 현황">
+        <div class="stat-item">
+          <span class="stat-value" id="statTotalBooks">0</span>
+          <span class="stat-label">총 권수</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value" id="statMonthBooks">0</span>
+          <span class="stat-label">이번 달</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value" id="statAvgRating">0.0</span>
+          <span class="stat-label">평균 별점</span>
+        </div>
+      </section>
+
+      <!-- 빈 상태 -->
+      <div id="emptyState" class="empty-state" hidden>
+        <div class="empty-state__icon" aria-hidden="true">📖</div>
+        <p class="empty-state__text">아직 읽은 책이 없어요.<br>아래 <strong>+ 버튼</strong>을 눌러 첫 책을 기록해 보세요!</p>
+      </div>
+
+      <!-- 책 카드 그리드 -->
+      <ul id="bookList" class="book-grid" role="list" aria-label="등록된 책 목록"></ul>
+
+      <!-- 더 보기 버튼 (페이지네이션) -->
+      <div class="load-more-wrapper" hidden>
+        <button id="btnLoadMore" class="btn btn--outline btn--wide" type="button">더 보기</button>
+      </div>
+    </section>
+  </template>
+
+  <!-- 5-2. 책 추가/수정 폼 화면 -->
+  <template id="tpl-form">
+    <section class="view view--form" data-view="form" aria-label="책 정보 등록">
+      <form id="bookForm" novalidate>
+        <input type="hidden" name="id" id="inputId">
+        <input type="hidden" name="createdAt" id="inputCreatedAt">
+        <input type="hidden" name="coverImageBlobId" id="inputCoverBlobId"> <!-- Blob 저장소 키 -->
+
+        <!-- 표지 이미지 영역 -->
+        <div class="form-group form-group--cover">
+          <label for="inputCover" class="visually-hidden">책 표지 사진</label>
+          <div id="coverPreview" class="cover-preview" role="img" aria-label="표지 미리보기">
+            <i class="bi bi-camera-fill cover-preview__icon" aria-hidden="true"></i>
+            <span class="cover-preview__text">표지 찍기/선택</span>
+          </div>
+          <input type="file" id="inputCover" name="coverImage" accept="image/*" capture="environment" hidden>
+          <div class="form-actions form-actions--cover">
+            <button type="button" id="btnTakePhoto" class="btn btn--secondary" aria-label="카메라로 찍기">
+              <i class="bi bi-camera" aria-hidden="true"></i> 사진 찍기
+            </button>
+            <button type="button" id="btnChooseFile" class="btn btn--secondary" aria-label="파일에서 선택">
+              <i class="bi bi-folder" aria-hidden="true"></i> 파일 선택
+            </button>
+            <button type="button" id="btnClearCover" class="btn btn--ghost" hidden aria-label="사진 지우기">
+              <i class="bi bi-x" aria-hidden="true"></i> 지우기
+            </button>
+          </div>
+        </div>
+
+        <!-- 기본 정보 -->
+        <div class="form-group">
+          <label for="inputTitle" class="form-label">책 제목 <span class="required" aria-hidden="true">*</span></label>
+          <div class="input-with-mic">
+            <input type="text" id="inputTitle" name="title" required maxlength="50" placeholder="책 제목을 말해주세요 또는 적어주세요" autocomplete="off" aria-required="true">
+            <button type="button" class="btn-mic" id="micTitle" aria-label="음성으로 제목 입력" title="음성 입력">
+              <i class="bi bi-mic-fill" aria-hidden="true"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="inputAuthor" class="form-label">지은이</label>
+          <div class="input-with-mic">
+            <input type="text" id="inputAuthor" name="author" maxlength="30" placeholder="작가 이름" autocomplete="off">
+            <button type="button" class="btn-mic" id="micAuthor" aria-label="음성으로 지은이 입력">
+              <i class="bi bi-mic-fill" aria-hidden="true"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- 별점 -->
+        <fieldset class="form-group">
+          <legend class="form-label">별점 <span class="required" aria-hidden="true">*</span></legend>
+          <div class="rating-input" role="radiogroup" aria-label="별점 선택" aria-required="true">
+            <input type="radio" id="star5" name="rating" value="5" required><label for="star5" aria-label="5점">☆</label>
+            <input type="radio" id="star4" name="rating" value="4"><label for="star4" aria-label="4점">☆</label>
+            <input type="radio" id="star3" name="rating" value="3"><label for="star3" aria-label="3점">☆</label>
+            <input type="radio" id="star2" name="rating" value="2"><label for="star2" aria-label="2점">☆</label>
+            <input type="radio" id="star1" name="rating" value="1"><label for="star1" aria-label="1점">☆</label>
+          </div>
+        </fieldset>
+
+        <!-- 느낌 이모지 -->
+        <fieldset class="form-group">
+          <legend class="form-label">느낌</legend>
+          <div class="feeling-input" role="radiogroup" aria-label="느낌 선택">
+            <input type="radio" id="feelLove" name="feeling" value="😍 최고예요"><label for="feelLove" aria-label="최고예요">😍</label>
+            <input type="radio" id="feelGood" name="feeling" value="😊 좋아요"><label for="feelGood" aria-label="좋아요">😊</label>
+            <input type="radio" id="feelOk" name="feeling" value="😐 그냥 그래요"><label for="feelOk" aria-label="그냥 그래요">😐</label>
+            <input type="radio" id="feelSad" name="feeling" value="😢 슬퍼요"><label for="feelSad" aria-label="슬퍼요">😢</label>
+            <input type="radio" id="feelAngry" name="feeling" value="😡 화나요"><label for="feelAngry" aria-label="화나요">😡</label>
+          </div>
+        </fieldset>
+
+        <!-- 한줄평 -->
+        <div class="form-group">
+          <label for="inputMemo" class="form-label">한줄평</label>
+          <div class="input-with-mic textarea-wrapper">
+            <textarea id="inputMemo" name="memo" rows="3" maxlength="200" placeholder="어떤 부분이 재밌었나요?"></textarea>
+            <button type="button" class="btn-mic" id="micMemo" aria-label="음성으로 한줄평 입력">
+              <i class="bi bi-mic-fill" aria-hidden="true"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- 읽은 날짜 -->
+        <div class="form-group">
+          <label for="inputReadDate" class="form-label">읽은 날 <span class="required" aria-hidden="true">*</span></label>
+          <input type="date" id="inputReadDate" name="readDate" required aria-required="true">
+        </div>
+
+        <!-- 선택 정보 (접기 가능) -->
+        <details class="form-group form-group--optional">
+          <summary class="form-label">더 보기 (선택 사항)</summary>
+          <div class="form-row">
+            <div>
+              <label for="inputPages" class="form-label">페이지 수</label>
+              <input type="number" id="inputPages" name="pages" min="1" max="9999" placeholder="예: 64">
+            </div>
+            <div>
+              <label for="inputIsbn" class="form-label">ISBN</label>
+              <div class="input-with-btn">
+                <input type="text" id="inputIsbn" name="isbn" placeholder="13자리 숫자" maxlength="13" pattern="[0-9]{13}">
+                <button type="button" id="btnScanIsbn" class="btn btn--secondary btn--icon" aria-label="바코드 스캔" hidden>
+                  <i class="bi bi-barcode" aria-hidden="true"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </details>
+
+        <!-- 음성 녹음 -->
+        <div class="form-group" id="audioRecorderSection">
+          <label class="form-label">목소리 녹음</label>
+          <div id="audioRecorder" class="audio-recorder">
+            <button type="button" id="btnRecord" class="btn btn--record" aria-label="녹음 시작" aria-pressed="false">
+              <i class="bi bi-mic-fill" aria-hidden="true"></i>
+              <span>녹음 시작</span>
+            </button>
+            <div id="recordingUI" class="recording-ui" hidden>
+              <span class="recording-indicator" aria-hidden="true"></span>
+              <span id="recordingTime">00:00</span>
+              <button type="button" id="btnStopRecord" class="btn btn--danger btn--icon" aria-label="녹음 중지">
+                <i class="bi bi-stop-fill" aria-hidden="true"></i>
+              </button>
+            </div>
+            <audio id="audioPlayback" controls class="audio-player" hidden></audio>
+            <input type="hidden" name="audioBlobId" id="inputAudioBlobId">
+          </div>
+        </div>
+
+        <!-- 제출 버튼 -->
+        <div class="form-actions form-actions--submit">
+          <button type="button" id="btnCancel" class="btn btn--ghost">취소</button>
+          <button type="submit" class="btn btn--primary">저장하기</button>
+        </div>
+      </form>
+    </section>
+  </template>
+
+  <!-- 5-3. 책 상세 보기 화면 -->
+  <template id="tpl-detail">
+    <section class="view view--detail" data-view="detail" aria-label="책 상세 정보">
+      <article id="detailContent" class="book-detail">
+        <!-- JS에서 동적 채움 -->
+      </article>
+      <div class="detail-actions">
+        <button type="button" id="btnEdit" class="btn btn--secondary" hidden aria-label="수정하기">
+          <i class="bi bi-pencil" aria-hidden="true"></i> 수정
+        </button>
+        <button type="button" id="btnDelete" class="btn btn--danger" hidden aria-label="삭제하기">
+          <i class="bi bi-trash" aria-hidden="true"></i> 삭제
+        </button>
+      </div>
+    </section>
+  </template>
+
+  <!-- 5-4. 보호자 모드 - PIN 입력 -->
+  <template id="tpl-parent-lock">
+    <section class="view view--parent-lock" data-view="parent-lock" aria-label="보호자 인증">
+      <div class="parent-lock">
+        <div class="parent-lock__icon" aria-hidden="true">🔒</div>
+        <h2>보호자 모드</h2>
+        <p>중요한 설정을 변경하려면 비밀번호를 입력하세요.</p>
+        <form id="pinForm" autocomplete="off">
+          <div class="pin-inputs" role="group" aria-label="4자리 PIN 입력">
+            <input type="password" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="첫 번째 숫자" required>
+            <input type="password" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="두 번째 숫자" required>
+            <input type="password" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="세 번째 숫자" required>
+            <input type="password" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="네 번째 숫자" required>
+          </div>
+          <p id="pinError" class="error-message" hidden>비밀번호가 틀렸어요. 다시 시도해 주세요.</p>
+          <button type="submit" class="btn btn--primary btn--wide">확인</button>
+        </form>
+        <button type="button" id="btnForgotPin" class="btn btn--ghost btn--small">비밀번호 잊음</button>
+      </div>
+    </section>
+  </template>
+
+  <!-- 5-5. 보호자 대시보드 -->
+  <template id="tpl-parent">
+    <section class="view view--parent" data-view="parent" aria-label="보호자 대시보드">
+      <h2>보호자 대시보드</h2>
+      <div class="card-grid">
+        <article class="card card--action">
+          <h3><i class="bi bi-download" aria-hidden="true"></i> 데이터 내보내기</h3>
+          <p>독서록 전체를 JSON 또는 CSV 파일로 저장합니다.</p>
+          <div class="card-actions">
+            <button id="btnExportJson" class="btn btn--secondary">JSON 다운로드</button>
+            <button id="btnExportCsv" class="btn btn--secondary">CSV 다운로드</button>
+          </div>
+        </article>
+        <article class="card card--action">
+          <h3><i class="bi bi-upload" aria-hidden="true"></i> 데이터 가져오기</h3>
+          <p>백업 파일(JSON)로 독서록을 복원합니다.</p>
+          <div class="card-actions">
+            <input type="file" id="inputImport" accept=".json" hidden>
+            <button id="btnImport" class="btn btn--secondary" type="button">파일 선택</button>
+          </div>
+        </article>
+        <article class="card card--action">
+          <h3><i class="bi bi-gear" aria-hidden="true"></i> 설정</h3>
+          <div class="setting-item">
+            <label class="toggle">
+              <input type="checkbox" id="toggleTheme" aria-label="다크 모드">
+              <span class="toggle-slider"></span>
+              <span>다크 모드</span>
+            </label>
+          </div>
+          <div class="setting-item">
+            <button id="btnChangePin" class="btn btn--outline">비밀번호 변경</button>
+          </div>
+          <div class="setting-item">
+            <button id="btnClearAll" class="btn btn--danger">전체 데이터 삭제</button>
+          </div>
+        </article>
+        <article class="card card--info">
+          <h3><i class="bi bi-info-circle" aria-hidden="true"></i> 앱 정보</h3>
+          <p>버전: <span id="appVersion">1.0.0</span></p>
+          <p>데이터 저장소: 브라우저 IndexedDB (완전 로컬)</p>
+          <p><a href="https://github.com/your-repo" target="_blank" rel="noopener">소스 코드 보기</a></p>
+        </article>
+      </div>
+    </section>
+  </template>
+
+  <!-- 5-6. 통계 화면 -->
+  <template id="tpl-stats">
+    <section class="view view--stats" data-view="stats" aria-label="독서 통계">
+      <h2>독서 통계 📊</h2>
+      <div class="stats-cards">
+        <article class="stat-card">
+          <div class="stat-card__icon" aria-hidden="true">📚</div>
+          <div class="stat-card__value" id="statTotal">0</div>
+          <div class="stat-card__label">총 읽은 책</div>
+        </article>
+        <article class="stat-card">
+          <div class="stat-card__icon" aria-hidden="true">📅</div>
+          <div class="stat-card__value" id="statThisMonth">0</div>
+          <div class="stat-card__label">이번 달</div>
+        </article>
+        <article class="stat-card">
+          <div class="stat-card__icon" aria-hidden="true">⭐</div>
+          <div class="stat-card__value" id="statAvgStar">0.0</div>
+          <div class="stat-card__label">평균 별점</div>
+        </article>
+        <article class="stat-card">
+          <div class="stat-card__icon" aria-hidden="true">🏆</div>
+          <div class="stat-card__value" id="statBestStreak">0</div>
+          <div class="stat-card__label">최고 연속</div>
+        </article>
+      </div>
+      <div class="chart-wrapper">
+        <canvas id="chartMonthly" aria-label="월별 독서량 막대 그래프"></canvas>
+      </div>
+      <div class="chart-wrapper">
+        <canvas id="chartRating" aria-label="별점 분포 도넛 그래프"></canvas>
+      </div>
+      <section class="favorites" aria-label="최애 작가/장르">
+        <h3>내가 좋아하는 것들</h3>
+        <div id="favAuthors" class="tag-cloud"></div>
+        <div id="favFeelings" class="tag-cloud"></div>
+      </section>
+    </section>
+  </template>
+
+  <!-- 5-7. 온보딩/첫 방문 안내 모달 -->
+  <template id="tpl-onboarding">
+    <dialog id="onboardingDialog" class="onboarding-dialog">
+      <div class="onboarding-content">
+        <h2>책읽기 친구에 오신 걸 환영해요! 🎉</h2>
+        <p>읽은 책을 사진으로 찍고, 별점을 주고, 느낌을 남겨보세요.</p>
+        <ul>
+          <li>📷 표지 사진은 카메라로 바로 찍을 수 있어요.</li>
+          <li>🎤 마이크 버튼을 누르면 말로 입력할 수 있어요.</li>
+          <li>🔒 중요한 건 보호자 모드에서만 바꿀 수 있어요.</li>
+        </ul>
+        <p class="onboarding-note">모든 데이터는 이 기기 안에만 안전하게 저장돼요.</p>
+        <button id="btnOnboardingClose" class="btn btn--primary btn--wide">시작하기</button>
+      </div>
+    </dialog>
+  </template>
+
+  <!-- ============================================================
+       6. 외부 JS 로드 (맨 마지막)
+       ============================================================ -->
+  <script src="app.js" type="module"></script>
+
+  <!-- ============================================================
+       7. Service Worker 등록 (인라인)
+       ============================================================ -->
+  <script>
+    // 프로덕션 배포 시에만 SW 등록 (로컬 file:// 프로토콜 방지)
+    if ('serviceWorker' in navigator && location.protocol === 'https:') {
+      // sw.js는 별도 파일로 두거나, 여기 문자열로 Blob 생성해 등록 가능
+      // 여기서는 별도 파일(sw.js) 있다고 가정하고 등록
+      navigator.serviceWorker.register('sw.js')
+        .then(reg => console.log('[SW] 등록 성공', reg.scope))
+        .catch(err => console.warn('[SW] 등록 실패', err));
+    }
+  </script>
+</body>
+</html>
