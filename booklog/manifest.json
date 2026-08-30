@@ -1,0 +1,55 @@
+{
+  "name": "내 독서록 - Reading Log",
+  "short_name": "독서록",
+  "description": "IndexedDB 기반 오프라인 퍼스트 개인 독서 기록장. ISBN 자동 조회, 마크다운 리뷰, 통계 대시보드 지원.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f8f9fa",
+  "theme_color": "#2d6a4f",
+  "lang": "ko-KR",
+  "dir": "ltr",
+  "categories": ["books", "education", "productivity"],
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "도서 추가",
+      "short_name": "추가",
+      "description": "새로운 도서를 빠르게 등록합니다.",
+      "url": "/#/add",
+      "icons": [{ "src": "icons/shortcut-add.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "통계 보기",
+      "short_name": "통계",
+      "description": "독서 통계 대시보드를 확인합니다.",
+      "url": "/#/stats",
+      "icons": [{ "src": "icons/shortcut-stats.png", "sizes": "96x96" }]
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "protocol_handlers": [
+    {
+      "protocol": "web+readinglog",
+      "url": "/#/add?isbn=%s"
+    }
+  ],
+  "edge_side_panel": {
+    "preferred_width": 400
+  }
+}
