@@ -1,5 +1,5 @@
 // ==========================================================================
-// views/FormView.js - Book Form View (Add/Edit, ISBN Lookup, Image Upload)
+// views/FormView.js - Book Form View (Fixed: Initialization Order Bug)
 // ==========================================================================
 
 import { state, subscribe } from '../utils/store.js';
@@ -27,25 +27,19 @@ const ISBN_API_OPEN_LIBRARY = 'https://openlibrary.org/api/books?bibkeys=ISBN:&f
 // -------------------------------------------------------------------------
 let _cleanupFns = [];
 let _dom = {};
-let _currentBookId = null; // 수정 모드 시 책 ID
-let _coverFile = null;     // 선택된 표지 파일 객체
-let _coverObjectUrl = null; // 미리보기용 Object URL
+let _currentBookId = null;
+let _coverFile = null;
+let _coverObjectUrl = null;
 let _isSubmitting = false;
 
 // -------------------------------------------------------------------------
 // 3. ISBN Metadata Fetching
 // -------------------------------------------------------------------------
 
-/**
- * ISBN으로 도서 메타데이터 조회 (Google Books -> Open Library Fallback)
- * @param {string} isbn - 하이픈 제거된 ISBN-13
- * @returns {Promise<Object|null>} 메타데이터 객체 또는 null
- */
 async function fetchBookMetadata(isbn) {
   const cleanIsbn = isbn.replace(/[-\s]/g, '');
   if (cleanIsbn.length !== 13) return null;
 
-  // 1. Google Books API
   try {
     const res = await fetch(`${ISBN_API_GOOGLE}${cleanIsbn}`);
     if (res.ok) {
@@ -56,7 +50,6 @@ async function fetchBookMetadata(isbn) {
     }
   } catch (e) { console.warn('[ISBN] Google Books API failed:', e); }
 
-  // 2. Open Library API (Fallback)
   try {
     const res = await fetch(`${ISBN_API_OPEN_LIBRARY}${cleanIsbn}`);
     if (res.ok) {
@@ -76,7 +69,7 @@ function transformGoogleBookData(vi) {
     publisher: vi.publisher || '',
     publishDate: vi.publishedDate ? normalizeDate(vi.publishedDate) : '',
     totalPages: vi.pageCount || 0,
-    externalCoverUrl: vi.imageLinks?.thumbnail?.replace('http:', 'https:') || '', // HTTPS 강제
+    externalCoverUrl: vi.imageLinks?.thumbnail?.replace('http:', 'https:') || '',
     description: vi.description || ''
   };
 }
@@ -94,7 +87,6 @@ function transformOpenLibraryData(ol) {
 }
 
 function normalizeDate(str) {
-  // "2023", "2023-05", "2023-05-15" 등 다양한 형식 → YYYY-MM-DD
   const parts = str.split('-').map(Number);
   if (parts.length === 1) return `${parts[0]}-01-01`;
   if (parts.length === 2) return `${parts[0]}-${String(parts[1]).padStart(2,'0')}-01`;
@@ -102,10 +94,38 @@ function normalizeDate(str) {
 }
 
 // -------------------------------------------------------------------------
-// 4. Render Functions
+// 4. DOM Caching (Must be called FIRST in init)
+// -------------------------------------------------------------------------
+function cacheDomElements() {
+  _dom = {
+    container: document.getElementById('app'),
+    form: null,
+    isbnInput: null,
+    titleInput: null,
+    fetchBtn: null,
+    coverInput: null,
+    coverPreview: null,
+    tagWrapper: null,
+    tagInput: null,
+    tagsHidden: null,
+    reviewTextarea: null,
+    reviewPreview: null,
+    statusSelect: null,
+    completedAtInput: null,
+    ratingInput: null,
+    ratingDisplay: null,
+    tabs: null,
+    panels: null
+  };
+}
+
+// -------------------------------------------------------------------------
+// 5. Render Functions
 // -------------------------------------------------------------------------
 
 function renderForm(book = {}) {
+  if (!_dom.container) return; // 안전 가드
+
   const isEdit = !!_currentBookId;
   const coverPreview = _coverObjectUrl 
     ? _coverObjectUrl 
@@ -128,9 +148,8 @@ function renderForm(book = {}) {
     <form id="book-form" class="form-view" novalidate>
       <input type="hidden" name="id" value="${book.id || ''}">
       <input type="hidden" name="createdAt" value="${book.createdAt || ''}">
-      <input type="hidden" name="coverFile" value=""> <!-- 파일은 별도 처리 -->
+      <input type="hidden" name="coverFile" value="">
 
-      <!-- Section 1: 기본 정보 & ISBN -->
       <fieldset class="form-section">
         <legend class="form-section__title">기본 정보</legend>
         
@@ -182,7 +201,6 @@ function renderForm(book = {}) {
         </div>
       </fieldset>
 
-      <!-- Section 2: 표지 이미지 -->
       <fieldset class="form-section">
         <legend class="form-section__title">표지 이미지</legend>
         <div class="cover-upload">
@@ -198,7 +216,6 @@ function renderForm(book = {}) {
         </div>
       </fieldset>
 
-      <!-- Section 3: 독서 상태 & 평점 -->
       <fieldset class="form-section">
         <legend class="form-section__title">독서 상태 & 평가</legend>
         
@@ -230,7 +247,6 @@ function renderForm(book = {}) {
         </div>
       </fieldset>
 
-      <!-- Section 4: 태그 -->
       <fieldset class="form-section">
         <legend class="form-section__title">태그</legend>
         <div class="tag-input-wrapper" id="tag-wrapper" role="listbox" aria-label="태그 목록">
@@ -246,7 +262,6 @@ function renderForm(book = {}) {
         <p class="cover-upload__hint">최대 ${MAX_TAGS}개까지 추가 가능. 쉼표(,) 또는 엔터로 구분.</p>
       </fieldset>
 
-      <!-- Section 5: 리뷰 (Markdown) -->
       <fieldset class="form-section">
         <legend class="form-section__title">한줄 평 / 서평 <span style="font-weight:400; font-size:0.8rem; color:var(--color-text-muted);">(Markdown 지원)</span></legend>
         <div class="review-editor">
@@ -265,7 +280,6 @@ function renderForm(book = {}) {
         </div>
       </fieldset>
 
-      <!-- Submit Actions (Fixed Bottom on Mobile) -->
       <div class="form-actions" style="position: sticky; bottom: 0; background: var(--color-bg-primary); border-top: 1px solid var(--color-border); padding-top: 1rem; margin-top: 1.5rem; z-index: 10;">
         <button type="button" class="btn btn-secondary btn-block" data-action="go-back" style="max-width: 200px; margin-right: auto;">취소</button>
         <button type="submit" class="btn btn-primary btn-block" ${_isSubmitting ? 'disabled' : ''} style="max-width: 200px;">
@@ -275,98 +289,89 @@ function renderForm(book = {}) {
     </form>
   `;
 
-  cacheDomElements();
-  bindEvents();
+  cacheFormDomElements();
+  bindFormEvents();
   updateTagInputState();
   updateRatingDisplay();
-  renderMarkdownPreview(); // 초기 프리뷰 렌더링
+  renderMarkdownPreview();
+  syncFormUI(); // 완독일 입력 활성화 상태 동기화
 }
 
-function cacheDomElements() {
-  _dom = {
-    form: document.getElementById('book-form'),
-    container: document.getElementById('app'),
-    isbnInput: document.getElementById('isbn'),
-    titleInput: document.getElementById('title'),
-    fetchBtn: document.getElementById('btn-fetch-isbn'),
-    coverInput: document.getElementById('cover-input'),
-    coverPreview: document.getElementById('cover-preview'),
-    tagWrapper: document.getElementById('tag-wrapper'),
-    tagInput: document.getElementById('tag-input'),
-    tagsHidden: document.getElementById('tags-hidden'),
-    reviewTextarea: document.getElementById('review'),
-    reviewPreview: document.getElementById('review-preview'),
-    statusSelect: document.getElementById('status'),
-    completedAtInput: document.getElementById('completedAt'),
-    ratingInput: document.getElementById('rating'),
-    ratingDisplay: document.getElementById('rating-display'),
-    tabs: document.querySelectorAll('.review-tab'),
-    panels: document.querySelectorAll('.tab-panel')
-  };
+function cacheFormDomElements() {
+  _dom.form = document.getElementById('book-form');
+  _dom.isbnInput = document.getElementById('isbn');
+  _dom.titleInput = document.getElementById('title');
+  _dom.fetchBtn = document.getElementById('btn-fetch-isbn');
+  _dom.coverInput = document.getElementById('cover-input');
+  _dom.coverPreview = document.getElementById('cover-preview');
+  _dom.tagWrapper = document.getElementById('tag-wrapper');
+  _dom.tagInput = document.getElementById('tag-input');
+  _dom.tagsHidden = document.getElementById('tags-hidden');
+  _dom.reviewTextarea = document.getElementById('review');
+  _dom.reviewPreview = document.getElementById('review-preview');
+  _dom.statusSelect = document.getElementById('status');
+  _dom.completedAtInput = document.getElementById('completedAt');
+  _dom.ratingInput = document.getElementById('rating');
+  _dom.ratingDisplay = document.getElementById('rating-display');
+  _dom.tabs = document.querySelectorAll('.review-tab');
+  _dom.panels = document.querySelectorAll('.tab-panel');
 }
 
 // -------------------------------------------------------------------------
-// 5. Event Binding & Handlers
+// 6. Event Binding & Handlers
 // -------------------------------------------------------------------------
 
-function bindEvents() {
-  // 폼 제출
+function bindFormEvents() {
+  if (!_dom.form) return;
+  
   _dom.form.addEventListener('submit', handleSubmit);
   _cleanupFns.push(() => _dom.form.removeEventListener('submit', handleSubmit));
 
-  // ISBN 조회
-  _dom.fetchBtn.addEventListener('click', handleFetchIsbn);
-  _cleanupFns.push(() => _dom.fetchBtn.removeEventListener('click', handleFetchIsbn));
-  _dom.isbnInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleFetchIsbn(); });
+  _dom.fetchBtn?.addEventListener('click', handleFetchIsbn);
+  _cleanupFns.push(() => _dom.fetchBtn?.removeEventListener('click', handleFetchIsbn));
+  _dom.isbnInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleFetchIsbn(); });
 
-  // 표지 이미지 업로드
-  _dom.coverInput.addEventListener('change', handleCoverChange);
-  _cleanupFns.push(() => _dom.coverInput.removeEventListener('change', handleCoverChange));
-  _dom.coverPreview.addEventListener('click', (e) => {
+  _dom.coverInput?.addEventListener('change', handleCoverChange);
+  _cleanupFns.push(() => _dom.coverInput?.removeEventListener('change', handleCoverChange));
+  _dom.coverPreview?.addEventListener('click', (e) => {
     if (e.target.closest('.cover-upload__remove')) handleCoverRemove();
   });
 
-  // 태그 입력
-  _dom.tagInput.addEventListener('keydown', handleTagKeydown);
-  _dom.tagInput.addEventListener('blur', handleTagBlur);
-  _dom.tagWrapper.addEventListener('click', (e) => {
+  _dom.tagInput?.addEventListener('keydown', handleTagKeydown);
+  _dom.tagInput?.addEventListener('blur', handleTagBlur);
+  _dom.tagWrapper?.addEventListener('click', (e) => {
     if (e.target.matches('.tag__remove')) handleTagRemove(e.target.closest('.tag').dataset.tag);
   });
   _cleanupFns.push(() => {
-    _dom.tagInput.removeEventListener('keydown', handleTagKeydown);
-    _dom.tagInput.removeEventListener('blur', handleTagBlur);
+    _dom.tagInput?.removeEventListener('keydown', handleTagKeydown);
+    _dom.tagInput?.removeEventListener('blur', handleTagBlur);
   });
 
-  // 리뷰 탭 전환
-  _dom.tabs.forEach(tab => {
+  _dom.tabs?.forEach(tab => {
     tab.addEventListener('click', () => switchReviewTab(tab.dataset.tab));
   });
 
-  // 마크다운 실시간 프리뷰
   let previewTimer;
-  _dom.reviewTextarea.addEventListener('input', () => {
+  _dom.reviewTextarea?.addEventListener('input', () => {
     clearTimeout(previewTimer);
     previewTimer = setTimeout(renderMarkdownPreview, 150);
   });
   _cleanupFns.push(() => clearTimeout(previewTimer));
 
-  // 평점 입력 시 별표 업데이트
-  _dom.ratingInput.addEventListener('input', updateRatingDisplay);
+  _dom.ratingInput?.addEventListener('input', updateRatingDisplay);
 
-  // 상태 변경 시 완독일 입력 활성화/비활성화
-  _dom.statusSelect.addEventListener('change', () => {
-    _dom.completedAtInput.disabled = _dom.statusSelect.value !== 'completed';
+  _dom.statusSelect?.addEventListener('change', () => {
+    if (_dom.completedAtInput) _dom.completedAtInput.disabled = _dom.statusSelect.value !== 'completed';
     if (_dom.statusSelect.value === 'completed' && !_dom.completedAtInput.value) {
       _dom.completedAtInput.value = todayString();
     }
   });
 
-  // 취소 버튼
-  _dom.container.querySelector('[data-action="go-back"]')?.addEventListener('click', () => navigate('/'));
+  _dom.form.querySelector('[data-action="go-back"]')?.addEventListener('click', () => navigate('/'));
 }
 
 // -------------------------------------------------------------------------
-// 6. Core Logic Handlers
+// 7. Core Logic Handlers
 // -------------------------------------------------------------------------
 
 async function handleFetchIsbn() {
@@ -398,26 +403,19 @@ async function handleFetchIsbn() {
 }
 
 function applyMetadataToForm(data) {
-  // 필드 매핑 (기존 값이 있으면 덮어쓰지 않거나, 확인 후 덮어쓰기)
-  // 여기서는 간단히 빈 필드만 채우거나 전체 업데이트
   const fields = ['title', 'author', 'publisher', 'publishDate', 'totalPages'];
   fields.forEach(key => {
     const input = _dom.form.querySelector(`[name="${key}"]`);
-    if (input && data[key] && !input.value) input.value = data[key];
-    else if (input && data[key]) input.value = data[key]; // 수정 모드에서도 업데이트 허용
+    if (input && data[key]) input.value = data[key];
   });
 
-  // 표지 이미지 URL 저장 (외부 링크)
   if (data.externalCoverUrl) {
-    // 숨김 필드에 저장하거나 별도 상태 관리
     _dom.form.dataset.externalCoverUrl = data.externalCoverUrl;
-    // 미리보기 업데이트 (로컬 파일이 없을 때만)
     if (!_coverFile && _dom.coverPreview) {
       _dom.coverPreview.style.backgroundImage = `url('${data.externalCoverUrl}')`;
     }
   }
 
-  // 설명이 있으면 리뷰에 추가 (기존 내용 뒤에 덧붙임)
   if (data.description && _dom.reviewTextarea) {
     const desc = `\n\n---\n*자동 조회된 설명:*\n${data.description}`;
     if (!_dom.reviewTextarea.value.includes(data.description.substring(0, 50))) {
@@ -431,7 +429,6 @@ async function handleSubmit(e) {
   e.preventDefault();
   if (_isSubmitting) return;
 
-  // 유효성 검사
   if (!_validateForm()) return;
 
   _isSubmitting = true;
@@ -441,7 +438,6 @@ async function handleSubmit(e) {
     const formData = new FormData(_dom.form);
     const bookData = Object.fromEntries(formData.entries());
 
-    // 데이터 타입 변환 및 정제
     const book = {
       id: bookData.id || crypto.randomUUID(),
       title: bookData.title.trim(),
@@ -462,23 +458,20 @@ async function handleSubmit(e) {
       externalCoverUrl: _dom.form.dataset.externalCoverUrl || ''
     };
 
-    // 완독 상태 시 완독일 자동 설정
     if (book.status === 'completed' && !book.completedAt) {
       book.completedAt = new Date().toISOString().split('T')[0];
     }
-    // 완독 해제 시 완독일 초기화
     if (book.status !== 'completed') {
       book.completedAt = null;
     }
 
-    // DB 저장 (트랜잭션: 책 + 표지)
     await ReadingDB.putBook(book);
     if (_coverFile) {
       await ReadingDB.saveCover(book.id, _coverFile);
     }
 
     showToast(`도서가 ${_currentBookId ? '수정' : '등록'}되었습니다.`, 'success');
-    navigate('/'); // 리스트로 이동
+    navigate('/');
 
   } catch (err) {
     console.error('[FormView] Save failed:', err);
@@ -514,8 +507,8 @@ function _validateForm() {
 }
 
 function _updateSubmitButtonState() {
-  const btns = _dom.container.querySelectorAll('[data-action="submit-form"], [type="submit"]');
-  btns.forEach(btn => {
+  const btns = _dom.container?.querySelectorAll('[data-action="submit-form"], [type="submit"]');
+  btns?.forEach(btn => {
     btn.disabled = _isSubmitting;
     btn.innerHTML = _isSubmitting 
       ? '<span class="loading__spinner" style="width:16px;height:16px;border-width:2px;margin-right:0.5rem;"></span>저장 중...' 
@@ -524,26 +517,24 @@ function _updateSubmitButtonState() {
 }
 
 // -------------------------------------------------------------------------
-// 7. Cover Image Handlers
+// 8. Cover Image Handlers
 // -------------------------------------------------------------------------
 
 function handleCoverChange(e) {
   const file = e.target.files[0];
   if (!file) return;
 
-  // 파일 타입/크기 검증
   if (!file.type.startsWith('image/')) {
     showToast('이미지 파일만 업로드 가능합니다.', 'warning');
     return;
   }
-  if (file.size > 5 * 1024 * 1024) { // 5MB
+  if (file.size > 5 * 1024 * 1024) {
     showToast('파일 크기는 5MB 이하여야 합니다.', 'warning');
     return;
   }
 
   _coverFile = file;
   
-  // 기존 Object URL 해제
   if (_coverObjectUrl) URL.revokeObjectURL(_coverObjectUrl);
   
   _coverObjectUrl = URL.createObjectURL(file);
@@ -551,7 +542,6 @@ function handleCoverChange(e) {
   _dom.coverPreview.style.backgroundSize = 'cover';
   _dom.coverPreview.style.backgroundPosition = 'center';
   
-  // 삭제 버튼 표시
   if (!_dom.coverPreview.querySelector('.cover-upload__remove')) {
     const removeBtn = document.createElement('button');
     removeBtn.type = 'button';
@@ -561,7 +551,6 @@ function handleCoverChange(e) {
     _dom.coverPreview.appendChild(removeBtn);
   }
 
-  // 외부 커버 URL 초기화 (로컬 파일이 우선)
   delete _dom.form.dataset.externalCoverUrl;
 }
 
@@ -573,7 +562,6 @@ function handleCoverRemove() {
   _coverFile = null;
   _dom.coverInput.value = '';
   
-  // 미리보기 초기화 (외부 URL 복원 또는 플레이스홀더)
   const externalUrl = _dom.form.dataset.externalCoverUrl;
   const fallback = `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 150'><rect fill='%23e9ecef' width='100' height='150'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-size='12' fill='%23adb5bd'>표지없음</text></svg>`;
   _dom.coverPreview.style.backgroundImage = `url('${externalUrl || fallback}')`;
@@ -584,7 +572,7 @@ function handleCoverRemove() {
 }
 
 // -------------------------------------------------------------------------
-// 8. Tag Input Handlers
+// 9. Tag Input Handlers
 // -------------------------------------------------------------------------
 
 function handleTagKeydown(e) {
@@ -593,7 +581,6 @@ function handleTagKeydown(e) {
     addTag(e.target.value);
     e.target.value = '';
   } else if (e.key === 'Backspace' && !e.target.value) {
-    // 백스페이스로 마지막 태그 삭제 (선택적 UX)
     const tags = getCurrentTags();
     if (tags.length > 0) {
       removeTag(tags[tags.length - 1]);
@@ -643,7 +630,7 @@ function updateTagsHiddenInput(tags) {
 
 function renderTagChips(tags) {
   const input = _dom.tagInput;
-  _dom.tagWrapper.innerHTML = ''; // 전체 재렌더링 (간단함)
+  _dom.tagWrapper.innerHTML = '';
   tags.forEach(tag => {
     const chip = document.createElement('span');
     chip.className = 'tag tag-removable';
@@ -662,15 +649,15 @@ function updateTagInputState() {
 }
 
 // -------------------------------------------------------------------------
-// 9. Markdown Preview
+// 10. Markdown Preview
 // -------------------------------------------------------------------------
 
 function switchReviewTab(tab) {
-  _dom.tabs.forEach(t => {
+  _dom.tabs?.forEach(t => {
     t.classList.toggle('active', t.dataset.tab === tab);
     t.setAttribute('aria-selected', t.dataset.tab === tab);
   });
-  _dom.panels.forEach(p => {
+  _dom.panels?.forEach(p => {
     p.style.display = p.id === `panel-${tab}` ? 'block' : 'none';
   });
   if (tab === 'preview') renderMarkdownPreview();
@@ -680,14 +667,8 @@ async function renderMarkdownPreview() {
   if (!_dom.reviewPreview) return;
   const text = _dom.reviewTextarea?.value || '';
   try {
-    // marked.js는 전역 `marked` 객체로 노출됨 (importmap 설정됨)
     const { marked } = await import('marked');
-    _dom.reviewPreview.innerHTML = marked.parse(text, { 
-      async: false, 
-      breaks: true, 
-      gfm: true,
-      sanitize: true // XSS 방지
-    });
+    _dom.reviewPreview.innerHTML = `<div class="markdown-body">${marked.parse(text, { async: false, breaks: true, gfm: true, sanitize: true })}</div>`;
   } catch (e) {
     console.error('[FormView] Markdown render failed:', e);
     _dom.reviewPreview.innerHTML = `<pre style="white-space: pre-wrap;">${escapeHtml(text)}</pre>`;
@@ -695,15 +676,15 @@ async function renderMarkdownPreview() {
 }
 
 // -------------------------------------------------------------------------
-// 10. Rating Stars Display
+// 11. Rating Stars Display
 // -------------------------------------------------------------------------
 
 function updateRatingDisplay() {
-  const val = parseFloat(_dom.ratingInput.value) || 0;
+  const val = parseFloat(_dom.ratingInput?.value) || 0;
   const full = Math.floor(val);
   const half = val % 1 >= 0.5;
   const empty = 5 - full - (half ? 1 : 0);
-  _dom.ratingDisplay.textContent = '★'.repeat(full) + (half ? '½' : '') + '☆'.repeat(empty);
+  if (_dom.ratingDisplay) _dom.ratingDisplay.textContent = '★'.repeat(full) + (half ? '½' : '') + '☆'.repeat(empty);
 }
 
 function renderStars(val) {
@@ -715,7 +696,7 @@ function renderStars(val) {
 }
 
 // -------------------------------------------------------------------------
-// 11. Edit Mode Data Loading
+// 12. Edit Mode Data Loading
 // -------------------------------------------------------------------------
 
 async function loadBookForEdit(id) {
@@ -726,19 +707,14 @@ async function loadBookForEdit(id) {
     const book = await ReadingDB.getBook(id);
     if (!book) throw new Error('도서를 찾을 수 없습니다.');
 
-    // 표지 Blob URL 생성 (미리보기용)
     let coverUrl = book.externalCoverUrl;
     const blob = await ReadingDB.getCoverBlob(id);
     if (blob) {
       coverUrl = URL.createObjectURL(blob);
-      _coverObjectUrl = coverUrl; // 정리 위해 저장
+      _coverObjectUrl = coverUrl;
     }
 
-    // 폼 렌더링 시 데이터 주입
     renderForm({ ...book, externalCoverUrl: coverUrl });
-    
-    // 태그 렌더링 (renderForm 내부에서 처리됨)
-    // 완독일 비활성화 상태 동기화
     _dom.completedAtInput.disabled = book.status !== 'completed';
 
   } catch (err) {
@@ -751,18 +727,29 @@ async function loadBookForEdit(id) {
 }
 
 // -------------------------------------------------------------------------
-// 12. Public Init Function
+// 13. UI Sync Helpers
 // -------------------------------------------------------------------------
 
-/**
- * 폼 뷰 초기화
- * @param {Object} ctx
- * @returns {Function} cleanup
- */
+function syncFormUI() {
+  if (_dom.statusSelect && _dom.completedAtInput) {
+    _dom.completedAtInput.disabled = _dom.statusSelect.value !== 'completed';
+    if (_dom.statusSelect.value === 'completed' && !_dom.completedAtInput.value) {
+      _dom.completedAtInput.value = todayString();
+    }
+  }
+}
+
+// -------------------------------------------------------------------------
+// 14. Public Init Function (Fixed Order)
+// -------------------------------------------------------------------------
+
 export async function init({ params, state, navigate, db, showToast, showConfirm }) {
   console.log('[FormView] Initializing...', params);
   
-  // 1. 수정 모드 판별 및 데이터 로드
+  // 1. DOM 캐싱 최우선 실행 (renderForm에서 _dom.container 사용하므로)
+  cacheDomElements();
+  
+  // 2. 수정 모드 판별 및 데이터 로드 또는 신규 폼 렌더링
   if (params.id) {
     await loadBookForEdit(params.id);
   } else {
@@ -776,7 +763,7 @@ export async function init({ params, state, navigate, db, showToast, showConfirm
     });
   }
 
-  // 2. 클린업 함수 반환
+  // 3. 클린업 함수 반환
   return () => {
     console.log('[FormView] Cleaning up...');
     if (_coverObjectUrl) URL.revokeObjectURL(_coverObjectUrl);
@@ -786,7 +773,7 @@ export async function init({ params, state, navigate, db, showToast, showConfirm
 }
 
 // -------------------------------------------------------------------------
-// 13. Helpers
+// 15. Helpers
 // -------------------------------------------------------------------------
 
 function escapeHtml(str) {

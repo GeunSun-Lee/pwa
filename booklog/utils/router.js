@@ -1,5 +1,5 @@
 // ==========================================================================
-// utils/router.js - Hash Based Router (Fixed: export router)
+// utils/router.js - Hash Based Router (Fixed: Initial Render Bug)
 // ==========================================================================
 
 /**
@@ -39,36 +39,60 @@ function matchRoute(pattern, path) {
   return params;
 }
 
+/**
+ * 라우터 인스턴스 생성 및 제어
+ */
 const router = (() => {
   let _callback = null;
   let _isListening = false;
-  let _currentHash = '';
+  let _currentHash = null; // 💡 수정: 초기값 null로 변경 (빈 문자열 ""과 구분)
 
+  /**
+   * 해시 변경 감지 및 콜백 실행
+   */
   function _onHashChange() {
     const newHash = window.location.hash;
+    
+    // 💡 수정: 최초 실행 시 _currentHash가 null이므로 무조건 실행되도록 보장
+    // 이후부터는 동일 해시 반복 방지
     if (newHash === _currentHash) return;
+    
     _currentHash = newHash;
     
     if (_callback) {
-      Promise.resolve().then(() => _callback(newHash));
+      // 마이크로태스크 큐에 넣어 현재 콜스택 종료 후 실행 보장
+      queueMicrotask(() => _callback(newHash));
     }
   }
 
+  /**
+   * 팝스테이트(브라우저 뒤로가기/앞으로가기) 감지
+   */
   function _onPopState() {
     _onHashChange();
   }
 
   return {
+    /**
+     * 라우터 리스닝 시작
+     * @param {Function} callback - 해시 변경 시 호출될 함수
+     */
     start(callback) {
       if (_isListening) return;
+      
       _callback = callback;
       _isListening = true;
-      _currentHash = window.location.hash;
+      _currentHash = null; // 💡 수정: 시작 시 null로 리셋 (최초 강제 실행 보장)
 
+      // 1. 해시 변경 이벤트 리스너 등록
       window.addEventListener('hashchange', _onHashChange);
+      
+      // 2. 히스토리 상태 변경 감지
       window.addEventListener('popstate', _onPopState);
 
-      setTimeout(() => _onHashChange(), 0);
+      // 3. 초기 라우팅 즉시 실행 (setTimeout 0 대신 queueMicrotask로 동기적에 가깝게 실행)
+      //    _currentHash가 null이므로 _onHashChange 내부에서 renderView 무조건 호출됨
+      queueMicrotask(() => _onHashChange());
     },
 
     stop() {
@@ -116,7 +140,9 @@ export function navigate(to, { replace = false, scrollToTop = true } = {}) {
     });
   }
 
-  // hashchange 이벤트 강제 트리거 (router 내부 가드 있음)
+  // navigate 호출 시 해시가 변경되면 hashchange 이벤트가 자동 발생하므로
+  // 별도 dispatchEvent 불필요 (브라우저 기본 동작 신뢰)
+  // 단, hashchange 이벤트가 안 뜨는 구형 브라우저 대비 수동 트리거 유지
   window.dispatchEvent(new HashChangeEvent('hashchange', {
     oldURL: window.location.href.replace(window.location.hash, ''),
     newURL: window.location.href
@@ -135,8 +161,8 @@ export function matchCurrentRoute(pattern) {
 
 // 개발 편의: 전역 노출
 if (typeof window !== 'undefined') {
-  window.__ROUTER__ = { navigate, parseHash, matchRoute, getCurrentRoute, router }; // router도 추가
+  window.__ROUTER__ = { navigate, parseHash, matchRoute, getCurrentRoute, router: router };
 }
 
-// ✅ 핵심 수정: router 객체 named export 추가
+// 💡 핵심 수정: router 객체 named export
 export { router };
