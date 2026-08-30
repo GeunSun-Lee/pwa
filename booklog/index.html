@@ -3,27 +3,31 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="description" content="IndexedDB 기반 오프라인 독서록">
+  <meta name="description" content="IndexedDB 기반 오프라인 퍼스트 독서록 - ISBN 자동 조회, 마크다운 리뷰, 통계 대시보드 지원">
   <meta name="theme-color" content="#2d6a4f" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#1b4332" media="(prefers-color-scheme: dark)">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="독서록">
   
-  <!-- PWA Manifest (선택: 나중 단계에서 manifest.json 별도 파일로 분리) -->
+  <!-- PWA Manifest -->
   <link rel="manifest" href="manifest.json" crossorigin="use-credentials">
+  
+  <!-- Favicon & Icons (SVG Data URI로 별도 파일 없이 기본 아이콘 제공) -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>">
   <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>">
+  <link rel="mask-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>" color="#2d6a4f">
 
-  <!-- 1. CSS 로드 -->
+  <!-- Stylesheet -->
   <link rel="stylesheet" href="style.css">
 
-  <!-- 2. 외부 라이브러리 CDN (ESM 호환 버전) -->
-  <!-- marked: 마크다운 파싱, uuid: ID 생성 -->
-  <!-- importmap을 써서 베어 임포터(bare specifier) 문제를 회피합니다. -->
+  <!-- Import Map: CDN 라이브러리 베어 임포트 지원 -->
   <script type="importmap">
   {
     "imports": {
       "marked": "https://cdn.jsdelivr.net/npm/marked@12/+esm",
       "uuid": "https://cdn.jsdelivr.net/npm/uuid@9/+esm",
-      "idb": "https://cdn.jsdelivr.net/npm/idb@8/+esm"
+      "jszip": "https://cdn.jsdelivr.net/npm/jszip@3.10.1/+esm"
     }
   }
   </script>
@@ -32,35 +36,41 @@
 </head>
 <body>
   <!-- 
-    루트 컨테이너: SPA 마운트 포인트 
-    data-route 속성으로 현재 뷰 식별 (CSS 선택자 용)
+    메인 앱 마운트 포인트 
+    data-route: 현재 뷰 식별용 (CSS에서 [data-route="list"] 등으로 사용)
+    role="main": 접근성 랜드마크
   -->
   <div id="app" data-route="list" role="main"></div>
 
-  <!-- 
-    전역 토스트/알림 컨테이너 (포털 패턴) 
-    JS에서 동적으로 생성해도 무방하지만, HTML에 자리 잡아두면 FOUC 방지 
-  -->
+  <!-- 전역 토스트/알림 컨테이너 (ui-helpers.js에서 사용) -->
   <div id="toast-container" aria-live="polite" aria-atomic="true" class="toast-container"></div>
 
-  <!-- 
-    모달/다이얼로그 백드롭 컨테이너 (접근성: 인ERT 속성 토글) 
-  -->
+  <!-- 모달/다이얼로그 루트 (ui-helpers.js에서 사용, inert로 비활성화 상태 유지) -->
   <div id="modal-root" class="modal-root" inert></div>
 
-  <!-- 3. 메인 애플리케이션 진입점 (ES Module) -->
+  <!-- 메인 애플리케이션 진입점 (ES Module) -->
   <script type="module" src="app.js"></script>
 
-  <!-- 
-    Service Worker 등록 (PWA / 오프라인 캐시) 
-    배포 후 sw.js 파일이 루트에 있어야 동작합니다.
-  -->
+  <!-- Service Worker 등록 (PWA / 오프라인 지원) -->
   <script>
+    // SW 등록 로직: 스코프를 './' 로 잡아 GitHub Pages 서브디렉토리 배포 대응
     if ('serviceWorker' in navigator) {
-      // GitHub Pages 서브디렉토리 배포 시 scope 주의: scope: './' 또는 '/repo-name/'
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('sw.js', { scope: './' })
-          .then(reg => console.log('[SW] Registered:', reg.scope))
+          .then(reg => {
+            console.log('[SW] Registered:', reg.scope);
+            // 업데이트 감지 시 사용자 알림 (선택적)
+            reg.addEventListener('updatefound', () => {
+              const newWorker = reg.installing;
+              newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  // 새 버전 설치 완료 시 알림 (토스트 대신 confirm 등으로 처리 권장)
+                  console.log('[SW] New version available. Please refresh.');
+                  // 실제 서비스에서는 여기서 사용자에게 "새로고침" 유도 UI 띄움
+                }
+              });
+            });
+          })
           .catch(err => console.warn('[SW] Registration failed:', err));
       });
     }

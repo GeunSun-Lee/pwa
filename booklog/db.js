@@ -1,62 +1,21 @@
 // ==========================================================================
-// db.js - IndexedDB Wrapper (ReadingDB)
+// db.js - IndexedDB Wrapper (ReadingLogDB) - Final Production Version
 // ==========================================================================
 
-/**
- * @typedef {Object} BookEntity
- * @property {string} id - UUID v4
- * @property {string} title
- * @property {string} author
- * @property {string} publisher
- * @property {string} publishDate - YYYY-MM-DD
- * @property {string} isbn - Unique
- * @property {number} totalPages
- * @property {string[]} tags
- * @property {'reading'|'completed'|'paused'|'wish'} status
- * @property {number} rating - 0.0 ~ 5.0
- * @property {string} review - Markdown
- * @property {string} startedAt - ISO String
- * @property {string|null} completedAt
- * @property {number} currentPage
- * @property {string} createdAt
- * @property {string} updatedAt
- * @property {string} [externalCoverUrl] - 외부 API 표지 URL (선택)
- */
-
-/**
- * @typedef {Object} CoverEntity
- * @property {string} bookId - FK to books.id
- * @property {Blob} blob - 이미지 바이너리
- * @property {string} mimeType
- * @property {string} updatedAt
- */
-
-/**
- * @typedef {Object} MemoEntity
- * @property {number} id - Auto increment
- * @property {string} bookId
- * @property {number} page
- * @property {string} text
- * @property {string} createdAt
- */
-
-/**
- * @typedef {Object} SettingsEntity
- * @property {string} key
- * @property {*} value
- */
-
+// -------------------------------------------------------------------------
+// 1. Constants & Schema Definition
+// -------------------------------------------------------------------------
 const DB_NAME = 'ReadingLogDB';
-const DB_VERSION = 1; // 스키마 변경 시 증가 (마이그레이션 로직 필요)
+const DB_VERSION = 1; // 스키마 변경 시 증가 (마이그레이션 로직 필요 시 버전 업)
 
-let _dbInstance = null; // 싱글톤 캐시
-let _initPromise = null; // 초기화 중복 방지
+let _dbInstance = null;
+let _initPromise = null;
 
-/**
- * IDBRequest를 Promise로 래핑
- * @param {IDBRequest} request
- * @returns {Promise<any>}
- */
+// -------------------------------------------------------------------------
+// 2. Low-level Helpers
+// -------------------------------------------------------------------------
+
+/** IDBRequest를 Promise로 래핑 */
 function promisifyRequest(request) {
   return new Promise((resolve, reject) => {
     request.onsuccess = () => resolve(request.result);
@@ -64,11 +23,7 @@ function promisifyRequest(request) {
   });
 }
 
-/**
- * IDBTransaction 완료 대기
- * @param {IDBTransaction} tx
- * @returns {Promise<void>}
- */
+/** 트랜잭션 완료 대기 */
 function waitTx(tx) {
   return new Promise((resolve, reject) => {
     tx.oncomplete = () => resolve();
@@ -77,8 +32,22 @@ function waitTx(tx) {
   });
 }
 
+/** 트랜잭션 생성 헬퍼 */
+async function getTransaction(storeNames, mode = 'readonly') {
+  const db = await connect();
+  return db.transaction(storeNames, mode);
+}
+
+function getStore(tx, storeName) {
+  return tx.objectStore(storeName);
+}
+
+// -------------------------------------------------------------------------
+// 3. Database Connection with Timeout & Error Handling
+// -------------------------------------------------------------------------
+
 /**
- * 데이터베이스 연결 및 스키마 초기화
+ * DB 연결 및 스키마 초기화 (5초 타임아웃, 블로킹 처리, 차단 감지)
  * @returns {Promise<IDBDatabase>}
  */
 async function connect() {
@@ -86,117 +55,128 @@ async function connect() {
   if (_initPromise) return _initPromise;
 
   _initPromise = new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
-
-    request.onupgradeneeded = (event) => {
-      const db = event.target.result;
-      const oldVersion = event.oldVersion;
-
-      // --- Version 1: 초기 스키마 생성 ---
-      if (oldVersion < 1) {
-        // 1. books 스토어
-        if (!db.objectStoreNames.contains('books')) {
-          const bookStore = db.createObjectStore('books', { keyPath: 'id' });
-          bookStore.createIndex('by_status', 'status', { unique: false });
-          bookStore.createIndex('by_title', 'title', { unique: false });
-          bookStore.createIndex('by_author', 'author', { unique: false });
-          bookStore.createIndex('by_completedAt', 'completedAt', { unique: false });
-          bookStore.createIndex('by_createdAt', 'createdAt', { unique: false });
-          bookStore.createIndex('by_isbn', 'isbn', { unique: true });
-          // multiEntry: true -> tags 배열의 각 요소를 별도 인덱스 엔트리로 생성 (태그 검색 핵심)
-          bookStore.createIndex('by_tag', 'tags', { unique: false, multiEntry: true });
-        }
-
-        // 2. covers 스토어 (Blob 저장용)
-        if (!db.objectStoreNames.contains('covers')) {
-          db.createObjectStore('covers', { keyPath: 'bookId' });
-        }
-
-        // 3. memos 스토어 (독서 메모/인용구)
-        if (!db.objectStoreNames.contains('memos')) {
-          const memoStore = db.createObjectStore('memos', { keyPath: 'id', autoIncrement: true });
-          memoStore.createIndex('by_bookId', 'bookId', { unique: false });
-          memoStore.createIndex('by_createdAt', 'createdAt', { unique: false });
-        }
-
-        // 4. settings 스토어 (키-값)
-        if (!db.objectStoreNames.contains('settings')) {
-          db.createObjectStore('settings', { keyPath: 'key' });
-        }
+    let finished = false;
+    
+    // 5초 타임아웃 (브라우저 차단/무한대기 방지)
+    const timeoutId = setTimeout(() => {
+      if (!finished) {
+        finished = true;
+        reject(new Error('IndexedDB 연결 시간 초과 (5초). 브라우저 설정(시크릿 모드, 쿠키 차단, 사파리 추적방지 등)으로 차단되었을 수 있습니다.'));
       }
+    }, 5000);
 
-      // --- 향후 버전 업그레이드 시 이곳에 마이그레이션 로직 추가 ---
-      // if (oldVersion < 2) { ... }
-    };
+    try {
+      const request = indexedDB.open(DB_NAME, DB_VERSION);
 
-    request.onsuccess = (event) => {
-      _dbInstance = event.target.result;
-      // DB 닫힘/에러 시 캐시 무효화
-      _dbInstance.onclose = () => { _dbInstance = null; _initPromise = null; };
-      _dbInstance.onerror = () => { _dbInstance = null; _initPromise = null; };
-      resolve(_dbInstance);
-    };
-    request.onerror = (event) => {
-      _initPromise = null;
-      reject(event.target.error);
-    };
+      // 스키마 업그레이드
+      request.onupgradeneeded = (event) => {
+        const db = event.target.result;
+        const oldVersion = event.oldVersion;
+
+        if (oldVersion < 1) {
+          // 1. books 스토어
+          if (!db.objectStoreNames.contains('books')) {
+            const store = db.createObjectStore('books', { keyPath: 'id' });
+            store.createIndex('by_status', 'status', { unique: false });
+            store.createIndex('by_title', 'title', { unique: false });
+            store.createIndex('by_author', 'author', { unique: false });
+            store.createIndex('by_completedAt', 'completedAt', { unique: false });
+            store.createIndex('by_createdAt', 'createdAt', { unique: false });
+            store.createIndex('by_isbn', 'isbn', { unique: true });
+            store.createIndex('by_tag', 'tags', { unique: false, multiEntry: true });
+          }
+          // 2. covers 스토어 (Blob 저장)
+          if (!db.objectStoreNames.contains('covers')) {
+            db.createObjectStore('covers', { keyPath: 'bookId' });
+          }
+          // 3. memos 스토어
+          if (!db.objectStoreNames.contains('memos')) {
+            const store = db.createObjectStore('memos', { keyPath: 'id', autoIncrement: true });
+            store.createIndex('by_bookId', 'bookId', { unique: false });
+            store.createIndex('by_createdAt', 'createdAt', { unique: false });
+          }
+          // 4. settings 스토어
+          if (!db.objectStoreNames.contains('settings')) {
+            db.createObjectStore('settings', { keyPath: 'key' });
+          }
+        }
+        // 향후 버전 업그레이드 시 여기서 마이그레이션 로직 추가
+      };
+
+      request.onsuccess = (event) => {
+        if (finished) return;
+        finished = true;
+        clearTimeout(timeoutId);
+        
+        _dbInstance = event.target.result;
+        
+        // 연결 끊김/런타임 에러 핸들러
+        _dbInstance.onclose = () => { 
+          _dbInstance = null; 
+          _initPromise = null; 
+          console.warn('[DB] Connection closed unexpectedly'); 
+        };
+        _dbInstance.onerror = (e) => { 
+          console.error('[DB] Runtime error:', e.target.error); 
+        };
+        
+        console.log('[DB] Connected successfully');
+        resolve(_dbInstance);
+      };
+
+      request.onerror = (event) => {
+        if (finished) return;
+        finished = true;
+        clearTimeout(timeoutId);
+        
+        const err = event.target.error;
+        console.error('[DB] Open error:', err);
+        
+        let msg = `IndexedDB 열기 실패: ${err?.message || 'UnknownError'}`;
+        if (err?.name === 'SecurityError' || err?.name === 'AbortError' || err?.name === 'NotAllowedError' || err?.name === 'InvalidStateError') {
+          msg += ' (브라우저 보안 정책/시크릿 모드/쿠키 차단으로 접근 거부됨)';
+        }
+        reject(new Error(msg));
+      };
+
+      // 다른 탭에서 DB가 열려 있어 업그레이드가 블로킹되는 경우
+      request.onblocked = () => {
+        console.warn('[DB] Blocked: Close other tabs with this app open to allow update.');
+      };
+
+    } catch (err) {
+      if (finished) return;
+      finished = true;
+      clearTimeout(timeoutId);
+      reject(err);
+    }
   });
 
   return _initPromise;
 }
 
-/**
- * 트랜잭션 생성 헬퍼
- * @param {string|string[]} storeNames
- * @param {'readonly'|'readwrite'} mode
- * @returns {Promise<IDBTransaction>}
- */
-async function getTransaction(storeNames, mode = 'readonly') {
-  const db = await connect();
-  return db.transaction(storeNames, mode);
-}
-
-/**
- * 스토어 접근 헬퍼
- * @param {IDBTransaction} tx
- * @param {string} storeName
- * @returns {IDBObjectStore}
- */
-function getStore(tx, storeName) {
-  return tx.objectStore(storeName);
-}
-
-// ==========================================================================
-// Public API: ReadingDB
-// ==========================================================================
+// -------------------------------------------------------------------------
+// 4. Public API: ReadingDB
+// -------------------------------------------------------------------------
 
 export const ReadingDB = {
   /**
-   * DB 초기화 강제 호출 (앱 시작 시 한 번 호출 권장)
+   * DB 초기화 강제 호출 (타임아웃 포함)
+   * @returns {Promise<IDBDatabase>}
    */
   async ready() {
-    await connect();
+    return connect();
   },
 
   // -------------------------------------------------------------------------
   // Books CRUD
   // -------------------------------------------------------------------------
 
-  /**
-   * 단일 책 조회
-   * @param {string} id
-   * @returns {Promise<BookEntity|undefined>}
-   */
   async getBook(id) {
     const tx = await getTransaction('books');
     return promisifyRequest(getStore(tx, 'books').get(id));
   },
 
-  /**
-   * 책 저장 (생성/수정)
-   * @param {BookEntity} book
-   * @returns {Promise<string>} 저장된 키 (id)
-   */
   async putBook(book) {
     const tx = await getTransaction('books', 'readwrite');
     const key = await promisifyRequest(getStore(tx, 'books').put(book));
@@ -204,13 +184,7 @@ export const ReadingDB = {
     return key;
   },
 
-  /**
-   * 책 삭제 (연관 표지 이미지도 함께 삭제)
-   * @param {string} id
-   * @returns {Promise<void>}
-   */
   async delBook(id) {
-    // books, covers 두 스토어에 대한 원자적 삭제를 위해 단일 트랜잭션 사용
     const tx = await getTransaction(['books', 'covers'], 'readwrite');
     getStore(tx, 'books').delete(id);
     getStore(tx, 'covers').delete(id);
@@ -218,14 +192,7 @@ export const ReadingDB = {
   },
 
   /**
-   * 책 목록 조회 (커서 기반 페이지네이션, 인덱스 정렬/필터링 지원)
-   * @param {Object} options
-   * @param {string} [options.index='by_createdAt'] - 사용할 인덱스명
-   * @param {IDBKeyRange} [options.range] - 필터 범위 (IDBKeyRange.only/bound 등)
-   * @param {'next'|'prev'|'nextunique'|'prevunique'} [options.direction='prev'] - 정렬 방향 (prev=내림차순)
-   * @param {number} [options.limit=20] - 가져올 개수
-   * @param {number} [options.offset=0] - 건너뛸 개수
-   * @returns {Promise<BookEntity[]>}
+   * 책 목록 조회 (커서 기반 페이지네이션) - 5초 타임아웃
    */
   async queryBooks({ index = 'by_createdAt', range = null, direction = 'prev', limit = 20, offset = 0 } = {}) {
     const tx = await getTransaction('books');
@@ -236,45 +203,44 @@ export const ReadingDB = {
     const results = [];
     let skipped = 0;
 
-    return new Promise((resolve, reject) => {
-      request.onsuccess = (event) => {
-        const cursor = event.target.result;
-        if (cursor) {
-          if (skipped < offset) {
-            skipped++;
-            cursor.continue();
-          } else if (results.length < limit) {
-            results.push(cursor.value);
-            cursor.continue();
+    // 5초 타임아웃 래퍼
+    return Promise.race([
+      new Promise((resolve, reject) => {
+        request.onsuccess = (event) => {
+          const cursor = event.target.result;
+          if (cursor) {
+            if (skipped < offset) {
+              skipped++;
+              cursor.continue();
+            } else if (results.length < limit) {
+              results.push(cursor.value);
+              cursor.continue();
+            } else {
+              resolve(results);
+            }
           } else {
             resolve(results);
           }
-        } else {
-          resolve(results);
-        }
-      };
-      request.onerror = () => reject(request.error);
-    });
+        };
+        request.onerror = () => reject(request.error);
+      }),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('DB_QUERY_TIMEOUT: queryBooks 5초 초과 (IndexedDB 커서 응답 없음)')), 5000)
+      )
+    ]);
   },
 
-  /**
-   * 책 개수 세기 (페이지네이션 총 개수용)
-   * @param {Object} options
-   * @param {string} [options.index]
-   * @param {IDBKeyRange} [options.range]
-   * @returns {Promise<number>}
-   */
   async countBooks({ index = null, range = null } = {}) {
     const tx = await getTransaction('books');
     const source = index ? getStore(tx, 'books').index(index) : getStore(tx, 'books');
-    return promisifyRequest(source.count(range));
+    
+    // 5초 타임아웃
+    return Promise.race([
+      promisifyRequest(source.count(range)),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('DB_COUNT_TIMEOUT')), 5000))
+    ]);
   },
 
-  /**
-   * ISBN으로 책 조회 (중복 체크용)
-   * @param {string} isbn
-   * @returns {Promise<BookEntity|undefined>}
-   */
   async getBookByIsbn(isbn) {
     const tx = await getTransaction('books');
     return promisifyRequest(getStore(tx, 'books').index('by_isbn').get(isbn));
@@ -284,12 +250,6 @@ export const ReadingDB = {
   // Covers (Blob Storage)
   // -------------------------------------------------------------------------
 
-  /**
-   * 표지 이미지 저장/업데이트
-   * @param {string} bookId
-   * @param {Blob} blob
-   * @returns {Promise<void>}
-   */
   async saveCover(bookId, blob) {
     const tx = await getTransaction('covers', 'readwrite');
     await promisifyRequest(getStore(tx, 'covers').put({
@@ -301,32 +261,17 @@ export const ReadingDB = {
     await waitTx(tx);
   },
 
-  /**
-   * 표지 Blob 조회
-   * @param {string} bookId
-   * @returns {Promise<Blob|null>}
-   */
   async getCoverBlob(bookId) {
     const tx = await getTransaction('covers');
     const record = await promisifyRequest(getStore(tx, 'covers').get(bookId));
     return record?.blob ?? null;
   },
 
-  /**
-   * 표지 Object URL 생성 (이미지 태그 src용)
-   * 사용 후 `URL.revokeObjectURL()` 필수
-   * @param {string} bookId
-   * @returns {Promise<string|null>}
-   */
   async getCoverUrl(bookId) {
     const blob = await this.getCoverBlob(bookId);
     return blob ? URL.createObjectURL(blob) : null;
   },
 
-  /**
-   * 표지 삭제
-   * @param {string} bookId
-   */
   async deleteCover(bookId) {
     const tx = await getTransaction('covers', 'readwrite');
     getStore(tx, 'covers').delete(bookId);
@@ -334,20 +279,13 @@ export const ReadingDB = {
   },
 
   // -------------------------------------------------------------------------
-  // Memos (독서 메모/인용구)
+  // Memos
   // -------------------------------------------------------------------------
 
-  /**
-   * 메모 목록 조회 (책별, 최신순)
-   * @param {string} bookId
-   * @param {number} [limit=50]
-   * @returns {Promise<MemoEntity[]>}
-   */
   async getMemosByBook(bookId, limit = 50) {
     const tx = await getTransaction('memos');
     const index = getStore(tx, 'memos').index('by_bookId');
     const range = IDBKeyRange.only(bookId);
-    // 최신순(prev) 정렬
     const request = index.openCursor(range, 'prev');
     const results = [];
 
@@ -365,11 +303,6 @@ export const ReadingDB = {
     });
   },
 
-  /**
-   * 메모 추가
-   * @param {Omit<MemoEntity, 'id'|'createdAt'>} memo
-   * @returns {Promise<number>} 생성된 메모 ID
-   */
   async addMemo(memo) {
     const tx = await getTransaction('memos', 'readwrite');
     const id = await promisifyRequest(getStore(tx, 'memos').put({
@@ -380,10 +313,6 @@ export const ReadingDB = {
     return id;
   },
 
-  /**
-   * 메모 삭제
-   * @param {number} id
-   */
   async deleteMemo(id) {
     const tx = await getTransaction('memos', 'readwrite');
     getStore(tx, 'memos').delete(id);
@@ -391,7 +320,7 @@ export const ReadingDB = {
   },
 
   // -------------------------------------------------------------------------
-  // Settings (키-값 저장소)
+  // Settings
   // -------------------------------------------------------------------------
 
   async getSetting(key) {
@@ -407,27 +336,20 @@ export const ReadingDB = {
   },
 
   // -------------------------------------------------------------------------
-  // Backup / Restore (전체 데이터 직렬화)
+  // Backup / Restore
   // -------------------------------------------------------------------------
 
-  /**
-   * 전체 데이터 내보내기 (JSON 직렬화 가능 형태로 변환)
-   * Blob -> Base64 DataURL 변환 포함
-   * @returns {Promise<Object>}
-   */
   async exportAll() {
-    await connect(); // DB 연결 보장
-    
-    // 병렬로 모든 스토어 데이터 가져오기
+    await connect();
     const [books, covers, memos, settings] = await Promise.all([
-      this._getAll('books'),
-      this._getAll('covers'),
-      this._getAll('memos'),
-      this._getAll('settings')
+      promisifyRequest((await getTransaction('books')).objectStore('books').getAll()),
+      promisifyRequest((await getTransaction('covers')).objectStore('covers').getAll()),
+      promisifyRequest((await getTransaction('memos')).objectStore('memos').getAll()),
+      promisifyRequest((await getTransaction('settings')).objectStore('settings').getAll())
     ]);
 
-    // Blob을 Base64 문자열로 변환 (JSON 직렬화 위해)
-    const coversBase64 = await Promise.all(covers.map(async (cover) => ({
+    // Blob -> Base64 변환
+    const coversB64 = await Promise.all(covers.map(async (cover) => ({
       ...cover,
       blob: await this._blobToBase64(cover.blob)
     })));
@@ -436,86 +358,46 @@ export const ReadingDB = {
       version: DB_VERSION,
       exportedAt: new Date().toISOString(),
       books,
-      covers: coversBase64,
+      covers: coversB64,
       memos,
       settings
     };
   },
 
-  /**
-   * 전체 데이터 가져오기 (덮어쓰기)
-   * @param {Object} data - exportAll() 반환 형식과 동일
-   * @returns {Promise<void>}
-   */
   async importAll(data) {
-    if (!data || !Array.isArray(data.books)) {
-      throw new Error('유효하지 않은 백업 데이터 형식입니다.');
-    }
+    if (!data || !Array.isArray(data.books)) throw new Error('유효하지 않은 백업 데이터입니다.');
 
     const db = await connect();
-    // 단일 트랜잭션으로 원자성 보장 (모든 스토어 포함)
     const tx = db.transaction(['books', 'covers', 'memos', 'settings'], 'readwrite');
-    
-    // 1. 기존 데이터 전체 삭제
+
+    // 기존 데이터 클리어
     await Promise.all([
-      this._clearStore(tx, 'books'),
-      this._clearStore(tx, 'covers'),
-      this._clearStore(tx, 'memos'),
-      this._clearStore(tx, 'settings')
+      promisifyRequest(tx.objectStore('books').clear()),
+      promisifyRequest(tx.objectStore('covers').clear()),
+      promisifyRequest(tx.objectStore('memos').clear()),
+      promisifyRequest(tx.objectStore('settings').clear())
     ]);
 
-    // 2. 신규 데이터 삽입
-    // books
-    if (data.books?.length) {
-      const bookStore = getStore(tx, 'books');
-      for (const book of data.books) bookStore.put(book);
-    }
-    // covers (Base64 -> Blob 변환)
+    // 신규 데이터 삽입
+    if (data.books?.length) data.books.forEach(b => tx.objectStore('books').put(b));
+    
     if (data.covers?.length) {
-      const coverStore = getStore(tx, 'covers');
-      for (const cover of data.covers) {
-        const blob = await this._base64ToBlob(cover.blob, cover.mimeType);
-        coverStore.put({ ...cover, blob });
+      for (const c of data.covers) {
+        const blob = await this._base64ToBlob(c.blob, c.mimeType);
+        tx.objectStore('covers').put({ bookId: c.bookId, blob, mimeType: c.mimeType, updatedAt: c.updatedAt });
       }
     }
-    // memos
-    if (data.memos?.length) {
-      const memoStore = getStore(tx, 'memos');
-      for (const memo of data.memos) memoStore.put(memo);
-    }
-    // settings
-    if (data.settings?.length) {
-      const settingStore = getStore(tx, 'settings');
-      for (const setting of data.settings) settingStore.put(setting);
-    }
+    if (data.memos?.length) data.memos.forEach(m => tx.objectStore('memos').put(m));
+    if (data.settings?.length) data.settings.forEach(s => tx.objectStore('settings').put(s));
 
     return waitTx(tx);
   },
 
   // -------------------------------------------------------------------------
-  // Private Helpers (Internal)
+  // Private Helpers
   // -------------------------------------------------------------------------
 
-  /**
-   * 스토어 전체 레코드 가져오기 (내부용)
-   */
-  _getAll(storeName) {
-    return connect().then(db => 
-      promisifyRequest(db.transaction(storeName).objectStore(storeName).getAll())
-    );
-  },
-
-  /**
-   * 스토어 전체 삭제 (내부용)
-   */
-  _clearStore(tx, storeName) {
-    return promisifyRequest(getStore(tx, storeName).clear());
-  },
-
-  /**
-   * Blob -> Base64 DataURL
-   */
-  _blobToBase64(blob) {
+  async _blobToBase64(blob) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => resolve(reader.result);
@@ -524,11 +406,7 @@ export const ReadingDB = {
     });
   },
 
-  /**
-   * Base64 DataURL -> Blob
-   */
-  _base64ToBlob(base64, mimeType) {
-    // "data:image/jpeg;base64,/9j/4AAQ..." 형식 파싱
+  async _base64ToBlob(base64, mimeType) {
     const byteString = atob(base64.split(',')[1] || base64);
     const ab = new ArrayBuffer(byteString.length);
     const ia = new Uint8Array(ab);
@@ -537,7 +415,7 @@ export const ReadingDB = {
   }
 };
 
-// 개발 편의를 위해 window에도 노출 (콘솔 디버깅용)
+// 개발 편의: 전역 노출
 if (typeof window !== 'undefined') {
   window.ReadingDB = ReadingDB;
 }
