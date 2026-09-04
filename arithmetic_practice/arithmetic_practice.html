@@ -1,0 +1,1928 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0,-scalable=no">
+  <meta name="theme-color" content="#4285f4">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>초등 1학년 산수 연습장</title>
+  <!-- Manifest (PWA) -->
+  <link rel="manifest" href='data:application/manifest+json,{"name":"산수연습장","short_name":"산수","start_url":".","display":"standalone","background_color":"%23f0f4f8","theme_color":"%234285f4","icons":[{"src":"data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%27.9em%27 font-size=%2790%27>%F0%9F%92%AA</text></svg>","sizes":"192x192","type":"image/svg+xml"}]}'>
+
+  <style>
+    /* ===== CSS Variables & Reset ===== */
+	:root {
+	  /* Light Theme (Default) */
+	  --bg: #f0f4f8; --card: #ffffff; --card-hover: #f8f9fa;
+	  --primary: #4285f4; --primary-dark: #3367d6; --primary-light: #e8f0fe;
+	  --success: #34a853; --success-light: #e6f4ea;
+	  --error: #ea4335; --error-light: #fce8e6;
+	  --warning: #fbbc05; --warning-light: #fff8e1;
+	  --text: #202124; --text-secondary: #5f6368; --text-muted: #80868b;
+	  --border: #dadce0; --border-focus: #4285f4;
+	  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08); --shadow: 0 2px 8px rgba(0,0,0,0.08); --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+	  --radius-sm: 8px; --radius: 16px; --radius-lg: 24px; --radius-full: 999px;
+	  --font-main: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+	  --font-mono: 'Roboto Mono', 'SF Mono', 'Consolas', monospace;
+	  --header-h: 56px; --btn-h: 48px; --input-h: 56px;
+	  --transition: 0.2s ease; --z-modal: 1000; --z-toast: 1100;
+	}
+
+	/* Dark Theme */
+	@media (prefers-color-scheme: dark) {
+	  :root:not([data-theme="light"]) {
+		--bg: #1a1c1e; --card: #242629; --card-hover: #2d2f32;
+		--primary: #669df6; --primary-dark: #4a80d8; --primary-light: #1e3a5f;
+		--success: #4cd964; --success-light: #1e3d20;
+		--error: #ff453a; --error-light: #3d1614;
+		--warning: #ffd60a; --warning-light: #3d3600;
+		--text: #f5f5f7; --text-secondary: #98989d; --text-muted: #6e6e73;
+		--border: #383b3e; --border-focus: #669df6;
+		--shadow-sm: 0 1px 3px rgba(0,0,0,0.3); --shadow: 0 2px 8px rgba(0,0,0,0.3); --shadow-lg: 0 8px 24px rgba(0,0,0,0.4);
+	  }
+	}
+
+	/* Forced Light Theme Class */
+	:root[data-theme="light"] { /* light vars above */ }
+
+	* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+	html { font-size: 16px; -webkit-text-size-adjust: 100%; }
+	body { margin: 0; font-family: var(--font-main); background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; font-size: 1rem; line-height: 1.6; transition: background var(--transition), color var(--transition); }
+	button, input, select { font-family: inherit; font-size: 1rem; border: none; background: none; color: inherit; outline: none; }
+	button { cursor: pointer; border-radius: var(--radius-sm); transition: transform 0.1s, background var(--transition), box-shadow var(--transition); }
+	button:active { transform: scale(0.98); }
+	button:focus-visible, input:focus-visible, select:focus-visible { box-shadow: 0 0 0 3px var(--primary-light); border-radius: var(--radius-sm); }
+	input, select { border: 2px solid var(--border); border-radius: var(--radius-sm); padding: 0 1rem; height: var(--input-h); width: 100%; background: var(--card); transition: border-color var(--transition), box-shadow var(--transition); }
+	input:focus, select:focus { border-color: var(--border-focus); box-shadow: 0 0 0 3px var(--primary-light); }
+	input[readonly] { background: #fafafa; color: var(--text-muted); }
+	:root[data-theme="dark"] input[readonly] { background: #1a1c1e; }
+	.hidden { display: none !important; }
+	.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+	/* ===== Layout ===== */
+	header { position: fixed; top: 0; left: 0; right: 0; height: var(--header-h); background: var(--card); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 1rem; z-index: 100; box-shadow: var(--shadow-sm); backdrop-filter: blur(8px); background: rgba(255,255,255,0.9); }
+	:root[data-theme="dark"] header { background: rgba(36,38,41,0.9); }
+	header > div:first-child { display: flex; align-items: center; gap: 0.5rem; }
+	header > div:last-child { display: flex; align-items: center; gap: 0.5rem; }
+	h1 { margin: 0; font-size: 1.15rem; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 0.5rem; white-space: nowrap; }
+	.header-btn { padding: 0.4rem 0.75rem; border-radius: var(--radius-full); color: var(--primary); font-weight: 600; font-size: 0.875rem; display: flex; align-items: center; gap: 0.35rem; white-space: nowrap; background: transparent; border: none; cursor: pointer; }
+	.header-btn:active { background: var(--primary-light); }
+	.header-home-btn { padding: 0.4rem 0.5rem !important; border-radius: var(--radius-full); color: var(--primary); background: transparent; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+	.header-home-btn:active { background: var(--primary-light); }
+	.header-home-btn span { font-size: 1.2rem; line-height: 1; }
+	body.is-start-screen .header-home-btn { display: none !important; }
+
+	main { flex: 1; padding-top: calc(var(--header-h) + 1rem); padding-bottom: 4rem; display: flex; flex-direction: column; align-items: center; width: 100%; }
+	.screen { display: none; flex-direction: column; align-items: center; padding: 1rem; width: 100%; max-width: 520px; margin: 0 auto; flex: 1; animation: fadeIn 0.3s ease; }
+	.screen.active { display: flex; }
+	@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+	/* ===== Common Components ===== */
+	.card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); width: 100%; border: 1px solid var(--border); overflow: hidden; }
+	.card-header { padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: var(--card-hover); }
+	.card-title { font-weight: 700; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem; }
+	.card-body { padding: 1.25rem; }
+	.card-footer { padding: 1rem 1.25rem; border-top: 1px solid var(--border); background: var(--card-hover); display: flex; justify-content: flex-end; gap: 0.5rem; }
+	.btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.75rem 1.5rem; border-radius: var(--radius-full); font-weight: 600; font-size: 1rem; min-height: var(--btn-h); touch-action: manipulation; border: 2px solid transparent; }
+	.btn-primary { background: var(--primary); color: white; box-shadow: 0 2px 6px rgba(66,133,244,0.3); }
+	.btn-primary:active { background: var(--primary-dark); transform: scale(0.98); }
+	.btn-secondary { background: var(--card-hover); color: var(--text); border-color: var(--border); }
+	.btn-secondary:active { background: var(--border); }
+	.btn-danger { background: var(--error-light); color: var(--error); border-color: var(--error); }
+	.btn-danger:active { background: var(--error); color: white; }
+	.btn-ghost { background: transparent; color: var(--text-secondary); padding: 0.5rem 1rem; }
+	.btn-ghost:active { background: var(--border); }
+	.btn-sm { padding: 0.4rem 0.8rem; font-size: 0.875rem; min-height: 36px; }
+	.btn-icon { padding: 0.5rem; min-width: 44px; }
+	.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+	.input-group { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 1rem; }
+	.input-label { font-size: 0.875rem; font-weight: 600; color: var(--text-secondary); }
+	.select-wrapper { position: relative; }
+	.select-wrapper select { appearance: none; padding-right: 2.5rem; }
+	.select-wrapper::after { content: '▼'; font-size: 0.7rem; color: var(--text-muted); position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); pointer-events: none; }
+
+	/* Toggle Switch */
+	.toggle { position: relative; display: inline-flex; align-items: center; gap: 0.75rem; cursor: pointer; }
+	.toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
+	.toggle-slider { width: 48px; height: 28px; background: var(--border); border-radius: var(--radius-full); position: relative; transition: background var(--transition); display: flex; align-items: center; padding: 0 3px; }
+	.toggle-slider::before { content: ''; width: 22px; height: 22px; background: white; border-radius: 50%; box-shadow: var(--shadow-sm); transition: transform var(--transition); }
+	.toggle input:checked + .toggle-slider { background: var(--primary); }
+	.toggle input:checked + .toggle-slider::before { transform: translateX(20px); }
+	.toggle-label { font-weight: 500; color: var(--text);-select: none; }
+
+	/* Badge */
+	.badge { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.2rem 0.6rem; border-radius: var(--radius-full); font-size: 0.75rem; font-weight: 700; white-space: nowrap; }
+	.badge-primary { background: var(--primary-light); color: var(--primary); }
+	.badge-success { background: var(--success-light); color: var(--success); }
+	.badge-warning { background: var(--warning-light); color: #b8860b; }
+	.badge-error { background: var(--error-light); color: var(--error); }
+	.badge-gray { background: var(--border); color: var(--text-secondary); }
+
+	/* Toast */
+	#toast-container { position: fixed; bottom: 5rem; left: 50%; transform: translateX(-50%); z-index: var(--z-toast); display: flex; flex-direction: column; gap: 0.5rem; pointer-events: none; }
+	.toast { background: var(--card); color: var(--text); padding: 0.75rem 1.5rem; border-radius: var(--radius); box-shadow: var(--shadow-lg); border: 1px solid var(--border); display: flex; align-items: center; gap: 0.75rem; animation: slideUp 0.3s ease; pointer-events: auto; max-width: 90vw; }
+	.toast.success { border-left: 4px solid var(--success); }
+	.toast.error { border-left: 4px solid var(--error); }
+	.toast.info { border-left: 4px solid var(--primary); }
+	@keyframes slideUp { from { opacity: 0; transform: translateX(-50%) translateY(20px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+
+	/* Modal Overlay - Final Stable Version */
+	.modal-overlay {
+	  position: fixed; inset: 0;
+	  background: rgba(0,0,0,0.5);
+	  backdrop-filter: blur(4px);
+	  z-index: var(--z-modal);
+	  display: flex;
+	  align-items: center;
+	  justify-content: center;
+	  padding: 1rem;
+	  opacity: 0;
+	  visibility: hidden;
+	  transition: opacity var(--transition), visibility var(--transition);
+	}
+	.modal-overlay.active { opacity: 1; visibility: visible; }
+	.modal {
+	  background: var(--card);
+	  border-radius: var(--radius-lg);
+	  box-shadow: var(--shadow-lg);
+	  width: 100%;
+	  max-width: 420px;
+	  max-height: 85vh;
+	  overflow: hidden;
+	  display: flex;
+	  flex-direction: column;
+	  transform: scale(0.95);
+	  transition: transform var(--transition);
+	}
+	.modal-overlay.active .modal { transform: scale(1); }
+	.modal-header {
+	  display: flex;
+	  align-items: center;
+	  justify-content: space-between;
+	  padding: 1rem 1.25rem;
+	  border-bottom: 1px solid var(--border);
+	  background: var(--card-hover);
+	  flex-shrink: 0; /* 🔧 추가: 헤더 고정 */
+	}
+	.modal-title { font-weight: 700; font-size: 1.1rem; }
+	.modal-close {
+	  width: 40px; height: 40px;
+	  display: flex; align-items: center; justify-content: center;
+	  border-radius: var(--radius-full);
+	  color: var(--text-secondary);
+	  font-size: 1.5rem; line-height: 1;
+	  background: transparent; border: none; cursor: pointer;
+	}
+	.modal-close:active { background: var(--border); }
+	.modal-body {
+	  padding: 1.25rem;
+	  overflow-y: auto;
+	  flex: 1;
+	  min-height: 0; /* 🔧 이 한 줄이 스크롤 깨짐 방지 */
+	  width: 100%;
+	  box-sizing: border-box;
+	}
+
+	.modal-footer {
+	  padding: 1rem 1.25rem;
+	  border-top: 1px solid var(--border);
+	  background: var(--card-hover);
+	  display: flex;
+	  justify-content: flex-end;
+	  gap: 0.5rem;
+	  flex-shrink: 0; /* 🔧 추가: 푸터 고정 */
+	}
+
+	/* ===== Start Screen ===== */
+	.level-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; width: 100%; max-width: 520px; margin: 0 auto; padding: 0 1rem 2rem; }
+	.level-card { background: var(--card); border-radius: var(--radius); padding: 1.5rem; box-shadow: var(--shadow); border: 2px solid var(--border); transition: all var(--transition); display: flex; flex-direction: column; gap: 0.75rem; cursor: pointer; }
+	.level-card:active { transform: scale(0.98); border-color: var(--primary); box-shadow: var(--shadow-lg); }
+	.level-card-header { display: flex; align-items: center; justify-content: space-between; }
+	.level-title { font-size: 1.1rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; }
+	.level-1 { color: var(--success); } .level-2 { color: var(--warning); } .level-3 { color: var(--error); }
+	.level-desc { font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; }
+	.level-stats { display: flex; gap: 1.5rem; margin-top: 0.5rem; font-size: 0.8rem; color: var(--text-muted); padding-top: 0.75rem; border-top: 1px solid var(--border); }
+	.level-stat { display: flex; align-items: center; gap: 0.35rem; font-weight: 500; }
+	.level-stat strong { color: var(--text); font-size: 0.9rem; }
+	.quick-stats { text-align: center; margin-top: 1.5rem; color: var(--text-secondary); font-size: 0.9rem; min-height: 1.5rem; }
+
+	/* ===== Quiz Screen ===== */
+	.quiz-header { width: 100%; max-width: 520px; margin: 0 auto 1rem; padding: 0 1rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+	.progress-wrapper { flex: 1; height: 8px; background: var(--border); border-radius: var(--radius-full); overflow: hidden; }
+	.progress-fill { height: 100%; background: linear-gradient(90deg, var(--primary), #6ec6ff); border-radius: var(--radius-full); transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); width: 0%; }
+	.quiz-counter { font-weight: 700; color: var(--text-secondary); font-size: 0.9rem; white-space: nowrap; }
+	.problem-card { background: var(--card); border-radius: var(--radius); padding: 2rem 1.5rem; width: 100%; max-width: 520px; margin: 0 auto 1.5rem; box-shadow: var(--shadow); text-align: center; min-height: 240px; display: flex; flex-direction: column; justify-content: center; gap: 1.5rem; border: 1px solid var(--border); }
+	.problem-expression { font-size: clamp(2.5rem, 8vw, 3.5rem); font-weight: 800; letter-spacing: 0.05em; font-variant-numeric: tabular-nums; font-family: var(--font-mono); color: var(--text); line-height: 1.2; word-break: break-all; }
+	.answer-input { font-size: clamp(2rem, 6vw, 3rem); font-weight: 700; width: 100%; max-width: 220px; margin: 0 auto; border-radius: var(--radius); padding: 0.75rem; border: 3px solid var(--border); background: var(--card-hover); text-align: center; color: var(--text); font-family: var(--font-mono); }
+	.answer-input.correct { border-color: var(--success); background: var(--success-light); animation: pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+	.answer-input.wrong { border-color: var(--error); background: var(--error-light); animation: shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
+	@keyframes pop { 0% { transform: scale(1); } 50% { transform: scale(1.08); } 100% { transform: scale(1); } }
+	@keyframes shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
+	.feedback { min-height: 1.5rem; font-weight: 600; font-size: 1rem; text-align: center; transition: opacity var(--transition); }
+	.feedback.correct { color: var(--success); }
+	.feedback.wrong { color: var(--error); }
+	.keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; width: 100%; max-width: 360px; margin: 0 auto; }
+	.key { aspect-ratio: 1; border-radius: var(--radius); background: var(--card); font-size: 1.5rem; font-weight: 700; color: var(--text); box-shadow: var(--shadow-sm); display: flex; align-items: center; justify-content: center; border: 1px solid var(--border); transition: all 0.1s; min-height: 60px; }
+	.key:active { background: var(--primary); color: white; transform: scale(0.95); border-color: var(--primary); box-shadow: var(--shadow); }
+	.key.action { background: var(--card-hover); color: var(--text-secondary); font-size: 1.1rem; font-weight: 600; }
+	.key.action:active { background: var(--error); color: white; border-color: var(--error); }
+	.key.enter { background: var(--primary); color: white; border-color: var(--primary); }
+	.key.enter:active { background: var(--primary-dark); }
+	.key.zero { grid-column: span 1; } /* 0 버튼도 1칸 차지 (4x3 그리드) */
+	@supports not (aspect-ratio: 1) { .key { height: 60px; } }
+
+	/* ===== Result Screen ===== */
+	.result-card { background: var(--card); border-radius: var(--radius-lg); padding: 2rem 1.5rem; width: 100%; max-width: 420px; margin: 0 auto 1rem; box-shadow: var(--shadow); text-align: center; border: 1px solid var(--border); }
+	.result-header { margin-bottom: 1.5rem; }
+	.result-title { font-size: 1.5rem; font-weight: 700; color: var(--text); margin-bottom: 0.5rem; }
+	.result-subtitle { color: var(--text-secondary); font-size: 1rem; }
+	.score-circle-wrap { position: relative; width: 140px; height: 140px; margin: 0 auto 1.5rem; }
+	.score-circle { width: 100%; height: 100%; border-radius: 50%; background: conic-gradient(var(--success) calc(var(--score, 0) * 1%), var(--border) 0); display: flex; align-items: center; justify-content: center; position: relative; filter: drop-shadow(0 4px 12px rgba(52,168,83,0.2)); }
+	.score-circle::before { content: ''; width: 85%; height: 85%; border-radius: 50%; background: var(--bg); position: absolute; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05); }
+	.score-text { position: relative; z-index: 1; font-size: 2.5rem; font-weight: 800; color: var(--text); font-family: var(--font-mono); }
+	.result-stats { display: flex; justify-content: space-around; margin: 1.5rem 0; padding: 1rem; background: var(--card-hover); border-radius: var(--radius); border: 1px solid var(--border); }
+	.result-stat { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; }
+	.result-stat-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+	.result-stat-value { font-size: 1.75rem; font-weight: 800; color: var(--text); font-family: var(--font-mono); }
+	.result-stat.correct .result-stat-value { color: var(--success); }
+	.result-stat.wrong .result-stat-value { color: var(--error); }
+	.result-actions { display: flex; flex-direction: column; gap: 0.75rem; }
+	.result-btn { width: 100%; }
+
+	/* ===== History Screen ===== */
+	.history-header { width: 100%; max-width: 520px; margin: 0 auto 1rem; padding: 0 1rem; display: flex; justify-content: space-between; align-items: center; }
+	.history-title { font-size: 1.25rem; font-weight: 700; }
+	.history-list { width: 100%; max-width: 520px; margin: 0 auto; padding: 0 1rem 2rem; display: flex; flex-direction: column; gap: 0.75rem; }
+	.history-item { background: var(--card); border-radius: var(--radius); padding: 1rem 1.25rem; box-shadow: var(--shadow-sm); display: flex; align-items: center; justify-content: space-between; gap: 1rem; border: 1px solid var(--border); transition: all var(--transition); cursor: pointer; }
+	.history-item:active { background: var(--card-hover); transform: scale(0.99); }
+	.history-item-main { flex: 1; min-width: 0; }
+	.history-item-date { font-weight: 700; font-size: 0.95rem; color: var(--text); margin-bottom: 0.25rem; }
+	.history-item-meta { display: flex; flex-wrap: wrap; gap: 0.75rem; font-size: 0.75rem; color: var(--text-muted); }
+	.history-item-badge { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.15rem 0.5rem; border-radius: var(--radius-full); font-weight: 600; font-size: 0.7rem; background: var(--primary-light); color: var(--primary); }
+	.history-item-score { font-size: 1.5rem; font-weight: 800; color: var(--success); font-family: var(--font-mono); white-space: nowrap; }
+	.history-item-score.low { color: var(--error); }
+	.history-item-score.mid { color: var(--warning); }
+	.history-empty { text-align: center; padding: 3rem 1rem; color: var(--text-muted); display: flex; flex-direction: column; align-items: center; gap: 1rem; }
+	.history-empty svg { width: 64px; height: 64px; opacity: 0.5; }
+	.history-footer { width: 100%; max-width: 520px; margin: 0 auto; padding: 0 1rem 2rem; display: flex; flex-direction: column; gap: 0.5rem; }
+
+	/* ===== Detail Modal (Phase 2) ===== */
+	.detail-header { display: flex; flex-direction: column; gap: 1rem; text-align: center; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+	.detail-score { font-size: 3rem; font-weight: 800; font-family: var(--font-mono); color: var(--success); }
+	.detail-score.low { color: var(--error); }
+	.detail-score.mid { color: var(--warning); }
+	.detail-meta { display: flex; justify-content: center; gap: 1.5rem; font-size: 0.875rem; color: var(--text-secondary); flex-wrap: wrap; }
+	.detail-problems { max-height: 40vh; overflow-y: auto; display: flex; flex-direction: column; gap: 0.5rem; }
+	.detail-problem { display: grid; grid-template-columns: auto 1fr auto auto; gap: 0.75rem; align-items: center; padding: 0.75rem; background: var(--card-hover); border-radius: var(--radius); border: 1px solid var(--border); font-size: 0.95rem; }
+	.detail-problem.correct { border-left: 3px solid var(--success); }
+	.detail-problem.wrong { border-left: 3px solid var(--error); }
+	.detail-problem-num { font-weight: 700; color: var(--text-secondary); width: 30px; text-align: right; font-family: var(--font-mono); }
+	.detail-problem-expr { font-family: var(--font-mono); color: var(--text); text-align: left; }
+	.detail-problem-ans { display: flex; align-items: center; gap: 0.5rem; font-family: var(--font-mono); font-weight: 600; }
+	.detail-problem-ans.user { color: var(--error); }
+	.detail-problem-ans.correct { color: var(--success); }
+	.detail-problem-time { color: var(--text-muted); font-size: 0.8rem; font-family: var(--font-mono); white-space: nowrap; }
+
+	/* ===== Settings Modal (Phase 1) ===== */
+	.setting-section { margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border); }
+	.setting-section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+	.setting-section-title { font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; font-size: 1rem; }
+	.setting-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 0.75rem; }
+	.setting-row:last-child { margin-bottom: 0; }
+	.setting-info { display: flex; flex-direction: column; gap: 0.2rem; }
+	.setting-label { font-weight: 600; font-size: 0.95rem; }
+	.setting-desc { font-size: 0.8rem; color: var(--text-muted); }
+	.setting-control { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
+	.setting-select { min-width: 140px; }
+
+	/* ===== Parent / Stats Screen (Phase 4) ===== */
+	.stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; margin-bottom: 1.5rem; }
+	.stat-card { background: var(--card); border-radius: var(--radius); padding: 1rem; border: 1px solid var(--border); text-align: center; }
+	.stat-value { font-size: 1.75rem; font-weight: 800; color: var(--primary); font-family: var(--font-mono); line-height: 1.2; }
+	.stat-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; margin-top: 0.25rem; }
+	.chart-container { background: var(--card); border-radius: var(--radius); padding: 1.25rem; border: 1px solid var(--border); margin-bottom: 1.5rem; min-height: 200px; position: relative; }
+	.chart-canvas { width: 100%; height: 200px; display: block; }
+	.chart-legend { display: flex; justify-content: center; gap: 1.5rem; margin-top: 1rem; flex-wrap: wrap; }
+	.legend-item { display: flex; align-items: center; gap: 0.35rem; font-size: 0.8rem; color: var(--text-secondary); }
+	.legend-color { width: 12px; height: 12px; border-radius: 2px; }
+	.weakness-list { display: flex; flex-direction: column; gap: 0.5rem; }
+	.weakness-item { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem; background: var(--card-hover); border-radius: var(--radius); border: 1px solid var(--border); }
+	.weakness-info { display: flex; align-items: center; gap: 0.75rem; }
+	.weakness-icon { width: 36px; height: 36px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; background: var(--error-light); color: var(--error); }
+	.weakness-text { display: flex; flex-direction: column; }
+	.weakness-name { font-weight: 600; font-size: 0.9rem; }
+	.weakness-rate { font-size: 0.8rem; color: var(--text-muted); }
+	.weakness-bar { width: 80px; height: 6px; background: var(--border); border-radius: var(--radius-full); overflow: hidden; flex-shrink: 0; }
+	.weakness-fill { height: 100%; background: var(--error); border-radius: var(--radius-full); transition: width 0.5s ease; }
+
+	/* ===== Character & Badges (Phase 3) ===== */
+	.profile-header { display: flex; flex-direction: column; align-items: center; gap: 1rem; padding: 1.5rem 1rem; background: linear-gradient(135deg, var(--primary-light), var(--card)); border-radius: var(--radius-lg); margin-bottom: 1rem; border: 1px solid var(--border); position: relative; overflow: hidden; }
+	.profile-header::before { content: ''; position: absolute; top: -50%; right: -50%; width: 100%; height: 100%; background: radial-gradient(circle, var(--primary-light) 0%, transparent 70%); opacity: 0.5; pointer-events: none; }
+	.char-container { position: relative; z-index: 1; width: 100px; height: 100px; }
+	.char-svg { width: 100%; height: 100%; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.1)); transition: transform 0.3s ease; }
+	.char-container:hover .char-svg { transform: scale(1.05) rotate(-2deg); }
+	.char-name { font-weight: 700; font-size: 1.25rem; color: var(--text); position: relative; z-index: 1; }
+	.char-level { display: flex; align-items: center; gap: 0.5rem; position: relative; z-index: 1; }
+	.char-exp-bar { flex: 1; height: 6px; background: var(--border); border-radius: var(--radius-full); overflow: hidden; max-width: 150px; }
+	.char-exp-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--success)); border-radius: var(--radius-full); transition: width 0.5s ease; width: 0%; }
+	.char-level-text { font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); white-space: nowrap; }
+
+	.badge-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; }
+	.badge-item { aspect-ratio: 1; border-radius: var(--radius); background: var(--card); border: 2px solid var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.35rem; padding: 0.75rem; transition: all var(--transition); cursor: default; position: relative; opacity: 0.4; filter: grayscale(1); }
+	.badge-item.earned { opacity: 1; filter: none; border-color: var(--warning); background: var(--warning-light); animation: badgePop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
+	@keyframes badgePop { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+	.badge-icon { font-size: 1.5rem; line-height: 1; }
+	.badge-name { font-size: 0.65rem; font-weight: 700; text-align: center; color: var(--text-secondary); line-height: 1.2; }
+	.badge-item.earned .badge-name { color: var(--text); }
+	.badge-tooltip { position: absolute; bottom: 120%; left: 50%; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 0.5rem 0.75rem; border-radius: var(--radius-sm); font-size: 0.7rem; white-space: nowrap; opacity: 0; visibility: hidden; pointer-events: none; transition: all var(--transition); z-index: 10; box-shadow: var(--shadow-lg); }
+	.badge-item:hover .badge-tooltip { opacity: 1; visibility: visible; bottom: 110%; }
+
+	.attendance-calendar { background: var(--card); border-radius: var(--radius); padding: 1rem; border: 1px solid var(--border); }
+	.attendance-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+	.attendance-month { font-weight: 700; font-size: 1rem; }
+	.attendance-nav { display: flex; gap: 0.25rem; }
+	.attendance-nav button { width: 32px; height: 32px; border-radius: var(--radius-full); display: flex; align-items: center; justify-content: center; color: var(--text-secondary); font-size: 1rem; background: transparent; border: none; cursor: pointer; }
+	.attendance-nav button:active { background: var(--border); color: var(--text); }
+	.attendance-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+	.attendance-day-header { text-align: center; font-size: 0.7rem; color: var(--text-muted); font-weight: 600; padding: 0.25rem 0; }
+	.attendance-day { aspect-ratio: 1; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 500; color: var(--text-muted); background: transparent; position: relative; }
+	.attendance-day.today { color: var(--primary); font-weight: 700; }
+	.attendance-day.today::after { content: ''; position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); width: 4px; height: 4px; background: var(--primary); border-radius: 50%; }
+	.attendance-day.stamped { background: var(--success-light); color: var(--success); }
+	.attendance-day.stamped::before { content: '✓'; font-weight: 700; }
+	.attendance-day.future { color: var(--border); pointer-events: none; }
+	.attendance-legend { display: flex; justify-content: center; gap: 1.5rem; margin-top: 1rem; font-size: 0.75rem; color: var(--text-secondary); }
+	.attendance-legend span { display: flex; align-items: center; gap: 0.35rem; }
+	.attendance-legend .dot { width: 10px; height: 10px; border-radius: var(--radius-sm); }
+	.attendance-legend .dot.stamped { background: var(--success-light); border: 1px solid var(--success); }
+	.attendance-legend .dot.today { border: 2px solid var(--primary); background: transparent; }
+
+	/* ===== Confetti Canvas ===== */
+	#confetti-canvas { position: fixed; inset: 0; pointer-events: none; z-index: 999; }
+
+	/* ===== Responsive ===== */
+	@media (max-width: 480px) {
+	  .badge-grid { grid-template-columns: repeat(3, 1fr); }
+	  .detail-problem { grid-template-columns: auto 1fr; grid-template-rows: auto auto auto; gap: 0.5rem; }
+	  .detail-problem-num { grid-row: span 3; }
+	  .detail-problem-time { grid-column: span 2; justify-self: start; }
+	  .stat-card { padding: 0.75rem; }
+	  .stat-value { font-size: 1.5rem; }
+	  .result-stats { flex-wrap: wrap; gap: 1rem; }
+	  .result-stat { flex: 1 1 30%; }
+	  .quiz-header { padding: 0 0.5rem; }
+	  .problem-card { padding: 1.5rem 1rem; }
+	  header { padding: 0 0.75rem; }
+	  main { padding-top: calc(var(--header-h) + 0.5rem); }
+	}
+
+	@media (max-width: 360px) {
+	  .badge-grid { grid-template-columns: repeat(2, 1fr); }
+	  .level-stats { flex-direction: column; gap: 0.5rem; }
+	  .history-item-meta { flex-direction: column; gap: 0.25rem; }
+	  .weakness-item { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+	  .weakness-bar { width: 100%; }
+	}
+
+	/* ===== Utility / Helpers ===== */
+	.flex { display: flex; }
+	.flex-col { flex-direction: column; }
+	.items-center { align-items: center; }
+	.justify-center { justify-content: center; }
+	.gap-05 { gap: 0.5rem; }
+	.gap-1 { gap: 1rem; }
+	.text-center { text-align: center; }
+	.mt-1 { margin-top: 1rem; }
+	.mb-1 { margin-bottom: 1rem; }
+	.w-full { width: 100%; }
+
+	/* Print Styles */
+	@media print {
+	  header, .keypad, .result-actions, .modal-overlay, #toast-container, #confetti-canvas { display: none !important; }
+	  body { background: white; }
+	  .screen { display: block !important; animation: none; }
+	  .card { box-shadow: none; border: 1px solid #ccc; }
+	}
+  </style>
+</head>
+<body class="is-start-screen">
+  <!-- ===== Header ===== -->
+  <header role="banner">
+    <!-- 좌측: 홈 버튼 + 타이틀 -->
+    <div style="display: flex; align-items: center; gap: 0.5rem;">
+      <button class="header-btn header-home-btn" onclick="showScreen('start')" aria-label="메인 메뉴로 이동" title="처음으로">
+        <span aria-hidden="true">🏠</span>
+      </button>
+      <h1>🧮 산수 연습장</h1>
+    </div>
+    <!-- 우측: 메뉴 버튼들 -->
+    <div style="display: flex; align-items: center; gap: 0.5rem;">
+      <button class="header-btn" onclick="showScreen('profile')" aria-label="프로필 및 배지 보기" title="프로필/배지/출석">🏆</button>
+      <button class="header-btn" onclick="showScreen('history')" aria-label="풀이 기록 보기" title="기록 보기">📜</button>
+      <button class="header-btn" onclick="openModal('settings-modal')" aria-label="설정 열기" title="설정">⚙️</button>
+    </div>
+  </header>
+
+  <!-- ===== Main Content ===== -->
+  <main role="main">
+    <!-- --- Start Screen (메인 메뉴) --- -->
+    <section id="screen-start" class="screen active" aria-label="메인 메뉴">
+      <div class="level-grid" role="list" aria-label="난이도 선택">
+        <article class="level-card" onclick="startGame(1)" role="listitem" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')startGame(1)">
+          <div class="level-card-header">
+            <div class="level-title level-1">🌱 1단계</div>
+            <span class="badge badge-success" id="badge-level-1">0%</span>
+          </div>
+          <p class="level-desc">10까지의 덧셈/뺄셈<br><small>받아올림/내림 없음</small></p>
+          <div class="level-stats" id="stats-level-1"><span class="level-stat">정답률 <strong>-</strong></span><span class="level-stat">평균 <strong>-</strong>초</span></div>
+        </article>
+        <article class="level-card" onclick="startGame(2)" role="listitem" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')startGame(2)">
+          <div class="level-card-header">
+            <div class="level-title level-2">🌿 2단계</div>
+            <span class="badge badge-warning" id="badge-level-2">0%</span>
+          </div>
+          <p class="level-desc">20까지의 덧셈/뺄셈<br><small>받아올림/내림 있음</small></p>
+          <div class="level-stats" id="stats-level-2"><span class="level-stat">정답률 <strong>-</strong></span><span class="level-stat">평균 <strong>-</strong>초</span></div>
+        </article>
+        <article class="level-card" onclick="startGame(3)" role="listitem" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')startGame(3)">
+          <div class="level-card-header">
+            <div class="level-title level-3">🌳 3단계</div>
+            <span class="badge badge-error" id="badge-level-3">0%</span>
+          </div>
+          <p class="level-desc">100까지의 덧셈/뺄셈<br><small>두 자리 수 연산</small></p>
+          <div class="level-stats" id="stats-level-3"><span class="level-stat">정답률 <strong>-</strong></span><span class="level-stat">평균 <strong>-</strong>초</span></div>
+        </article>
+      </div>
+      <div class="quick-stats" id="quickStats" aria-live="polite"></div>
+    </section>
+
+    <!-- --- Quiz Screen (문제 풀이) --- -->
+    <section id="screen-quiz" class="screen" aria-label="문제 풀이" aria-live="polite">
+      <div class="quiz-header">
+        <div class="progress-wrapper" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="진행률">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <span class="quiz-counter" id="quizCounter">0 / 20</span>
+      </div>
+      <article class="problem-card">
+        <div class="problem-expression" id="problemExpr" aria-label="문제">준비 중...</div>
+        <input type="text" class="answer-input" id="answerInput" inputmode="numeric" placeholder="?" readonly autocomplete="off" aria-label="정답 입력" spellcheck="false">
+        <div class="feedback" id="feedback" aria-live="assertive"></div>
+      </article>
+      <div class="keypad" id="keypad" role="group" aria-label="숫자 키패드"></div>
+    </section>
+
+    <!-- --- Result Screen (결과) --- -->
+    <section id="screen-result" class="screen" aria-label="결과">
+      <article class="result-card">
+        <header class="result-header">
+          <h2 class="result-title" id="resultTitle">수고했어요! 🎉</h2>
+          <p class="result-subtitle" id="resultSubtitle">최고 기록에 도전해보세요</p>
+        </header>
+        <div class="score-circle-wrap">
+          <div class="score-circle" id="scoreCircle" style="--score: 0;" role="img" aria-label="점수 0퍼센트">
+            <span class="score-text" id="scoreText">0%</span>
+          </div>
+        </div>
+        <div class="result-stats">
+          <div class="result-stat correct"><span class="result-stat-label">정답</span><span class="result-stat-value" id="correctCount">0</span></div>
+          <div class="result-stat wrong"><span class="result-stat-label">오답</span><span class="result-stat-value" id="wrongCount">0</span></div>
+          <div class="result-stat"><span class="result-stat-label">시간</span><span class="result-stat-value" id="timeTaken">0</span><span class="result-stat-label">초</span></div>
+        </div>
+        <div class="result-actions">
+          <button class="btn btn-primary result-btn" onclick="showScreen('start')">🏠 처음으로</button>
+          <button class="btn btn-secondary result-btn" onclick="restartSameLevel()">🔁 다시 도전</button>
+          <button class="btn btn-ghost result-btn" onclick="openWrongNote()">📝 오답 다시 풀기</button>
+          <button class="btn btn-ghost result-btn" onclick="openDetailModal()">🔍 상세 보기</button>
+        </div>
+      </article>
+    </section>
+
+    <!-- --- History Screen (풀이 기록) --- -->
+    <section id="screen-history" class="screen" aria-label="풀이 기록">
+      <div class="history-header">
+        <h2 class="history-title">풀이 기록</h2>
+        <button class="btn btn-ghost btn-sm" onclick="clearAllHistory()" aria-label="전체 기록 삭제">🗑️ 전체 삭제</button>
+      </div>
+      <div class="history-list" id="historyList" role="list" aria-label="기록 목록"></div>
+      <div class="history-empty hidden" id="historyEmpty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12h6M9 12l2-2m0 0l2 2m-2-2v6M21 12c0 4.97-4.03 9-9 9S3 16.97 3 12 7.03 3 12 3s9 4.03 9 9z"/></svg>
+        <p>아직 풀어본 기록이 없어요.<br>첫 문제를 풀어보세요! 🚀</p>
+      </div>
+    </section>
+
+    <!-- --- Profile / Badges / Attendance Screen (프로필/배지/출석) --- -->
+    <section id="screen-profile" class="screen" aria-label="프로필 및 성장">
+      <div style="width:100%; max-width:520px; margin:0 auto; padding:0 1rem;">
+        <!-- Character Profile -->
+        <article class="card profile-header" aria-label="캐릭터 프로필">
+          <div class="char-container" id="charContainer">
+            <!-- SVG injected by JS -->
+          </div>
+          <div class="char-name" id="charName">알에서 깨어나는 중...</div>
+          <div class="char-level">
+            <span class="char-level-text" id="charLevelText">Lv. 1</span>
+            <div class="char-exp-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="경험치">
+              <div class="char-exp-fill" id="charExpFill"></div>
+            </div>
+          </div>
+        </article>
+
+        <!-- Badges -->
+        <article class="card">
+          <div class="card-header"><h3 class="card-title">🏅 배지 컬렉션</h3></div>
+          <div class="card-body" style="padding-top:0.5rem;">
+            <div class="badge-grid" id="badgeGrid" role="list" aria-label="획득 배지"></div>
+          </div>
+        </article>
+
+        <!-- Attendance -->
+        <article class="card">
+          <div class="card-header"><h3 class="card-title">📅 출석 도장</h3></div>
+          <div class="card-body" style="padding-top:0.5rem;">
+            <div class="attendance-calendar">
+              <div class="attendance-header">
+                <button class="attendance-nav" onclick="changeMonth(-1)" aria-label="이전 달">&lt;</button>
+                <span class="attendance-month" id="attendanceMonth">2025년 8월</span>
+                <button class="attendance-nav" onclick="changeMonth(1)" aria-label="다음 달">&gt;</button>
+              </div>
+              <div class="attendance-grid" id="attendanceGrid" role="grid" aria-label="출석 달력">
+                <!-- Headers & Days injected by JS -->
+              </div>
+              <div class="attendance-legend">
+                <span><span class="dot stamped"></span> 출석</span>
+                <span><span class="dot today"></span> 오늘</span>
+              </div>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- --- Parent / Stats Screen (학부모 통계) --- -->
+    <section id="screen-stats" class="screen" aria-label="학부모 통계">
+      <div style="width:100%; max-width:520px; margin:0 auto; padding:0 1rem;">
+        <article class="card">
+          <div class="card-header"><h3 class="card-title">📊 학습 통계 대시보드</h3></div>
+          <div class="card-body">
+            <div class="stats-grid" id="statsGrid"></div>
+            <div class="chart-container">
+              <canvas class="chart-canvas" id="weeklyChart" aria-label="주간 정답률 추이 차트"></canvas>
+              <div class="chart-legend" id="chartLegend"></div>
+            </div>
+            <h4 style="margin:1rem 0 0.5rem; font-size:1rem;">🎯 취약 유형 분석</h4>
+            <div class="weakness-list" id="weaknessList"></div>
+          </div>
+        </article>
+        <button class="btn btn-secondary" style="width:100%;" onclick="exportData()">📥 데이터 내보내기 (JSON)</button>
+        <input type="file" id="importFile" accept=".json" hidden onchange="importData(event)">
+        <button class="btn btn-ghost" style="width:100%; margin-top:0.5rem;" onclick="document.getElementById('importFile').click()">📤 데이터 가져오기</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- ===== Modals (모달들 - Body 최하단) ===== -->
+  <!-- 1. 설정 모달 -->
+  <div class="modal-overlay" id="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+    <div class="modal">
+      <header class="modal-header">
+        <h3 class="modal-title" id="settings-title">⚙️ 설정</h3>
+        <button class="modal-close" onclick="closeModal('settings-modal')" aria-label="닫기">×</button>
+      </header>
+      <div class="modal-body">
+        <div class="setting-section">
+          <h4 class="setting-section-title">🔊 피드백</h4>
+          <div class="setting-row">
+            <div class="setting-info"><span class="setting-label">소리 효과</span><span class="setting-desc">정답/오답/버튼 소리 재생</span></div>
+            <label class="toggle"><input type="checkbox" id="settingSound"><span class="toggle-slider"></span></label>
+          </div>
+          <div class="setting-row">
+            <div class="setting-info"><span class="setting-label">진동 피드백</span><span class="setting-desc">오답 시 진동 (모바일)</span></div>
+            <label class="toggle"><input type="checkbox" id="settingVibrate"><span class="toggle-slider"></span></label>
+          </div>
+        </div>
+        <div class="setting-section">
+          <h4 class="setting-section-title">🎮 게임 옵션</h4>
+          <div class="setting-row">
+            <div class="setting-info"><span class="setting-label">자동 다음 문제</span><span class="setting-desc">정답 시 바로 다음 문제로</span></div>
+            <label class="toggle"><input type="checkbox" id="settingAutoNext"><span class="toggle-slider"></span></label>
+          </div>
+          <div class="setting-row">
+            <div class="setting-info"><span class="setting-label">문제 수</span><span class="setting-desc">한 세트당 문제 개수</span></div>
+            <div class="setting-control"><select class="setting-select" id="settingCount"><option value="10">10개</option><option value="20" selected>20개</option><option value="30">30개</option></select></div>
+          </div>
+        </div>
+        <div class="setting-section">
+          <h4 class="setting-section-title">🎨 테마</h4>
+          <div class="setting-row">
+            <div class="setting-info"><span class="setting-label">다크 모드</span><span class="setting-desc">시스템 설정 따르기</span></div>
+            <label class="toggle"><input type="checkbox" id="settingDark"><span class="toggle-slider"></span></label>
+          </div>
+        </div>
+        <div class="setting-section">
+          <h4 class="setting-section-title">🔒 학부모 모드</h4>
+          <div class="setting-row">
+            <div class="setting-info"><span class="setting-label">통계/데이터 관리</span><span class="setting-desc">PIN 인증 후 접근</span></div>
+            <div class="setting-control"><button class="btn btn-primary btn-sm" onclick="openParentAuth()">입장하기</button></div>
+          </div>
+        </div>
+        <div class="setting-section">
+          <h4 class="setting-section-title">🗂️ 데이터 관리</h4>
+          <div class="setting-row"><div class="setting-control"><button class="btn btn-danger btn-sm" onclick="confirmClearAll()">전체 기록 초기화</button></div></div>
+        </div>
+      </div>
+      <div class="modal-footer" style="justify-content: space-between;">
+        <button class="btn btn-secondary" onclick="closeModal('settings-modal')">취소</button>
+        <button class="btn btn-primary" onclick="(async () => { await saveSettingsFromUI(); closeModal('settings-modal'); })()">저장 후 닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. 상세 보기 모달 -->
+  <div class="modal-overlay" id="detail-modal" role="dialog" aria-modal="true" aria-labelledby="detail-title">
+    <div class="modal" style="max-width: 90vw; max-height: 90vh;">
+      <header class="modal-header">
+        <h3 class="modal-title" id="detail-title">🔍 상세 풀이 기록</h3>
+        <button class="modal-close" onclick="closeModal('detail-modal')" aria-label="닫기">×</button>
+      </header>
+      <div class="modal-body">
+        <div class="detail-header">
+          <div class="detail-score" id="detailScore">100%</div>
+          <div class="detail-meta" id="detailMeta">2단계 • 20문제 • 45초 • 2025.08.02</div>
+        </div>
+        <div class="detail-problems" id="detailProblems" role="list" aria-label="문제별 상세"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="retryWrongFromDetail()">📝 틀린 것만 다시 풀기</button>
+        <button class="btn btn-secondary" onclick="closeModal('detail-modal')">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. 학부모 인증 모달 -->
+  <div class="modal-overlay" id="auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-title">
+    <div class="modal">
+      <header class="modal-header"><h3 class="modal-title" id="auth-title">🔒 학부모 인증</h3></header>
+      <div class="modal-body" style="text-align:center; padding:2rem;">
+        <p style="margin-bottom:1rem; color:var(--text-secondary);">4자리 PIN을 입력하세요</p>
+        <div style="display:flex; gap:0.5rem; justify-content:center; margin-bottom:1rem;">
+          <input type="password" maxlength="1" inputmode="numeric" class="pin-input" style="width:50px; text-align:center; font-size:1.5rem;" aria-label="PIN 첫 번째 자리">
+          <input type="password" maxlength="1" inputmode="numeric" class="pin-input" style="width:50px; text-align:center; font-size:1.5rem;" aria-label="PIN 두 번째 자리">
+          <input type="password" maxlength="1" inputmode="numeric" class="pin-input" style="width:50px; text-align:center; font-size:1.5rem;" aria-label="PIN 세 번째 자리">
+          <input type="password" maxlength="1" inputmode="numeric" class="pin-input" style="width:50px; text-align:center; font-size:1.5rem;" aria-label="PIN 네 번째 자리">
+        </div>
+        <p id="authError" class="hidden" style="color:var(--error); font-size:0.85rem; min-height:1.2rem;">PIN이 일치하지 않습니다.</p>
+      </div>
+      <div class="modal-footer" style="justify-content:center;">
+        <button class="btn btn-secondary" onclick="closeModal('auth-modal')">취소</button>
+        <button class="btn btn-primary" onclick="verifyParentPin()">확인</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- Confetti Canvas -->
+  <canvas id="confetti-canvas" aria-hidden="true"></canvas>
+
+  <script>
+    // ===== 1. Configuration & Constants =====
+	const CONFIG = {
+	  DB_NAME: 'MathPracticeDB_v3',
+	  STORES: { history: 'history', profile: 'profile', settings: 'settings' },
+	  DB_VERSION: 3,
+	  TOTAL_QUESTIONS_DEFAULT: 20,
+	  LEVELS: {
+		1: { name: '1단계', max: 10, ops: ['+', '-'], carry: false, desc: '10까지, 받아올림/내림 없음' },
+		2: { name: '2단계', max: 20, ops: ['+', '-'], carry: true, desc: '20까지, 받아올림/내림 있음' },
+		3: { name: '3단계', max: 99, ops: ['+', '-'], carry: true, desc: '100까지, 두 자리 수' }
+	  },
+	  BADGES: [
+		{ id: 'first_perfect', name: '첫 100점', desc: '처음으로 100점 달성', icon: '💯' },
+		{ id: 'streak_5', name: '5연속 정답', desc: '한 세트에서 5개 연속 정답', icon: '🔥' },
+		{ id: 'streak_10', name: '10연속 정답', desc: '한 세트에서 10개 연속 정답', icon: '⚡' },
+		{ id: 'speed_demon', name: '속도왕', desc: '평균 3초 이내 정답 (20문제)', icon: '🚀' },
+		{ id: 'level1_master', name: '1단계 마스터', desc: '1단계 100점 3회 달성', icon: '🌱' },
+		{ id: 'level2_master', name: '2단계 마스터', desc: '2단계 100점 3회 달성', icon: '🌿' },
+		{ id: 'level3_master', name: '3단계 마스터', desc: '3단계 100점 3회 달성', icon: '🌳' },
+		{ id: 'week_warrior', name: '주간 전사', desc: '7일 연속 출석', icon: '📅' },
+		{ id: 'hundred_solver', name: '백문백답', desc: '누적 100문제 풀이', icon: '📝' },
+		{ id: 'thousand_solver', name: '천문천답', desc: '누적 1000문제 풀이', icon: '📚' },
+		{ id: 'night_owl', name: '올빼미형', desc: '오후 10시 이후 문제 풀이', icon: '🦉' },
+		{ id: 'early_bird', name: '아침형 인간', desc: '오전 7시 이전 문제 풀이', icon: '🐦' },
+	  ],
+	  CHARACTER_STAGES: [
+		{ name: '알', minExp: 0, svg: getEggSVG },
+		{ name: '아기 공룡', minExp: 50, svg: getBabyDinoSVG },
+		{ name: '청소년 공룡', minExp: 200, svg: getTeenDinoSVG },
+		{ name: '성체 공룡', minExp: 500, svg: getAdultDinoSVG },
+		{ name: '전설의 용', minExp: 1000, svg: getDragonSVG },
+	  ],
+	  PARENT_PIN: '1234' // 실제 서비스 시 별도 설정 화면 필요
+	};
+
+	// ===== 2. Utility Functions =====
+	const $ = (sel, ctx = document) => ctx.querySelector(sel);
+	const $$ = (sel, ctx = document) => [...ctx.querySelectorAll(sel)];
+	const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+	const formatTime = (sec) => `${Math.floor(sec/60)}:${String(sec%60).padStart(2,'0')}`;
+	const todayKey = () => new Date().toISOString().split('T')[0];
+	const nowISO = () => new Date().toISOString();
+
+	function showToast(msg, type = 'info') {
+	  const container = $('#toast-container');
+	  const el = document.createElement('div');
+	  el.className = `toast ${type}`;
+	  el.textContent = msg;
+	  container.appendChild(el);
+	  setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 2500);
+	}
+
+	function generateId() { return Date.now().toString(36) + Math.random().toString(36).substr(2); }
+
+	// ===== 3. IndexedDB Wrapper =====
+	const dbPromise = (() => {
+	  return new Promise((resolve, reject) => {
+		const req = indexedDB.open(CONFIG.DB_NAME, CONFIG.DB_VERSION);
+		req.onupgradeneeded = (e) => {
+		  const db = e.target.result;
+		  if (!db.objectStoreNames.contains(CONFIG.STORES.history)) {
+			const h = db.createObjectStore(CONFIG.STORES.history, { keyPath: 'id' });
+			h.createIndex('date', 'date', { unique: false });
+			h.createIndex('level', 'level', { unique: false });
+		  }
+		  if (!db.objectStoreNames.contains(CONFIG.STORES.profile)) {
+			db.createObjectStore(CONFIG.STORES.profile, { keyPath: 'key' });
+		  }
+		  if (!db.objectStoreNames.contains(CONFIG.STORES.settings)) {
+			db.createObjectStore(CONFIG.STORES.settings, { keyPath: 'key' });
+		  }
+		};
+		req.onsuccess = (e) => resolve(e.target.result);
+		req.onerror = (e) => { console.error('DB Open Error', e.target.error); resolve(null); };
+		req.onblocked = () => showToast('데이터베이스 업데이트 필요: 다른 탭을 닫아주세요.', 'error');
+	  });
+	})();
+
+	async function dbGet(store, key) {
+	  const db = await dbPromise; if (!db) return undefined;
+	  return new Promise((res, rej) => {
+		const req = db.transaction(store).objectStore(store).get(key);
+		req.onsuccess = () => res(req.result); req.onerror = () => rej(req.error);
+	  });
+	}
+	async function dbPut(store, val) {
+	  const db = await dbPromise; if (!db) return;
+	  return new Promise((res, rej) => {
+		const req = db.transaction(store, 'readwrite').objectStore(store).put(val);
+		req.onsuccess = () => res(); req.onerror = () => rej(req.error);
+	  });
+	}
+	async function dbGetAll(store, indexName, query) {
+	  const db = await dbPromise; if (!db) return [];
+	  return new Promise((res, rej) => {
+		const tx = db.transaction(store, 'readonly');
+		const storeRef = tx.objectStore(store);
+		const req = indexName ? storeRef.index(indexName).getAll(query) : storeRef.getAll();
+		req.onsuccess = () => res(req.result); req.onerror = () => rej(req.error);
+	  });
+	}
+	async function dbDelete(store, key) {
+	  const db = await dbPromise; if (!db) return;
+	  return new Promise((res, rej) => {
+		const req = db.transaction(store, 'readwrite').objectStore(store).delete(key);
+		req.onsuccess = () => res(); req.onerror = () => rej(req.error);
+	  });
+	}
+	async function dbClear(store) {
+	  const db = await dbPromise; if (!db) return;
+	  return new Promise((res, rej) => {
+		const req = db.transaction(store, 'readwrite').objectStore(store).clear();
+		req.onsuccess = () => res(); req.onerror = () => rej(req.error);
+	  });
+	}
+
+	// ===== 4. Audio & Haptics (Phase 1) =====
+	let audioCtx = null;
+	function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+	function playTone(freq, type, dur, vol = 0.1, delay = 0) {
+	  if (!audioCtx) return;
+	  const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+	  o.connect(g); g.connect(audioCtx.destination);
+	  o.type = type; o.frequency.value = freq;
+	  g.gain.setValueAtTime(0, audioCtx.currentTime + delay);
+	  g.gain.linearRampToValueAtTime(vol, audioCtx.currentTime + delay + 0.01);
+	  g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + delay + dur);
+	  o.start(audioCtx.currentTime + delay); o.stop(audioCtx.currentTime + delay + dur);
+	}
+
+	// 캐시(currentSettings) 직접 참조로 동기 처리
+	function playSound(type) {
+	  if (!currentSettings.sound) return;
+	  initAudio();
+	  switch(type) {
+		case 'correct': playTone(523.25, 'sine', 0.1); playTone(659.25, 'sine', 0.15, 0.08, 0.1); break;
+		case 'wrong': playTone(200, 'square', 0.3, 0.15); break;
+		case 'click': playTone(800, 'sine', 0.05, 0.05); break;
+		case 'levelup': playTone(523, 'sine', 0.1); playTone(659, 'sine', 0.1, 0.1); playTone(784, 'sine', 0.2, 0.2); break;
+		case 'badge': playTone(784, 'sine', 0.1); playTone(1046, 'sine', 0.1, 0.1); playTone(1318, 'sine', 0.2, 0.2); break;
+	  }
+	}
+	function vibrate(pattern) {
+	  if (!currentSettings.vibrate || !navigator.vibrate) return;
+	  navigator.vibrate(pattern);
+	}
+
+	// ===== 5. Settings Management (캐시 기반) =====
+	const DEFAULT_SETTINGS = { sound: true, vibrate: true, autoNext: true, questionCount: 20, darkMode: false };
+	let currentSettings = { ...DEFAULT_SETTINGS }; // 메모리 캐시
+
+	async function getSettings() { // DB에서 직접 읽기 (초기화용)
+	  const s = await dbGet(CONFIG.STORES.settings, '');
+	  return { ...DEFAULT_SETTINGS, ...(s?.value || {}) };
+	}
+
+	// 초기 앱 시작 시 1회만 DB에서 로드
+	async function loadInitialSettings() {
+	  const s = await getSettings();
+	  currentSettings = { ...DEFAULT_SETTINGS, ...(s?.value || {}) };
+	  applySettings(currentSettings);
+	}
+
+	// 설정 로드: 캐시 → UI 반영 (동기)
+	function loadSettings() {
+	  applySettings(currentSettings);
+	  return Promise.resolve(currentSettings);
+	}
+
+	// 설정 저장: 캐시 갱신 → DB 저장(백그라운드) → UI 반영
+	async function saveSettings(partial = {}) {
+	  const next = { ...currentSettings, ...partial };
+	  currentSettings = next; // 1. 캐시 즉시 갱신
+	  applySettings(next);    // 2. UI 즉시 반영
+
+	  // 3. DB 저장 (백그라운드)
+	  try {
+		await dbPut(CONFIG.STORES.settings, { key: '', value: next, updatedAt: nowISO() });
+	  } catch (e) {
+		console.error('설정 저장 실패:', e);
+		showToast('설정 저장 실패(오프라인 가능성)', 'error');
+	  }
+	  return next;
+	}
+
+	// 설정 적용 (UI 동기화 + 테마 적용)
+	function applySettings(s) {
+	  $('#settingSound').checked = s.sound;
+	  $('#settingVibrate').checked = s.vibrate;
+	  $('#settingAutoNext').checked = s.autoNext;
+	  $('#settingCount').value = s.questionCount;
+	  $('#settingDark').checked = s.darkMode;
+
+	  if (s.darkMode !== undefined) {
+		document.documentElement.dataset.theme = s.darkMode ? 'dark' : 'light';
+	  }
+	  TOTAL_QUESTIONS = s.questionCount;
+	}
+
+	// UI에서 값 읽어 저장 호출 (저장 버튼용)
+	async function saveSettingsFromUI() {
+	  const next = {
+		sound: $('#settingSound').checked,
+		vibrate: $('#settingVibrate').checked,
+		autoNext: $('#settingAutoNext').checked,
+		questionCount: parseInt($('#settingCount').value),
+		darkMode: $('#settingDark').checked
+	  };
+	  await saveSettings(next);
+	  showToast('설정이 저장되었습니다.', 'success');
+	}
+
+	function toggleTheme() {
+	  const isDark = $('#settingDark').checked;
+	  document.documentElement.dataset.theme = isDark ? 'dark' : 'light';
+	  saveSettings({ darkMode: isDark });
+	}
+
+	// ===== 6. State Management =====
+	let currentLevel = 1;
+	let questions = [];
+	let currentIndex = 0;
+	let correctCount = 0;
+	let startTime = 0;
+	let questionStartTime = 0;
+	let answers = [];
+	let TOTAL_QUESTIONS = CONFIG.TOTAL_QUESTIONS_DEFAULT;
+	let detailRecordId = null;
+	let currentMonth = new Date();
+	let isParentAuthed = false;
+
+	const screens = {
+	  start: 'screen-start', quiz: 'screen-quiz', result: 'screen-result',
+	  history: 'screen-history', profile: 'screen-profile', stats: 'screen-stats'
+	};
+
+	// ===== 7. Screen Navigation =====
+	function showScreen(name) {
+	  Object.values(screens).forEach(id => {
+		const el = $(`#${id}`); if (el) el.classList.toggle('active', id === screens[name]);
+	  });
+	  document.body.classList.toggle('is-start-screen', name === 'start');
+	  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+	  switch(name) {
+		case 'start': loadStartStats(); break;
+		case 'history': renderHistory(); break;
+		case 'profile': renderProfile(); break;
+		case 'stats':
+		  if (verifyParentPin(true)) { renderStats(); }
+		  else { openParentAuth(() => { isParentAuthed = true; renderStats(); }); }
+		  break;
+	  }
+	  closeAllModals();
+	}
+
+	// ===== 8. Modal Management (Final Stable Version) =====
+	function openModal(id) {
+	  console.log('[DEBUG openModal] 요청됨:', id);
+
+	  const el = $(`#${id}`);
+	  if (!el) { console.error('[DEBUG openModal] 엘리먼트 없음:', id); return; }
+
+	  if (id === 'settings-modal') { loadSettings(); }
+
+	  // 1. body 직속으로 강제 이동 (Containing Block 문제 해결)
+	  document.body.appendChild(el);
+
+	  // 2. 오버레이 강제 스타일
+	  el.style.cssText = `
+		display: flex !important;
+		opacity: 1 !important;
+		visibility: visible !important;
+		z-index: 2147483647 !important;
+		position: fixed !important;
+		inset: 0 !important;
+		background: rgba(0, 0, 0, 0.5) !important;
+		backdrop-filter: none !important;
+		-webkit-backdrop-filter: none !important;
+		transition: none !important;
+		align-items: center !important;
+		justify-content: center !important;
+		padding: 1rem !important;
+		pointer-events: auto !important;
+	  `;
+
+	  // 3. 내부 .modal 박스 강제 스타일
+	  const modalBox = el.querySelector('.modal');
+	  if (modalBox) {
+		modalBox.style.cssText = `
+		  transform: scale(1) translateZ(0) !important;
+		  opacity: 1 !important;
+		  visibility: visible !important;
+		  display: flex !important;
+		  flex-direction: column !important;
+		  max-height: 85vh !important;
+		  width: 100% !important;
+		  max-width: 420px !important;
+		  background: var(--card, white) !important;
+		  border-radius: 24px !important;
+		  box-shadow: 0 8px 24px rgba(0,0,0,0.12) !important;
+		  overflow: hidden !important;
+		  flex-shrink: 0 !important;
+		`;
+
+		// 4. 내부 요소들 강제 스타일 (레이아웃 고정)
+		const header = modalBox.querySelector('.modal-header');
+		const body = modalBox.querySelector('.modal-body');
+		const footer = modalBox.querySelector('.modal-footer');
+
+		if (header) header.style.cssText = 'display: flex !important; align-items: center !important; justify-content: space-between !important; padding: 1rem 1.25rem !important; border-bottom: 1px solid var(--border) !important; background: var(--card-hover) !important; flex-shrink: 0 !important;';
+		if (footer) footer.style.cssText = 'display: flex !important; justify-content: flex-end !important; gap: 0.5rem !important; padding: 1rem 1.25rem !important; border-top: 1px solid var(--border) !important; background: var(--card-hover) !important; flex-shrink: 0 !important;';
+
+		// 🔧 핵심: 바디 스크롤 레이아웃 보장
+		if (body) {
+		  body.style.cssText = `
+			padding: 1.25rem !important;
+			overflow-y: auto !important;
+			flex: 1 1 auto !important;
+			min-height: 0 !important; /* 🔧 필수: 플렉스 자식 스크롤 허용 */
+			width: 100% !important;
+			box-sizing: border-box !important;
+			overflow-x: hidden !important; /* 가로 스크롤 방지 */
+		  `;
+		}
+
+		// 모달 내부의 폰트/버튼 등 가독성 보장
+		modalBox.querySelectorAll('button, input, select, label').forEach(el => {
+		  el.style.opacity = '1';
+		  el.style.visibility = 'visible';
+		});
+	  }
+
+	  el.classList.add('active');
+
+	  // 강제 리플로우 (즉시 렌더링 강제)
+	  el.getBoundingClientRect();
+	  if (modalBox) modalBox.getBoundingClientRect();
+
+	  // 포커스 이동
+	  setTimeout(() => {
+		const focusable = el.querySelector('button, input, select, [tabindex]:not([tabindex="-1"])');
+		if(focusable) focusable.focus();
+	  }, 50);
+
+	  el.removeEventListener('keydown', trapFocus);
+	  el.addEventListener('keydown', trapFocus);
+	}
+
+	function closeModal(id) {
+	  const el = $(`#${id}`); if (!el) return;
+
+	  // 강제 스타일 제거
+	  el.style.cssText = '';
+
+	  const modalBox = el.querySelector('.modal');
+	  if (modalBox) {
+		modalBox.style.cssText = '';
+		modalBox.querySelectorAll('.modal-header, .modal-body, .modal-footer').forEach(child => child.style.cssText = '');
+	  }
+
+	  el.classList.remove('active');
+	  el.removeEventListener('keydown', trapFocus);
+	}
+
+	function closeAllModals() { $$('.modal-overlay.active').forEach(m => closeModal(m.id)); }
+
+	function trapFocus(e) {
+	  if (e.key !== 'Tab') return;
+	  const modal = e.currentTarget.querySelector('.modal');
+	  const focusable = modal.querySelectorAll('button, input, select, [tabindex]:not([tabindex="-1"])');
+	  const first = focusable[0]; const last = focusable[focusable.length-1];
+	  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+	  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+	}
+
+	// ===== 9. Problem Generation =====
+	function generateQuestion(level) {
+	  const cfg = CONFIG.LEVELS[level];
+	  const op = cfg.ops[rand(0, cfg.ops.length - 1)];
+	  let a, b, ans;
+	  if (op === '+') {
+		if (level === 1) { a = rand(1, 9); b = rand(1, 9 - a); ans = a + b; }
+		else if (level === 2) { a = rand(1, 19); b = rand(1, 20 - a); ans = a + b; }
+		else { a = rand(10, 50); b = rand(10, 50); if (a+b>99) b = 99-a; ans = a+b; }
+	  } else {
+		if (level === 1) { ans = rand(1, 9); a = rand(ans, 9); b = a - ans; }
+		else if (level === 2) { ans = rand(1, 19); a = rand(ans, 20); b = a - ans; }
+		else { a = rand(20, 99); b = rand(10, a-1); ans = a - b; }
+	  }
+	  return { a, b, op, ans, text: `${a} ${op} ${b} =`, level };
+	}
+
+	function shuffle(arr) { for(let i=arr.length-1;i>0;i--){const j=rand(0,i);[arr[i],arr[j]]=[arr[j],arr[i]]} return arr; }
+
+	// ===== 10. Game Flow: Start, Quiz, Submit, Finish =====
+	function startGame(level) {
+	  currentLevel = level;
+	  TOTAL_QUESTIONS = currentSettings.questionCount || CONFIG.TOTAL_QUESTIONS_DEFAULT;
+	  questions = shuffle(Array.from({length: TOTAL_QUESTIONS}, () => generateQuestion(level)));
+	  currentIndex = 0; correctCount = 0; answers = []; startTime = Date.now();
+	  showScreen('quiz');
+	  renderQuestion();
+	  buildKeypad();
+	}
+
+	function renderQuestion() {
+	  const q = questions[currentIndex];
+	  $('#problemExpr').textContent = q.text;
+	  $('#problemExpr').setAttribute('aria-label', `${q.a} ${q.op === '+' ? '더하기' : '빼기'} ${q.b}`);
+	  const input = $('#answerInput');
+	  input.value = ''; input.className = 'answer-input'; input.focus();
+	  $('#feedback').textContent = '';
+	  $('#quizCounter').textContent = `${currentIndex + 1} / ${TOTAL_QUESTIONS}`;
+	  $('#progressFill').style.width = `${(currentIndex / TOTAL_QUESTIONS) * 100}%`;
+	  $('#progressFill').setAttribute('aria-valuenow', currentIndex);
+	  questionStartTime = Date.now();
+	}
+
+	function buildKeypad() {
+	  const pad = $('#keypad'); pad.innerHTML = '';
+	  const keys = ['1','2','3','4','5','6','7','8','9','⌫','0','✓'];
+	  keys.forEach(k => {
+		const btn = document.createElement('button');
+		btn.className = `key${k==='⌫'||k==='✓'?' action':''}${k==='✓'?' enter':''}${k==='0'?' zero':''}`;
+		btn.textContent = k; btn.setAttribute('aria-label', k==='⌫'?'지우기':k==='✓'?'확인':k);
+		btn.onclick = () => handleKey(k);
+		pad.appendChild(btn);
+	  });
+	}
+
+	let lastKeyTime = 0;
+	function handleKey(key) {
+	  const now = Date.now(); if (now - lastKeyTime < 50) return; lastKeyTime = now;
+	  playSound('click');
+	  const input = $('#answerInput');
+	  if (key === '⌫') input.value = input.value.slice(0, -1);
+	  else if (key === '✓') submitAnswer();
+	  else if (input.value.length < 3) input.value += key;
+	}
+
+	async function submitAnswer() {
+	  const input = $('#answerInput');
+	  const Val = parseInt(input.value, 10);
+	  const q = questions[currentIndex];
+	  const isCorrect = Val === q.ans;
+	  const timeSpent = Math.round((Date.now() - questionStartTime) / 1000);
+	  const totalTime = Math.round((Date.now() - startTime) / 1000);
+
+	  answers.push({ ...q,Ans: isNaN(Val) ? null : Val, correct: isCorrect, time: timeSpent, totalTime });
+	  if (isCorrect) correctCount++;
+
+	  input.classList.add(isCorrect ? 'correct' : 'wrong');
+	  const fb = $('#feedback');
+	  fb.textContent = isCorrect ? '정답! 👍' : `오답! 정답은 ${q.ans}예요.`;
+	  fb.className = 'feedback ' + (isCorrect ? 'correct' : 'wrong');
+
+	  playSound(isCorrect ? 'correct' : 'wrong');
+	  if (!isCorrect) vibrate([50, 20, 50]);
+
+	  const delay = isCorrect ? 600 : 1200;
+	  setTimeout(() => {
+		currentIndex++;
+		if (currentIndex >= TOTAL_QUESTIONS) finishGame();
+		else renderQuestion();
+	  }, delay);
+	}
+
+	async function finishGame() {
+	  const totalTime = Math.round((Date.now() - startTime) / 1000);
+	  const scorePct = Math.round((correctCount / TOTAL_QUESTIONS) * 100);
+	  const avgTime = totalTime / TOTAL_QUESTIONS;
+
+	  const record = {
+		id: generateId(), date: nowISO(), level: currentLevel,
+		levelName: CONFIG.LEVELS[currentLevel].name,
+		correct: correctCount, total: TOTAL_QUESTIONS, score: scorePct,
+		time: totalTime, avgTime, details: answers
+	  };
+	  await dbPut(CONFIG.STORES.history, record);
+	  await updateProfileOnFinish(record);
+	  await checkAttendance();
+	  checkBadges(record);
+
+	  $('#scoreCircle').style.setProperty('--score', scorePct);
+	  $('#scoreText').textContent = `${scorePct}%`;
+	  $('#correctCount').textContent = correctCount;
+	  $('#wrongCount').textContent = TOTAL_QUESTIONS - correctCount;
+	  $('#timeTaken').textContent = totalTime;
+	  $('#resultTitle').textContent = scorePct === 100 ? '완벽해요! 🏆' : scorePct >= 80 ? '수고했어요! 🎉' : '조금 더 연습해요! 💪';
+	  $('#resultSubtitle').textContent = `평균 ${avgTime.toFixed(1)}초 걸렸어요`;
+
+	  showScreen('result');
+	  if (scorePct === 100) launchConfetti(3000);
+	  else if (scorePct >= 80) launchConfetti(1500);
+	}
+
+	function restartSameLevel() { startGame(currentLevel); }
+
+	// ===== 11. Start Screen Stats Loading =====
+	async function loadStartStats() {
+	  const records = await dbGetAll(CONFIG.STORES.history);
+	  for (let lvl = 1; lvl <= 3; lvl++) {
+		const lvlRecs = records.filter(r => r.level === lvl);
+		const el = $(`#stats-level-${lvl}`);
+		const badge = $(`#badge-level-${lvl}`);
+		if (!lvlRecs.length) { el.innerHTML = '<span class="level-stat">기록 없음</span>'; badge.textContent = '0%'; continue; }
+		const avgScore = Math.round(lvlRecs.reduce((s,r)=>s+r.score,0)/lvlRecs.length);
+		const avgTime = Math.round(lvlRecs.reduce((s,r)=>s+r.time,0)/lvlRecs.length);
+		el.innerHTML = `<span class="level-stat">정답률 <strong>${avgScore}%</strong></span><span class="level-stat">평균 <strong>${avgTime}s</strong></span>`;
+		badge.textContent = `${avgScore}%`;
+		badge.className = `badge ${avgScore===100?'badge-success':avgScore>=80?'badge-warning':'badge-error'}`;
+	  }
+	  const recent = records[0];
+	  $('#quickStats').innerHTML = recent ? `최근: ${recent.levelName} • ${recent.correct}/${recent.total} 정답 • ${recent.time}초` : '아직 기록이 없어요. 첫 도전을 시작해보세요!';
+	}
+
+	// ===== 12. History Screen (Phase 2) - Event Delegation =====
+	async function renderHistory() {
+	  const list = $('#historyList');
+	  const empty = $('#historyEmpty');
+	  const records = await dbGetAll(CONFIG.STORES.history);
+
+	  if (!records.length) {
+		list.innerHTML = '';
+		empty.classList.remove('hidden');
+		// 리스너 초기화 위해 클론 교체
+		list.replaceWith(list.cloneNode(true));
+		$('#historyList').addEventListener('click', handleHistoryClick);
+		return;
+	  }
+	  empty.classList.add('hidden');
+
+	  list.innerHTML = records.map(r => {
+		const d = new Date(r.date);
+		const dateStr = `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+		const scoreClass = r.score === 100 ? '' : r.score >= 80 ? 'mid' : 'low';
+		// data-id 속성에 ID 저장 (onclick 제거)
+		return `
+		  <article class="history-item" role="listitem" tabindex="0" data-id="${r.id}"
+			aria-label="${r.levelName}, ${r.correct}/${r.total} 정답, ${r.score}점, ${formatTime(r.time)}">
+			<div class="history-item-main">
+			  <div class="history-item-date">${dateStr}</div>
+			  <div class="history-item-meta">
+				<span class="history-item-badge">${r.levelName}</span>
+				<span>${r.correct}/${r.total} 정답</span>
+				<span>${formatTime(r.time)}</span>
+			  </div>
+			</div>
+			<div class="history-item-score ${scoreClass}" aria-label="점수 ${r.score}%">${r.score}%</div>
+		  </article>
+		`;
+	  }).join('');
+
+	  // 이벤트 위임: 리스트에 클릭 리스너 1개만 등록
+	  const newList = list.cloneNode(true);
+	  list.replaceWith(newList);
+	  newList.addEventListener('click', handleHistoryClick);
+	}
+
+	// 이벤트 위임 핸들러
+	function handleHistoryClick(e) {
+	  const item = e.target.closest('.history-item');
+	  if (!item) return;
+	  const recordId = item.dataset.id;
+	  if (recordId) openDetailModal(recordId);
+	  else console.warn('History item has no data-id', item);
+	}
+
+	// ===== 13. Detail Modal (Phase 2) =====
+	async function openDetailModal(recordId = null) {
+	  // playSound('click'); // 모달 열기 시 소리 제거 (렌더링 블로킹 방지)
+
+	  const targetId = recordId || window.lastRecordId;
+	  if (!targetId) { showToast('상세 기록 ID가 없습니다.', 'error'); return; }
+
+	  detailRecordId = targetId;
+
+	  try {
+		const record = await dbGet(CONFIG.STORES.history, targetId);
+		if (!record) { showToast('기록을 찾을 수 없습니다.', 'error'); return; }
+
+		const d = new Date(record.date);
+		const dateStr = `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+
+		$('#detailScore').textContent = `${record.score}%`;
+		$('#detailScore').className = `detail-score ${record.score===100?'':record.score>=80?'mid':'low'}`;
+		$('#detailMeta').textContent = `${record.levelName} • ${record.total}문제 • ${formatTime(record.time)} • ${dateStr}`;
+
+		const container = $('#detailProblems');
+		container.innerHTML = record.details.map((q, i) => {
+		  const isCorrect = q.correct;
+		  const Ans = q.Ans !== undefined ? q.Ans : q.userAns;
+		  const displayAns = Ans === null ? '미입력' : Ans;
+
+		  return `
+			<div class="detail-problem ${isCorrect ? 'correct' : 'wrong'}" role="listitem">
+			  <span class="detail-problem-num">${i+1}.</span>
+			  <span class="detail-problem-expr">${q.text}</span>
+			  <div class="detail-problem-ans">
+				<span class="${isCorrect ? 'correct' : 'wrong'}">내 답: ${displayAns}</span>
+				${!isCorrect ? `<span class="correct">정답: ${q.ans}</span>` : ''}
+			  </div>
+			  <span class="detail-problem-time">${q.time}초</span>
+			</div>
+		  `;
+		}).join('');
+
+		openModal('detail-modal');
+
+	  } catch (err) {
+		console.error('[openDetailModal] Error:', err);
+		showToast('상세 보기 로드 실패', 'error');
+	  }
+	}
+
+	function closeDetailModal() { closeModal('detail-modal'); }
+
+	// 오답 다시 풀기 (결과 화면/상세 모달에서 진입)
+	async function retryWrongFromDetail() {
+	  if (!detailRecordId) { showToast('상세 보기에서 오답을 선택해주세요.', 'info'); return; }
+
+	  const record = await dbGet(CONFIG.STORES.history, detailRecordId);
+	  if (!record) return;
+
+	  const wrongQuestions = record.details.filter(q => !q.correct);
+	  if (!wrongQuestions.length) { showToast('틀린 문제가 없습니다! 🎉', 'success'); return; }
+
+	  questions = wrongQuestions.map(q => ({ a: q.a, b: q.b, op: q.op, ans: q.ans, text: q.text, level: q.level }));
+	  for(let i=questions.length-1;i>0;i--){const j=rand(0,i);[questions[i],questions[j]]=[questions[j],questions[i]]}
+
+	  currentLevel = record.level;
+	  currentIndex = 0; correctCount = 0; answers = []; startTime = Date.now();
+	  TOTAL_QUESTIONS = questions.length;
+
+	  closeDetailModal();
+	  showScreen('quiz');
+	  renderQuestion();
+	  buildKeypad();
+	  showToast(`${questions.length}개 오답 다시 풀기 시작!`, 'info');
+	}
+
+	function openWrongNote() { retryWrongFromDetail(); }
+
+	// ===== 14. Profile, Character, Badges, Attendance (Phase 3) =====
+
+	// --- Character SVG Generators ---
+	function getEggSVG() { return `<svg viewBox="0 0 100 100"><ellipse cx="50" cy="60" rx="35" ry="40" fill="#fff8e1" stroke="#fbc02d" stroke-width="2"/><ellipse cx="50" cy="35" rx="20" ry="5" fill="#fff3c4"/></svg>`; }
+	function getBabyDinoSVG() { return `<svg viewBox="0 0 100 100"><g transform="translate(50,85) scale(0.7)"><path d="M0 0 Q-20 -30 0 -60 Q20 -30 0 0" fill="#81c784" stroke="#4caf50" stroke-width="2"/><circle cx="-10" cy="-50" r="5" fill="white"/><circle cx="-10" cy="-50" r="2" fill="black"/><circle cx="10" cy="-50" r="5" fill="white"/><circle cx="10" cy="-50" r="2" fill="black"/></g></svg>`; }
+	function getTeenDinoSVG() { return `<svg viewBox="0 0 100 100"><g transform="translate(50,90) scale(0.9)"><path d="M0 0 Q-30 -40 0 -80 Q30 -40 0 0" fill="#64b5f6" stroke="#2196f3" stroke-width="2"/><ellipse cx="-15" cy="-60" rx="8" ry="6" fill="white"/><circle cx="-15" cy="-60" r="3" fill="black"/><ellipse cx="15" cy="-60" rx="8" ry="6" fill="white"/><circle cx="15" cy="-60" r="3" fill="black"/></g></svg>`; }
+	function getAdultDinoSVG() { return `<svg viewBox="0 0 100 100"><g transform="translate(50,95) scale(1.1)"><path d="M0 0 Q-40 -50 0 -90 Q40 -50 0 0" fill="#4db6ac" stroke="#009688" stroke-width="3"/><ellipse cx="-18" cy="-65" rx="10" ry="8" fill="white"/><circle cx="-18" cy="-65" r="4" fill="black"/><ellipse cx="18" cy="-65" rx="10" ry="8" fill="white"/><circle cx="18" cy="-65" r="4" fill="black"/><path d="M-30 -20 Q-40 -30 -30 -40" stroke="#009688" stroke-width="4" fill="none" stroke-linecap="round"/></g></svg>`; }
+	function getDragonSVG() { return `<svg viewBox="0 0 100 100"><g transform="translate(50,95) scale(1.1)"><path d="M0 0 Q-40 -50 0 -90 Q40 -50 0 0" fill="#ce93d8" stroke="#ab47bc" stroke-width="3"/><ellipse cx="-18" cy="-65" rx="10" ry="8" fill="white"/><circle cx="-18" cy="-65" r="4" fill="black"/><ellipse cx="18" cy="-65" rx="10" ry="8" fill="white"/><circle cx="18" cy="-65" r="4" fill="black"/><path d="M-35 -30 Q-50 -50 -30 -70" stroke="#ab47bc" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M35 -30 Q50 -50 30 -70" stroke="#ab47bc" stroke-width="4" fill="none" stroke-linecap="round"/></g></svg>`; }
+
+	// --- Profile Rendering ---
+	async function renderProfile() {
+	  const profile = await getProfile();
+	  renderCharacter(profile);
+	  renderBadges(profile);
+	  renderAttendance(profile);
+	}
+
+	async function getProfile() {
+	  let p = await dbGet(CONFIG.STORES.profile, 'main');
+	  if (!p) {
+		p = { key: 'main', exp: 0, level: 0, badges: {}, attendance: {}, lastAttendance: null, stats: { totalSolved: 0, totalCorrect: 0, perfectCount: {}, streakMax: 0, levelPerfectCounts: {1:0,2:0,3:0} } };
+		await dbPut(CONFIG.STORES.profile, p);
+	  }
+	  return p;
+	}
+
+	function renderCharacter(profile) {
+	  const stageIdx = Math.min(CONFIG.CHARACTER_STAGES.length - 1,
+		CONFIG.CHARACTER_STAGES.findLastIndex(s => profile.exp >= s.minExp));
+	  const stage = CONFIG.CHARACTER_STAGES[stageIdx];
+	  const nextStage = CONFIG.CHARACTER_STAGES[stageIdx + 1];
+
+	  $('#charContainer').innerHTML = stage.svg();
+	  $('#charName').textContent = stage.name;
+	  $('#charLevelText').textContent = `Lv. ${stageIdx + 1} (${profile.exp} EXP)`;
+
+	  let expPercent = 100;
+	  if (nextStage) {
+		expPercent = Math.round((profile.exp - stage.minExp) / (nextStage.minExp - stage.minExp) * 100);
+	  }
+	  $('#charExpFill').style.width = `${expPercent}%`;
+	  $('#charExpFill').setAttribute('aria-valuenow', expPercent);
+	}
+
+	function renderBadges(profile) {
+	  const grid = $('#badgeGrid');
+	  grid.innerHTML = CONFIG.BADGES.map(b => {
+		const earned = profile.badges[b.id];
+		const date = earned ? new Date(earned).toLocaleDateString() : '미획득';
+		return `
+		  <div class="badge-item ${earned ? 'earned' : ''}" role="listitem" aria-label="${b.name}: ${earned ? `획득일 ${date}` : '미획득'} - ${b.desc}">
+			<div class="badge-icon">${b.icon}</div>
+			<div class="badge-name">${b.name}</div>
+			<div class="badge-tooltip">${b.desc}${earned ? `\n획득: ${date}` : ''}</div>
+		  </div>
+		`;
+	  }).join('');
+	}
+
+	function renderAttendance(profile) {
+	  const grid = $('#attendanceGrid');
+	  const today = new Date();
+	  const year = currentMonth.getFullYear();
+	  const month = currentMonth.getMonth();
+	  $('#attendanceMonth').textContent = `${year}년 ${month+1}월`;
+
+	  const firstDay = new Date(year, month, 1).getDay();
+	  const daysInMonth = new Date(year, month+1, 0).getDate();
+	  const todayStr = todayKey();
+
+	  let html = '';
+	  ['일','월','화','수','목','금','토'].forEach(d => html += `<div class="attendance-day-header">${d}</div>`);
+
+	  for(let i=0;i<firstDay;i++) html += `<div class="attendance-day future"></div>`;
+
+	  for(let d=1; d<=daysInMonth; d++) {
+		const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+		const isToday = dateStr === todayStr;
+		const isFuture = new Date(dateStr) > today;
+		const stamped = profile.attendance[dateStr];
+
+		let cls = 'attendance-day';
+		if (isFuture) cls += ' future';
+		else if (stamped) cls += ' stamped';
+		if (isToday) cls += ' today';
+
+		html += `<div class="${cls}" data-date="${dateStr}" title="${dateStr}${stamped?' ✓':''}">${d}</div>`;
+	  }
+	  grid.innerHTML = html;
+	}
+
+	function changeMonth(delta) {
+	  currentMonth.setMonth(currentMonth.getMonth() + delta);
+	  renderProfile();
+	}
+
+	// 출석 체크 및 보상
+	async function checkAttendance() {
+	  const profile = await getProfile();
+	  const today = todayKey();
+	  if (profile.attendance[today]) return;
+
+	  profile.attendance[today] = nowISO();
+	  let streak = 1;
+	  let checkDate = new Date(today);
+	  checkDate.setDate(checkDate.getDate() - 1);
+	  while(profile.attendance[checkDate.toISOString().split('T')[0]]) {
+		streak++; checkDate.setDate(checkDate.getDate() - 1);
+	  }
+	  const expGain = 10 + (streak > 7 ? 20 : streak * 2);
+	  profile.exp += expGain;
+
+	  await dbPut(CONFIG.STORES.profile, profile);
+	  showToast(`출석 도장 찍힘! +${expGain} EXP ${streak>1?`(${streak}일 연속)`:''}`, 'success');
+	  playSound('levelup');
+	  if (document.getElementById('screen-profile').classList.contains('active')) renderProfile();
+	}
+
+	// ===== 15. Badge Checking Logic (Phase 3) =====
+	async function checkBadges(record) {
+	  const profile = await getProfile();
+	  const newBadges = [];
+	  const now = nowISO();
+
+	  if (record.score === 100 && !profile.badges.first_perfect) newBadges.push('first_perfect');
+
+	  if (record.score === 100) {
+		profile.stats.levelPerfectCounts[record.level] = (profile.stats.levelPerfectCounts[record.level] || 0) + 1;
+		if (profile.stats.levelPerfectCounts[record.level] >= 3 && !profile.badges[`level${record.level}_master`]) {
+		  newBadges.push(`level${record.level}_master`);
+		}
+	  }
+
+	  if (record.avgTime <= 3 && record.total >= 20 && !profile.badges.speed_demon) newBadges.push('speed_demon');
+
+	  profile.stats.totalSolved += record.total;
+	  if (profile.stats.totalSolved >= 100 && !profile.badges.hundred_solver) newBadges.push('hundred_solver');
+	  if (profile.stats.totalSolved >= 1000 && !profile.badges.thousand_solver) newBadges.push('thousand_solver');
+
+	  const hour = new Date(record.date).getHours();
+	  if (hour >= 22 && !profile.badges.night_owl) newBadges.push('night_owl');
+	  if (hour < 7 && !profile.badges.early_bird) newBadges.push('early_bird');
+
+	  let streak = 0; let checkDate = new Date();
+	  for(let i=0;i<365;i++) {
+		const key = checkDate.toISOString().split('T')[0];
+		if (profile.attendance[key]) streak++;
+		else break;
+		checkDate.setDate(checkDate.getDate()-1);
+	  }
+	  if (streak >= 7 && !profile.badges.week_warrior) newBadges.push('week_warrior');
+
+	  // 연속 정답 배지 (게임 내 최대 스트릭 기준)
+	  let currentStreak = 0, maxStreak = 0;
+	  record.details.forEach(q => { if(q.correct) currentStreak++; else currentStreak=0; if(currentStreak>maxStreak) maxStreak=currentStreak; });
+	  if (maxStreak >= 5 && !profile.badges.streak_5) newBadges.push('streak_5');
+	  if (maxStreak >= 10 && !profile.badges.streak_10) newBadges.push('streak_10');
+
+	  for(const id of newBadges) {
+		if (!profile.badges[id]) {
+		  profile.badges[id] = now;
+		  showToast(`🏅 새 배지 획득: ${CONFIG.BADGES.find(b=>b.id===id)?.name}`, 'success');
+		  playSound('badge');
+		}
+	  }
+
+	  if (newBadges.length) await dbPut(CONFIG.STORES.profile, profile);
+	}
+
+	// ===== 16. Profile Update on Finish =====
+	async function updateProfileOnFinish(record) {
+	  const profile = await getProfile();
+	  profile.stats.totalSolved += record.total;
+	  profile.stats.totalCorrect += record.correct;
+	  profile.exp += record.correct * 2 + (record.score === 100 ? 50 : 0);
+
+	  let currentStreak = 0, maxStreak = 0;
+	  record.details.forEach(q => { if(q.correct) currentStreak++; else currentStreak=0; if(currentStreak>maxStreak) maxStreak=currentStreak; });
+	  if (maxStreak > profile.stats.streakMax) profile.stats.streakMax = maxStreak;
+
+	  await dbPut(CONFIG.STORES.profile, profile);
+	}
+
+	// ===== 17. Parent Auth Logic =====
+	let parentAuthCallback = null;
+	function openParentAuth(callback) {
+	  parentAuthCallback = callback || (() => { isParentAuthed = true; showScreen('stats'); });
+	  closeModal('settings-modal');
+	  $('#authError').classList.add('hidden');
+	  $$('#auth-modal .pin-input').forEach((inp, i) => { inp.value = ''; if(i===0) setTimeout(()=>inp.focus(), 100); });
+	  openModal('auth-modal');
+	}
+
+	function verifyParentPin(silent = false) {
+	  if (silent) return isParentAuthed;
+
+	  const pins = $$('#auth-modal .pin-input');
+	  const pin = pins.map(p => p.value).join('');
+
+	  if (pin === CONFIG.PARENT_PIN) {
+		isParentAuthed = true;
+		closeModal('auth-modal');
+		pins.forEach(p => p.value = '');
+		if (parentAuthCallback) parentAuthCallback();
+		showToast('인증 성공', 'success');
+		return true;
+	  } else {
+		$('#authError').classList.remove('hidden');
+		pins.forEach(p => p.value = '');
+		pins[0].focus();
+		vibrate([100, 50, 100]);
+		playSound('wrong');
+		return false;
+	  }
+	}
+
+	// PIN Input Auto-focus
+	$$('#auth-modal .pin-input').forEach((inp, i, arr) => {
+	  inp.addEventListener('input', () => { if(inp.value && i < arr.length-1) arr[i+1].focus(); });
+	  inp.addEventListener('keydown', (e) => { if(e.key==='Backspace' && !inp.value && i>0) arr[i-1].focus(); });
+	});
+
+	// ===== 18. Data Export/Import =====
+	async function exportData() {
+	  const history = await dbGetAll(CONFIG.STORES.history);
+	  const profile = await getProfile();
+	  const settings = await getSettings(); // 현재 캐시 기준 저장
+	  const data = { version: 3, exportDate: nowISO(), history, profile, settings: currentSettings };
+	  const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+	  const url = URL.createObjectURL(blob);
+	  const a = document.createElement('a');
+	  a.href = url; a.download = `math_practice_backup_${todayKey()}.json`;
+	  a.click(); URL.revokeObjectURL(url);
+	  showToast('데이터 내보내기 완료', 'success');
+	}
+
+	async function importData(e) {
+	  const file = e.target.files[0]; if(!file) return;
+	  const text = await file.text();
+	  try {
+		const data = JSON.parse(text);
+		if (!data.history || !data.profile) throw new Error('Invalid format');
+
+		if(!confirm('기존 데이터가 모두 덮어씌워집니다. 계속하시겠습니까?')) return;
+
+		await dbClear(CONFIG.STORES.history);
+		await dbClear(CONFIG.STORES.profile);
+		await dbClear(CONFIG.STORES.settings);
+
+		for(const r of data.history) await dbPut(CONFIG.STORES.history, r);
+		await dbPut(CONFIG.STORES.profile, { key: 'main', ...data.profile });
+		if(data.settings) { currentSettings = { ...DEFAULT_SETTINGS, ...data.settings }; await dbPut(CONFIG.STORES.settings, { key: '', value: currentSettings, updatedAt: nowISO() }); applySettings(currentSettings); }
+
+		showToast('데이터 가져오기 완료. 새로고침합니다.', 'success');
+		setTimeout(() => location.reload(), 1000);
+	  } catch(err) { console.error(err); showToast('가져오기 실패: 잘못된 파일', 'error'); }
+	  e.target.value = '';
+	}
+
+	async function clearAllHistory() {
+	  if(!confirm('정말 모든 기록(히스토리, 프로필, 설정)을 삭제하시겠습니까? 복구 불가합니다.')) return;
+	  if(!confirm('최종 확인: 영구 삭제됩니다.')) return;
+	  await dbClear(CONFIG.STORES.history);
+	  await dbClear(CONFIG.STORES.profile);
+	  await dbClear(CONFIG.STORES.settings);
+	  showToast('전체 데이터 초기화 완료. 새로고침합니다.', 'success');
+	  setTimeout(() => location.reload(), 1000);
+	}
+
+	async function confirmClearAll() {
+	  closeModal('settings-modal');
+	  await clearAllHistory();
+	}
+
+	// ===== 19. Statistics & Charts (Phase 4) =====
+	async function renderStats() {
+	  // 인증 체크는 showScreen에서 처리됨
+	  const records = await dbGetAll(CONFIG.STORES.history);
+	  const profile = await getProfile();
+	  renderStatsGrid(records, profile);
+	  renderWeeklyChart(records);
+	  renderWeaknessAnalysis(records);
+	}
+
+	function renderStatsGrid(records, profile) {
+	  const grid = $('#statsGrid');
+	  const totalSessions = records.length;
+	  const totalSolved = profile.stats.totalSolved || records.reduce((s,r)=>s+r.total,0);
+	  const totalCorrect = profile.stats.totalCorrect || records.reduce((s,r)=>s+r.correct,0);
+	  const overallAcc = totalSolved ? Math.round(totalCorrect/totalSolved*100) : 0;
+	  const bestStreak = profile.stats.streakMax || 0;
+
+	  grid.innerHTML = `
+		<div class="stat-card"><div class="stat-value">${totalSessions}</div><div class="stat-label">총 세션</div></div>
+		<div class="stat-card"><div class="stat-value">${totalSolved}</div><div class="stat-label">총 문항</div></div>
+		<div class="stat-card"><div class="stat-value">${overallAcc}%</div><div class="stat-label">전체 정답률</div></div>
+		<div class="stat-card"><div class="stat-value">${bestStreak}</div><div class="stat-label">최대 연승</div></div>
+	  `;
+	}
+
+	// --- Simple Canvas Chart (No Library) ---
+	function renderWeeklyChart(records) {
+	  const canvas = $('#weeklyChart');
+	  if (!canvas) return;
+	  const ctx = canvas.getContext('2d');
+	  const dpr = window.devicePixelRatio || 1;
+	  const rect = canvas.getBoundingClientRect();
+	  canvas.width = rect.width * dpr;
+	  canvas.height = rect.height * dpr;
+	  ctx.scale(dpr, dpr);
+	  const w = rect.width, h = rect.height;
+	  const padding = 40;
+	  const chartW = w - padding * 2;
+	  const chartH = h - padding * 2;
+
+	  ctx.clearRect(0, 0, w, h);
+
+	  // Last 7 days data
+	  const days = [];
+	  const scores = [];
+	  const today = new Date();
+	  for(let i=6; i>=0; i--) {
+		const d = new Date(today); d.setDate(d.getDate() - i);
+		const key = d.toISOString().split('T')[0];
+		days.push(`${d.getMonth()+1}/${d.getDate()}`);
+		const dayRecs = records.filter(r => r.date.startsWith(key));
+		const avg = dayRecs.length ? Math.round(dayRecs.reduce((s,r)=>s+r.score,0)/dayRecs.length) : null;
+		scores.push(avg);
+	  }
+
+	  // Grid & Axes
+	  ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--border').trim();
+	  ctx.lineWidth = 1;
+	  ctx.font = '11px var(--font-main)';
+	  ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim();
+	  ctx.textAlign = 'center';
+
+	  [0, 25, 50, 75, 100].forEach(v => {
+		const y = padding + chartH * (1 - v/100);
+		ctx.beginPath(); ctx.moveTo(padding, y); ctx.lineTo(w-padding, y); ctx.stroke();
+		ctx.fillText(`${v}%`, padding - 20, y + 4);
+	  });
+
+	  days.forEach((day, i) => {
+		const x = padding + (i / 6) * chartW;
+		ctx.beginPath(); ctx.moveTo(x, padding); ctx.lineTo(x, h-padding); ctx.stroke();
+		ctx.fillText(day, x, h - padding + 20);
+	  });
+
+	  // Line Path
+	  ctx.beginPath();
+	  ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();
+	  ctx.lineWidth = 3;
+	  ctx.lineCap = 'round';
+	  ctx.lineJoin = 'round';
+
+	  let firstPoint = true;
+	  scores.forEach((score, i) => {
+		if (score === null) return;
+		const x = padding + (i / 6) * chartW;
+		const y = padding + chartH * (1 - score/100);
+		if (firstPoint) { ctx.moveTo(x, y); firstPoint = false; }
+		else { ctx.lineTo(x, y); }
+	  });
+	  ctx.stroke();
+
+	  // Points
+	  scores.forEach((score, i) => {
+		if (score === null) return;
+		const x = padding + (i / 6) * chartW;
+		const y = padding + chartH * (1 - score/100);
+		ctx.beginPath();
+		ctx.arc(x, y, 6, 0, Math.PI*2);
+		ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--card').trim();
+		ctx.fill();
+		ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();
+		ctx.stroke();
+	  });
+
+	  // Legend
+	  const legendEl = $('#chartLegend');
+	  if (legendEl) legendEl.innerHTML = `
+		<span class="legend-item"><span class="legend-color" style="background:var(--primary)"></span> 정답률</span>
+		<span class="legend-item"><span class="legend-color" style="background:var(--success)"></span> 목표(80%)</span>
+	  `;
+
+	  // Target Line (80%)
+	  const targetY = padding + chartH * (1 - 80/100);
+	  ctx.setLineDash([5,5]);
+	  ctx.beginPath(); ctx.moveTo(padding, targetY); ctx.lineTo(w-padding, targetY); ctx.stroke();
+	  ctx.setLineDash([]);
+	}
+
+	function renderWeaknessAnalysis(records) {
+	  const container = $('#weaknessList');
+	  if (!records.length) { container.innerHTML = '<p style="text-align:center; color:var(--text-muted); padding:1rem;">분석할 데이터가 없습니다.</p>'; return; }
+
+	  const stats = {};
+	  records.forEach(r => {
+		r.details.forEach(q => {
+		  const key = `${q.level}_${q.op}_${q.carry ? 'carry' : 'nocarry'}`;
+		  if (!stats[key]) stats[key] = { total: 0, correct: 0, level: q.level, op: q.op, carry: q.carry };
+		  stats[key].total++;
+		  if (q.correct) stats[key].correct++;
+		});
+	  });
+
+	  const weak = Object.values(stats)
+		.filter(s => s.total >= 5 && s.correct/s.total < 0.7)
+		.sort((a,b) => (a.correct/a.total) - (b.correct/b.total))
+		.slice(0, 5);
+
+	  if (!weak.length) {
+		container.innerHTML = '<p style="text-align:center; color:var(--success); padding:1rem;">🎉 뚜렷한 취약 유형이 없습니다! 훌륭해요!</p>';
+		return;
+	  }
+
+	  const levelNames = {1:'1단계',2:'2단계',3:'3단계'};
+	  container.innerHTML = weak.map(s => {
+		const rate = Math.round(s.correct/s.total*100);
+		const typeName = `${levelNames[s.level]} ${s.op==='+'?'덧셈':'뺄셈'} ${s.carry?'(받아올림/내림)':'(기본)'}`;
+		return `
+		  <div class="weakness-item">
+			<div class="weakness-info">
+			  <div class="weakness-icon">${s.op==='+'?'➕':'➖'}</div>
+			  <div class="weakness-text">
+				<span class="weakness-name">${typeName}</span>
+				<span class="weakness-rate">${s.correct}/${s.total} 정답 (${rate}%)</span>
+			  </div>
+			</div>
+			<div class="weakness-bar"><div class="weakness-fill" style="width:${rate}%"></div></div>
+		  </div>
+		`;
+	  }).join('');
+	}
+
+	// ===== 20. Confetti Effect (Celebration) =====
+	let confettiParticles = [], confettiAnimationId = null;
+	const confettiCanvas = $('#confetti-canvas');
+	const confettiCtx = confettiCanvas.getContext('2d');
+
+	function resizeConfettiCanvas() {
+	  confettiCanvas.width = window.innerWidth;
+	  confettiCanvas.height = window.innerHeight;
+	}
+	window.addEventListener('resize', resizeConfettiCanvas);
+	resizeConfettiCanvas();
+
+	function launchConfetti(duration = 3000) {
+	  confettiParticles = [];
+	  const colors = ['#4285f4','#34a853','#fbbc05','#ea4335','#ff6d00','#ab47bc','#26c6da'];
+	  const shapes = ['circle', 'square', 'triangle'];
+
+	  for(let i=0; i<150; i++) {
+		confettiParticles.push({
+		  x: Math.random() * confettiCanvas.width,
+		  y: -20,
+		  size: Math.random() * 8 + 4,
+		  color: colors[Math.floor(Math.random() * colors.length)],
+		  shape: shapes[Math.floor(Math.random() * shapes.length)],
+		  vx: (Math.random() - 0.5) * 8,
+		  vy: Math.random() * 3 + 2,
+		  rotation: Math.random() * 360,
+		  rotationSpeed: (Math.random() - 0.5) * 20,
+		  opacity: 1
+		});
+	  }
+
+	  const endTime = Date.now() + duration;
+
+	  function animate() {
+		confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+
+		confettiParticles = confettiParticles.filter(p => {
+		  p.x += p.vx;
+		  p.y += p.vy;
+		  p.vy += 0.05; // Gravity
+		  p.rotation += p.rotationSpeed;
+		  p.opacity -= 0.005;
+
+		  if (p.y > confettiCanvas.height + 50 || p.opacity <= 0) return false;
+
+		  confettiCtx.globalAlpha = p.opacity;
+		  confettiCtx.fillStyle = p.color;
+		  confettiCtx.save();
+		  confettiCtx.translate(p.x, p.y);
+		  confettiCtx.rotate(p.rotation * Math.PI / 180);
+
+		  if (p.shape === 'circle') {
+			confettiCtx.beginPath(); confettiCtx.arc(0, 0, p.size, 0, Math.PI*2); confettiCtx.fill();
+		  } else if (p.shape === 'square') {
+			confettiCtx.fillRect(-p.size/2, -p.size/2, p.size, p.size);
+		  } else {
+			confettiCtx.beginPath();
+			confettiCtx.moveTo(0, -p.size);
+			confettiCtx.lineTo(p.size*0.866, p.size/2);
+			confettiCtx.lineTo(-p.size*0.866, p.size/2);
+			confettiCtx.closePath(); confettiCtx.fill();
+		  }
+		  confettiCtx.restore();
+		  return true;
+		});
+
+		if (Date.now() < endTime && confettiParticles.length > 0) {
+		  confettiAnimationId = requestAnimationFrame(animate);
+		} else {
+		  confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+		  confettiParticles = [];
+		}
+	  }
+	  animate();
+	}
+
+	// ===== 21. Keyboard Support (Quiz Input) =====
+	function handleGlobalKeydown(e) {
+	  if ($$('.modal-overlay.active').length) return;
+
+	  const activeScreen = Object.values(screens).find(id => $('#'+id).classList.contains('active'));
+
+	  if (activeScreen === screens.quiz) {
+		if (e.key >= '0' && e.key <= '9') handleKey(e.key);
+		else if (e.key === 'Backspace') handleKey('⌫');
+		else if (e.key === 'Enter') submitAnswer();
+		else if (e.key === 'Escape') showScreen('start');
+	  }
+
+	  // Global shortcuts
+	  if (e.altKey && e.key === 'h') { e.preventDefault(); showScreen('history'); }
+	  if (e.altKey && e.key === 'p') { e.preventDefault(); showScreen('profile'); }
+	  if (e.altKey && e.key === 's') { e.preventDefault(); openModal('settings-modal'); }
+	}
+
+	// ===== 22. Initialization =====
+	async function initApp() {
+	  // 1. 설정 초기 로드 (DB → 캐시)
+	  await loadInitialSettings();
+
+	  // 2. Confetti Canvas 초기화
+	  resizeConfettiCanvas();
+
+	  // 3. Start Screen Stats 로드
+	  await loadStartStats();
+
+	  // 4. Event Listeners
+	  document.addEventListener('keydown', handleGlobalKeydown);
+
+	  // Answer Input direct typing (supplement keypad)
+	  $('#answerInput').addEventListener('input', (e) => {
+		e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 3);
+	  });
+
+	  // PIN Input Auto-focus (Auth Modal)
+	  $$('#auth-modal .pin-input').forEach((inp, i, arr) => {
+		inp.addEventListener('input', () => { if(inp.value && i < arr.length-1) arr[i+1].focus(); });
+		inp.addEventListener('keydown', (e) => { if(e.key==='Backspace' && !inp.value && i>0) arr[i-1].focus(); });
+	  });
+
+	  // Close modals on overlay click
+	  $$('.modal-overlay').forEach(overlay => {
+		overlay.addEventListener('click', (e) => {
+		  if (e.target === overlay) closeModal(overlay.id);
+		});
+	  });
+
+	  // Prevent form submit on Enter in modals
+	  $$('.modal input').forEach(inp => inp.addEventListener('keydown', e => { if(e.key==='Enter') e.preventDefault(); }));
+
+	  // Service Worker Registration (Optional, for PWA/Offline if served via HTTP)
+	  if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+		try {
+		  // sw.js 파일이 별도로 있어야 함. 여기선 주석 처리 또는 간단 등록.
+		  // const reg = await navigator.serviceWorker.register('./sw.js');
+		  // console.log('SW Registered', reg.scope);
+		} catch(err) { console.log('SW Registration skipped (offline file:// or no sw.js)'); }
+	  }
+
+	  console.log('🧮 산수 연습장 초기화 완료');
+	}
+
+	// ===== 23. Run =====
+	document.addEventListener('DOMContentLoaded', initApp);
+
+	// ===== 24. Global Error Handler =====
+	window.addEventListener('error', (e) => {
+	  console.error('Global Error:', e.error);
+	  showToast('오류가 발생했습니다. 콘솔을 확인해주세요.', 'error');
+	});
+	window.addEventListener('unhandledrejection', (e) => {
+	  console.error('Unhandled Promise Rejection:', e.reason);
+	  showToast('비동기 오류 발생', 'error');
+	});
+  </script>
+</body>
+</html>
