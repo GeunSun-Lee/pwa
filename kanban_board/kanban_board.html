@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kanban Board</title>
+    <style>
+        :root {
+            /* Light Mode */
+            --bg-color: #f4f5f7;
+            --header-bg: #ffffff;
+            --column-bg: #ebecf0;
+            --card-bg: #ffffff;
+            --primary-blue: #0052cc;
+            --text-main: #172b4d;
+            --text-sub: #5e6c84;
+            --border-color: #ddd;
+            --modal-bg: rgba(0,0,0,0.5);
+            /* Priority Colors */
+            --prio-high: #ff5252;
+            --prio-medium: #ffab00;
+            --prio-low: #36a2eb;
+            /* Date Alert Colors */
+            --date-overdue: #ff5252;
+            --date-soon: #ffab00;
+        }
+
+        body.dark-mode {
+            --bg-color: #121212;
+            --header-bg: #1e1e1e;
+            --column-bg: #2c2c2c;
+            --card-bg: #333333;
+            --primary-blue: #4c9aff;
+            --text-main: #e0e0e0;
+            --text-sub: #a0a0a0;
+            --border-color: #444;
+            --modal-bg: rgba(0,0,0,0.8);
+        }
+		body.dark-mode.card { box-shadow: 0 1px 0 rgba(0,0,0,0.5); }
+		body.dark-mode.due-date { background: #4d5054; color: #ccc; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        header {
+            background-color: var(--header-bg);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 25px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .header-left { display: flex; align-items: center; gap: 20px; }
+        .header-left h1 { font-size: 22px; color: var(--primary-blue); margin: 0; }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .search-input {
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            background: var(--card-bg);
+            color: var(--text-main);
+            width: 200px;
+        }
+
+        .btn {
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 13px;
+            border: none;
+            transition: all 0.2s;
+        }
+        .btn:hover { opacity: 0.8; transform: translateY(-1px); }
+        .btn-add { background-color: var(--primary-blue); color: white; }
+        .btn-util { background-color: var(--text-sub); color: white; }
+        .btn-theme { background-color: var(--border-color); color: var(--text-main); }
+
+        /* Kanban Layout */
+        .board {
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+            align-items: flex-start;
+            overflow-x: auto;
+            min-height: calc(100vh - 80px);
+        }
+
+        .column {
+            background-color: var(--column-bg);
+            border-radius: 8px;
+            width: 350px;
+            min-width: 300px;
+            display: flex;
+            flex-direction: column;
+            padding: 12px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .column h2 {
+            font-size: 15px;
+            padding: 0 10px 15px 10px;
+            color: var(--text-sub);
+            text-transform: uppercase;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .task-list {
+            flex-grow: 1;
+            min-height: 150px;
+        }
+
+        /* Card Style */
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            cursor: pointer;
+            position: relative;
+            transition: transform 0.1s, background 0.2s;
+            border-left: 6px solid transparent;
+        }
+
+        .card:hover { background-color: var(--header-bg); transform: scale(1.02); }
+        .card.prio-high { border-left-color: var(--prio-high); }
+        .card.prio-medium { border-left-color: var(--prio-medium); }
+        .card.prio-low { border-left-color: var(--prio-low); }
+
+        .card-title { font-weight: 600; margin-bottom: 8px; display: block; font-size: 15px; }
+        .card-desc { font-size: 13px; color: var(--text-sub); margin-bottom: 12px; white-space: pre-wrap; line-height: 1.4; }
+        .card-footer { display: flex; justify-content: space-between; align-items: center; font-size: 11px; }
+
+        .due-date {
+            background: var(--column-bg);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            color: var(--text-sub);
+        }
+        .due-date.overdue { color: var(--date-overdue); border: 1px solid var(--date-overdue); }
+        .due-date.soon { color: var(--date-soon); border: 1px solid var(--date-soon); }
+
+        .btn-delete {
+            background: none; border: none; color: #ff5252; cursor: pointer; font-size: 11px; opacity: 0.6;
+        }
+        .btn-delete:hover { opacity: 1; text-decoration: underline; }
+
+        /* Modal Style */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--modal-bg);
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            backdrop-filter: blur(3px);
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 12px;
+            width: 450px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        .modal-content input, .modal-content textarea, .modal-content select {
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--bg-color);
+            color: var(--text-main);
+            font-family: inherit;
+        }
+
+        .modal-actions { display: flex; justify-content: flex-end; gap: 10px; }
+        .btn-cancel { background: var(--column-bg); color: var(--text-main); border: none; padding: 10px 20px; cursor: pointer; border-radius: 6px; }
+        .btn-save { background: var(--primary-blue); color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 6px; font-weight: bold; }
+
+        .drag-over { background-color: rgba(0, 82, 204, 0.1); outline: 2px dashed var(--primary-blue); }
+        #importFile { display: none; }
+		
+
+		/* 마감일 강조 스타일 */
+		.date-overdue { color: #ff5252 !important; font-weight: bold; }
+		.date-soon { color: #ffab00 !important; font-weight: bold; }
+
+		/* 헤더 컨트롤 스타일 */
+		.header-controls {
+			display: flex;
+			gap: 10px;
+			padding: 10px;
+			align-items: center;
+			margin-bottom: 15px;
+			flex-wrap: wrap;
+		}
+		.search-input {
+			padding: 8px;
+			border-radius: 3px;
+			border: 1px solid var(--border-color);
+			width: 200px;
+		}
+		.sort-select {
+			padding: 8px;
+			border-radius: 3px;
+			border: 1px solid var(--border-color);
+		}
+		.btn-theme {
+			background-color: #eee;
+			border: 1px solid #ccc;
+			padding: 8px 12px;
+			cursor: pointer;
+			border-radius: 3px;
+		}
+		body.dark-mode .btn-theme {
+			background-color: #444;
+			color: white;
+			border-color: #666;
+		}
+		/* 태그 스타일 */
+		.tag-container {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 4px;
+			margin-bottom: 8px;
+		}
+		.tag {
+			background: #dfe1e6;
+			color: #42526e;
+			font-size: 10px;
+			padding: 2px 6px;
+			border-radius: 3px;
+			font-weight: bold;
+		}
+		body.dark-mode .tag {
+			background: #4d5054;
+			color: #ccc;
+		}
+		
+		/* 체크리스트 컨테이너 */
+		.checklist-section {
+			margin: 10px 0;
+			padding-top: 10px;
+			border-top: 1px solid var(--border-color);
+		}
+
+		.checklist-item {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			font-size: 12px;
+			margin-bottom: 5px;
+			color: var(--text-sub);
+		}
+
+		.checklist-item input[type="checkbox"] {
+			cursor: pointer;
+			width: 14px;
+			height: 14px;
+		}
+
+		.checklist-item.completed span {
+			text-decoration: line-through;
+			opacity: 0.6;
+		}
+
+		/* 진행률 바 (Progress Bar) */
+		.progress-container {
+			width: 100%;
+			height: 6px;
+			background-color: #dfe1e6;
+			border-radius: 3px;
+			margin-bottom: 5px;
+			overflow: hidden;
+		}
+
+		.progress-fill {
+			height: 100%;
+			background-color: #4caf50; /* 완료 색상 (초록) */
+			width: 0%;
+			transition: width 0.3s ease;
+		}
+
+		.progress-text {
+			font-size: 10px;
+			color: var(--text-sub);
+			text-align: right;
+			display: block;
+			margin-bottom: 10px;
+		}
+
+		/* 모달 내 체크리스트 입력 스타일 */
+		.modal-checklist-input {
+			display: flex;
+			gap: 5px;
+			margin-bottom: 5px;
+		}
+		.modal-checklist-input input {
+			flex: 1;
+		}
+		
+		/* 스윔레인 전체 컨테이너 */
+		.swimlane {
+			margin-bottom: 30px;
+			width: 100%;
+		}
+
+		/* 스윔레인 구분 제목 (가로줄 헤더) */
+		.swimlane-header {
+			background-color: #dfe1e6;
+			padding: 8px 15px;
+			font-weight: bold;
+			font-size: 14px;
+			color: var(--text-main);
+			border-radius: 5px 5px 0 0;
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+		}
+
+		/* 스윔레인 내부의 컬럼들을 감싸는 영역 */
+		.swimlane-content {
+			display: flex;
+			gap: 20px;
+			align-items: flex-start;
+			padding: 10px 0;
+		}
+
+		/* 기존 .board 클래스는 이제 스윔레인들을 담는 그릇이 됩니다 */
+		.board {
+			display: flex;
+			flex-direction: column; /* 세로로 스윔레인들을 배치 */
+			gap: 0; 
+			overflow-x: auto;
+		}
+
+		/* 스윔레인 적용 시 .column의 min-height 조정 */
+		.column {
+			min-height: 100px; /* 기존 80vh에서 낮춤 (스윔레인이 여러 개일 수 있으므로) */
+			flex: 1; /* 컬럼들이 균등하게 나눠 갖도록 */
+		}
+		
+		body.dark-mode .swimlane-header {
+			background-color: #3c3f41;
+			color: #e1e3e6;
+		}
+
+		body.dark-mode .progress-container {
+			background-color: #4d5054;
+		}
+
+		body.dark-mode .checklist-item {
+			color: #b0b3b8;
+		}
+
+		body.dark-mode .progress-text {
+			color: #b0b3b8;
+		}
+		/* 대시보드 모달 전체 컨테이너 */
+		.dashboard-modal {
+			display: none; /* 기본적으로 숨김 */
+			position: fixed;
+			top: 0; left: 0; width: 100%; height: 100%;
+			background: rgba(0,0,0,0.7);
+			backdrop-filter: blur(5px);
+			justify-content: center;
+			align-items: center;
+			z-index: 1000;
+		}
+
+		.dashboard-content {
+			background: var(--bg-color);
+			width: 80%;
+			max-width: 1000px;
+			max-height: 90vh;
+			border-radius: 15px;
+			padding: 30px;
+			overflow-y: auto;
+			position: relative;
+			box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+		}
+
+		.dashboard-header {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: 30px;
+			border-bottom: 2px solid var(--border-color);
+			padding-bottom: 15px;
+		}
+
+		/* 요약 카드 그리드 (상단 3~4개 카드) */
+		.stat-grid {
+			display: grid;
+			grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+			gap: 20px;
+			margin-bottom: 40px;
+		}
+
+		.stat-card {
+			background: var(--card-bg);
+			padding: 20px;
+			border-radius: 10px;
+			text-align: center;
+			box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+			border: 1px solid var(--border-color);
+		}
+
+		.stat-card .label {
+			font-size: 14px;
+			color: var(--text-sub);
+			margin-bottom: 10px;
+			display: block;
+		}
+
+		.stat-card .value {
+			font-size: 28px;
+			font-weight: bold;
+			color: var(--primary-blue);
+		}
+
+		/* 차트 섹션 (막대 그래프 형태) */
+		.chart-section {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 30px;
+		}
+
+		.chart-container {
+			background: var(--card-bg);
+			padding: 20px;
+			border-radius: 10px;
+			border: 1px solid var(--border-color);
+		}
+
+		.chart-title {
+			font-size: 16px;
+			font-weight: bold;
+			margin-bottom: 20px;
+			color: var(--text-main);
+			text-align: center;
+		}
+
+		/* 커스텀 CSS 막대 그래프 */
+		.bar-group {
+			margin-bottom: 15px;
+		}
+
+		.bar-label {
+			display: flex;
+			justify-content: space-between;
+			font-size: 13px;
+			margin-bottom: 5px;
+			color: var(--text-sub);
+		}
+
+		.bar-bg {
+			width: 100%;
+			height: 12px;
+			background: #dfe1e6;
+			border-radius: 6px;
+			overflow: hidden;
+		}
+
+		.bar-fill {
+			height: 100%;
+			background: var(--primary-blue);
+			width: 0%; /* JS에서 동적으로 조절 */
+			transition: width 0.5s ease-out;
+			border-radius: 6px;
+		}
+
+		/* 우선순위별 색상 적용 */
+		.bar-fill.high { background-color: var(--prio-high); }
+		.bar-fill.medium { background-color: var(--prio-medium); }
+		.bar-fill.low { background-color: var(--prio-low); }
+
+		/* 다크모드 대응 */
+		body.dark-mode .dashboard-content {
+			background: #1a1c1e;
+		}
+		body.dark-mode .stat-card {
+			background: #2d2f31;
+			border-color: #444;
+		}
+		body.dark-mode .chart-container {
+			background: #2d2f31;
+			border-color: #444;
+		}
+		body.dark-mode .bar-bg {
+			background: #4d5054;
+		}
+		body.dark-mode .bar-label {
+			color: #b0b3b8;
+		}
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-left">
+            <h1>🚀 Kanban Board</h1>
+        </div>
+        <div class="header-right">
+            <!-- [추가] 대시보드 버튼 -->
+            <button class="btn" style="background-color: #4caf50; color: white;" onclick="openDashboard()">📊 대시보드</button>
+            <button class="btn btn-theme" onclick="toggleTheme()">🌙 테마 변경</button>
+            <button class="btn btn-export" onclick="exportData()">💾 내보내기</button>
+            <button class="btn btn-import" onclick="document.getElementById('importFile').click()">📂 가져오기</button>
+            <input type="file" id="importFile" accept=".json" onchange="importData(event)" style="display:none;">
+            <button class="btn btn-add" onclick="openModal()">+ 이슈 생성</button>
+        </div>
+    </header>
+
+    <!-- 검색 및 정렬 컨트롤 -->
+    <div class="header-controls">
+        <input type="text" id="searchInput" class="search-input" placeholder="이슈, 태그, 내용 검색..." oninput="handleSearch()">
+        <select id="sortSelect" class="sort-select" onchange="loadTasks()">
+            <option value="newest">최신순</option>
+            <option value="oldest">오래된순</option>
+            <option value="due">마감일순</option>
+            <option value="priority">우선순위순</option>
+        </select>
+    </div>
+
+    <!-- 보드 영역: 스윔레인에 의해 동적으로 생성됨 -->
+    <main class="board" id="mainBoard">
+        <!-- JavaScript loadTasks() 함수가 이곳에 .swimlane 구조를 생성합니다 -->
+    </main>
+
+    <!-- 이슈 등록/수정 모달 -->
+    <div id="taskModal" class="modal">
+        <div class="modal-content" style="width: 500px;">
+            <h3 id="modalTitle">새 이슈 등록</h3>
+            <input type="hidden" id="taskId">
+            
+            <input type="text" id="taskTitle" placeholder="이슈 제목">
+            <textarea id="taskDesc" rows="3" placeholder="상세 내용"></textarea>
+            
+            <div style="display: flex; flex-direction: column; gap: 5px; margin-bottom: 15px;">
+                <label style="font-size: 12px; color: #666;">스윔레인 (그룹 이름)</label>
+                <input type="text" id="taskSwimlane" placeholder="예: 기획팀, 긴급작업, 담당자A">
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 5px;">
+                    <label style="font-size: 12px; color: #666;">우선순위</label>
+                    <select id="taskPriority">
+                        <option value="low">낮음</option>
+                        <option value="medium" selected>보통</option>
+                        <option value="high">높음</option>
+                    </select>
+                </div>
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 5px;">
+                    <label style="font-size: 12px; color: #666;">마감일</label>
+                    <input type="date" id="taskDueDate">
+                </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 5px; margin-bottom: 15px;">
+                <label style="font-size: 12px; color: #666;">태그 (쉼표로 구분)</label>
+                <input type="text" id="taskTags" placeholder="예: 버그, UI, 긴급">
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; border: 1px solid var(--border-color); padding: 10px; border-radius: 5px;">
+                <label style="font-size: 12px; font-weight: bold; color: #666;">체크리스트 (세부 작업)</label>
+                <div id="checklistContainer"></div>
+                <button class="btn" style="background: #eee; color: #333; font-size: 11px; width: fit-content;" onclick="addChecklistItemField()">+ 항목 추가</button>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeModal()">취소</button>
+                <button class="btn-save" onclick="saveTask()">저장</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- [추가] 통계 대시보드 모달 -->
+    <div id="dashboardModal" class="dashboard-modal">
+        <div class="dashboard-content">
+            <div class="dashboard-header">
+                <h2>📊 프로젝트 통계 분석</h2>
+                <button class="btn-cancel" onclick="closeDashboard()" style="font-size: 20px; padding: 0 10px;">&times;</button>
+            </div>
+
+            <!-- 상단 요약 카드 -->
+            <div class="stat-grid" id="statGrid">
+                <!-- JS에서 동적으로 생성 (전체수, 완료율 등) -->
+            </div>
+
+            <!-- 차트 섹션 -->
+            <div class="chart-section">
+                <!-- 상태별 분포 차트 -->
+                <div class="chart-container">
+                    <div class="chart-title">상태별 이슈 분포</div>
+                    <div id="statusChart">
+                        <!-- JS에서 막대 그래프 생성 -->
+                    </div>
+                </div>
+                <!-- 우선순위별 분포 차트 -->
+                <div class="chart-container">
+                    <div class="chart-title">우선순위별 분포</div>
+                    <div id="priorityChart">
+                        <!-- JS에서 막대 그래프 생성 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * DB 및 전역 설정
+         */
+        let db;
+        const DB_NAME = "KanbanDB_v5";
+        const STORE_NAME = "tasks";
+
+        const request = indexedDB.open(DB_NAME, 1);
+        request.onupgradeneeded = (e) => {
+            db = e.target.result;
+            if (!db.objectStoreNames.contains(STORE_NAME)) {
+                db.createObjectStore(STORE_NAME, { keyPath: "id", autoIncrement: true });
+            }
+        };
+        request.onsuccess = (e) => {
+            db = e.target.result;
+            loadTasks();
+        };
+
+        /**
+         * 검색 최적화를 위한 전역 변수
+         */
+        let searchTimer = null; // 디바운싱을 위한 타이머
+        let lastRequestId = 0;  // 최신 요청을 추적하기 위한 ID
+
+
+        // 테마 토글
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
+            localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+        }
+
+        window.onload = () => {
+            if (localStorage.getItem('theme') === 'dark') {
+                document.body.classList.add('dark-mode');
+            }
+        };
+
+        /**
+         * 모달 제어 로직
+         */
+        function openModal(taskId = null) {
+            const modal = document.getElementById('taskModal');
+            if (taskId) {
+                document.getElementById('modalTitle').innerText = "이슈 수정";
+                loadTaskIntoModal(taskId);
+            } else {
+                document.getElementById('modalTitle').innerText = "새 이슈 등록";
+                clearForm();
+            }
+            modal.style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('taskModal').style.display = 'none';
+        }
+
+        function clearForm() {
+            document.getElementById('taskId').value = '';
+            document.getElementById('taskTitle').value = '';
+            document.getElementById('taskDesc').value = '';
+            document.getElementById('taskSwimlane').value = '기본';
+            document.getElementById('taskTags').value = '';
+            document.getElementById('taskPriority').value = 'medium';
+            document.getElementById('taskDueDate').value = '';
+            document.getElementById('checklistContainer').innerHTML = '';
+        }
+
+        function addChecklistItemField(text = '', done = false) {
+            const container = document.getElementById('checklistContainer');
+            const div = document.createElement('div');
+            div.className = 'modal-checklist-input';
+            div.innerHTML = `
+                <input type="checkbox" class="cl-done" ${done ? 'checked' : ''}>
+                <input type="text" class="cl-text" placeholder="할 일 입력" value="${text}">
+                <button class="btn-delete" style="padding: 0 5px;" onclick="this.parentElement.remove()">×</button>
+            `;
+            container.appendChild(div);
+        }
+        /**
+         * 데이터 처리 로직 (CRUD)
+         */
+        function loadTaskIntoModal(id) {
+            const transaction = db.transaction([STORE_NAME], "readonly");
+            const store = transaction.objectStore(STORE_NAME);
+            const getRequest = store.get(id);
+
+            getRequest.onsuccess = () => {
+                const task = getRequest.result;
+                document.getElementById('taskId').value = task.id;
+                document.getElementById('taskTitle').value = task.title;
+                document.getElementById('taskDesc').value = task.desc;
+                document.getElementById('taskSwimlane').value = task.swimlane || '기본';
+                document.getElementById('taskTags').value = task.tags ? task.tags.join(', ') : '';
+                document.getElementById('taskPriority').value = task.priority || 'medium';
+                document.getElementById('taskDueDate').value = task.dueDate;
+
+                // [체크리스트 로드] 기존 데이터를 기반으로 입력 필드 생성
+                document.getElementById('checklistContainer').innerHTML = '';
+                if (task.checklist && Array.isArray(task.checklist)) {
+                    task.checklist.forEach(item => {
+                        addChecklistItemField(item.text, item.done);
+                    });
+                }
+            };
+        }
+
+        function saveTask() {
+            const id = document.getElementById('taskId').value;
+            const title = document.getElementById('taskTitle').value;
+            const desc = document.getElementById('taskDesc').value;
+            const swimlane = document.getElementById('taskSwimlane').value || '기본';
+            const priority = document.getElementById('taskPriority').value;
+            const dueDate = document.getElementById('taskDueDate').value;
+            
+            // [태그 처리] 쉼표 구분 문자열 -> 배열
+            const tagsInput = document.getElementById('taskTags').value;
+            const tags = tagsInput.split(',').map(t => t.trim()).filter(t => t !== '');
+
+            // [체크리스트 처리] 입력 필드들 -> 객체 배열
+            const checklistItems = [];
+            document.querySelectorAll('.modal-checklist-input').forEach(div => {
+                const text = div.querySelector('.cl-text').value;
+                const done = div.querySelector('.cl-done').checked;
+                if (text.trim() !== '') {
+                    checklistItems.push({ text, done });
+                }
+            });
+
+            if (!title) { alert("제목을 입력해주세요."); return; }
+
+            const transaction = db.transaction([STORE_NAME], "readwrite");
+            const store = transaction.objectStore(STORE_NAME);
+            
+            const taskData = {
+                title, desc, swimlane, priority, dueDate, tags,
+                checklist: checklistItems,
+                updatedAt: new Date().getTime(),
+                status: id ? (window.currentTaskStatus || 'todo') : 'todo'
+            };
+
+            if (id) {
+                taskData.id = parseInt(id);
+                store.put(taskData);
+            } else {
+                taskData.createdAt = new Date().getTime();
+                store.add(taskData);
+            }
+            transaction.oncomplete = () => { closeModal(); loadTasks(); };
+        }
+
+        function deleteTask(id) {
+            if(!confirm("정말 삭제하시겠습니까?")) return;
+            const transaction = db.transaction([STORE_NAME], "readwrite");
+            const store = transaction.objectStore(STORE_NAME);
+            store.delete(id);
+            transaction.oncomplete = () => loadTasks();
+        }
+
+        /**
+         * 체크리스트 개별 항목 업데이트 (카드에서 직접 체크 시)
+         */
+        function toggleChecklistItem(taskId, itemIndex) {
+            const transaction = db.transaction([STORE_NAME], "readwrite");
+            const store = transaction.objectStore(STORE_NAME);
+            
+            store.get(taskId).onsuccess = (e) => {
+                const task = e.target.result;
+                if (task.checklist && task.checklist[itemIndex]) {
+                    task.checklist[itemIndex].done = !task.checklist[itemIndex].done;
+                    store.put(task);
+                }
+                transaction.oncomplete = () => loadTasks(); // 진행률 바 실시간 갱신을 위해 리로드
+            };
+        }
+
+        /**
+         * 데이터 백업 (파일명에 날짜-시간 포함)
+         */
+        function exportData() {
+            const transaction = db.transaction([STORE_NAME], "readonly");
+            const store = transaction.objectStore(STORE_NAME);
+
+            store.getAll().onsuccess = (e) => {
+                const data = e.target.result;
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+
+                // --- 날짜 및 시간 포맷팅 시작 ---
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const day = String(now.getDate()).padStart(2, '0');
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                const seconds = String(now.getSeconds()).padStart(2, '0');
+
+                // 파일명 예: kanban-backup-2026-08-01_09-00-00.json
+                const fileName = `kanban-backup-${year}-${month}-${day}_${hours}-${minutes}-${seconds}.json`;
+                // --- 날짜 및 시간 포맷팅 끝 ---
+
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = fileName;
+                a.click();
+
+                // 메모리 누수 방지를 위해 URL 객체 해제
+                URL.revokeObjectURL(url);
+            };
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (confirm("기존 데이터를 모두 대체하시겠습니까?")) {
+                        const transaction = db.transaction([STORE_NAME], "readwrite");
+                        const store = transaction.objectStore(STORE_NAME);
+                        store.clear();
+                        data.forEach(item => store.put(item));
+                        transaction.oncomplete = () => { alert("데이터 복구 완료"); loadTasks(); };
+                    }
+                } catch(err) { alert("올바른 JSON 파일이 아닙니다."); }
+            };
+            reader.readAsText(file);
+        }
+
+
+        /**
+         * [추가] 검색 입력 핸들러 (디바운싱 적용)
+         */
+        function handleSearch() {
+            // 이전 타이머를 취소하여 연속 입력 시 마지막 입력만 처리하도록 함
+            if (searchTimer) clearTimeout(searchTimer);
+
+            // 200ms 후에 loadTasks 실행 (사용자가 입력을 잠시 멈췄을 때)
+            searchTimer = setTimeout(() => {
+                loadTasks();
+            }, 200);
+        }
+
+        /**
+         * [수정] loadTasks 함수 (요청 ID 검증 로직 추가)
+         */
+        function loadTasks() {
+            const searchQuery = document.getElementById('searchInput').value.toLowerCase();
+            const sortValue = document.getElementById('sortSelect').value;
+            const board = document.getElementById('mainBoard');
+
+            // 이번 요청의 고유 ID 생성
+            const currentRequestId = ++lastRequestId;
+
+            const transaction = db.transaction([STORE_NAME], "readonly");
+            const store = transaction.objectStore(STORE_NAME);
+            const request = store.getAll();
+
+            request.onsuccess = () => {
+                // [핵심] 현재 응답이 가장 마지막에 요청한 것인지 확인
+                // 만약 그 사이에 새로운 요청이 발생했다면, 이 결과는 무시함
+                if (currentRequestId !== lastRequestId) return;
+
+                // 보드 초기화는 요청이 성공한 시점에 수행 (화면 깜빡임 방지)
+                board.innerHTML = '';
+
+                let tasks = request.result;
+
+                // 1. 검색 필터링
+                tasks = tasks.filter(t => 
+                    t.title.toLowerCase().includes(searchQuery) || 
+                    t.desc.toLowerCase().includes(searchQuery) ||
+                    (t.tags && t.tags.some(tag => tag.toLowerCase().includes(searchQuery)))
+                );
+
+                // 2. 정렬 로직 (기존과 동일)
+                tasks.sort((a, b) => {
+                    if (sortValue === 'newest') return b.createdAt - a.createdAt;
+                    if (sortValue === 'oldest') return a.createdAt - b.createdAt;
+                    if (sortValue === 'due') return new Date(a.dueDate || '9999-12-31') - new Date(b.dueDate || '9999-12-31');
+                    if (sortValue === 'priority') {
+                        const map = { high: 1, medium: 2, low: 3 };
+                        return map[a.priority] - map[b.priority];
+                    }
+                    return 0;
+                });
+
+                // 3. 스윔레인별 그룹화 및 렌더링 (기존과 동일)
+                const lanes = {};
+                tasks.forEach(task => {
+                    const laneName = task.swimlane || '기본';
+                    if (!lanes[laneName]) lanes[laneName] = [];
+                    lanes[laneName].push(task);
+                });
+
+                Object.keys(lanes).forEach(laneName => {
+                    const laneDiv = document.createElement('div');
+                    laneDiv.className = 'swimlane';
+                    laneDiv.innerHTML = `
+                        <div class="swimlane-header">
+                            <span>${laneName}</span>
+                            <span style="font-size:11px; opacity:0.7;">이슈 ${lanes[laneName].length}개</span>
+                        </div>
+                        <div class="swimlane-content">
+                            <div class="column" ondragover="allowDrop(event)" ondragleave="clearDragOver(event)" ondrop="drop(event, 'todo', '${laneName}')">
+                                <h2>Todo</h2>
+                                <div class="task-list" id="todo-${laneName}"></div>
+                            </div>
+                            <div class="column" ondragover="allowDrop(event)" ondragleave="clearDragOver(event)" ondrop="drop(event, 'in-progress', '${laneName}')">
+                                <h2>In Progress</h2>
+                                <div class="task-list" id="in-progress-${laneName}"></div>
+                            </div>
+                            <div class="column" ondragover="allowDrop(event)" ondragleave="clearDragOver(event)" ondrop="drop(event, 'done', '${laneName}')">
+                                <h2>Done</h2>
+                                <div class="task-list" id="done-${laneName}"></div>
+                            </div>
+                        </div>
+                    `;
+                    board.appendChild(laneDiv);
+                    lanes[laneName].forEach(task => renderTask(task, laneName));
+                });
+            };
+        }
+
+        function renderTask(task, laneName) {
+            const container = document.getElementById(`${task.status}-${laneName}`);
+            if (!container) return;
+
+            const card = document.createElement('div');
+            card.className = `card prio-${task.priority || 'medium'}`;
+            card.draggable = true;
+            card.id = `task-${task.id}`;
+            
+            card.ondragstart = (e) => e.dataTransfer.setData("text/plain", task.id);
+            card.onclick = (e) => {
+                if (e.target.classList.contains('btn-delete') || e.target.type === 'checkbox') return;
+                window.currentTaskStatus = task.status;
+                openModal(task.id);
+            };
+
+            // 마감일 강조 로직
+            let dateClass = "";
+            if (task.dueDate) {
+                const today = new Date().setHours(0,0,0,0);
+                const due = new Date(task.dueDate).setHours(0,0,0,0);
+                const diff = due - today;
+                if (diff < 0) dateClass = "date-overdue";
+                else if (diff <= 3 * 24 * 60 * 60 * 1000) dateClass = "date-soon";
+            }
+
+            // [체크리스트 및 진행률 바 계산]
+            let checklistHTML = '';
+            let progressPercent = 0;
+            if (task.checklist && task.checklist.length > 0) {
+                const total = task.checklist.length;
+                const doneCount = task.checklist.filter(i => i.done).length;
+                progressPercent = Math.round((doneCount / total) * 100);
+
+                checklistHTML = `
+                    <div class="checklist-section">
+                        <span class="progress-text">${doneCount}/${total} 완료 (${progressPercent}%)</span>
+                        <div class="progress-container">
+                            <div class="progress-fill" style="width: ${progressPercent}%"></div>
+                        </div>
+                        <div class="checklist-items">
+                            ${task.checklist.map((item, idx) => `
+                                <div class="checklist-item ${item.done ? 'completed' : ''}">
+                                    <input type="checkbox" ${item.done ? 'checked' : ''} 
+                                           onclick="toggleChecklistItem(${task.id}, ${idx})">
+                                    <span>${item.text}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            const tagsHTML = task.tags 
+                ? `<div class="tag-container">${task.tags.map(t => `<span class="tag">${t}</span>`).join('')}</div>` 
+                : '';
+
+            card.innerHTML = `
+                <span class="card-title">${task.title}</span>
+                ${tagsHTML}
+                <div class="card-desc">${task.desc}</div>
+                ${checklistHTML}
+                <div class="card-footer">
+                    <span class="due-date ${dateClass}">${task.dueDate || '기한 없음'}</span>
+                    <button class="btn-delete" onclick="deleteTask(${task.id})">삭제</button>
+                </div>
+            `;
+            container.appendChild(card);
+        }
+
+        /**
+         * 드래그 앤 드롭 로직
+         */
+        function allowDrop(e) { 
+            e.preventDefault(); 
+            e.currentTarget.classList.add('drag-over'); 
+        }
+        function clearDragOver(e) { 
+            e.currentTarget.classList.remove('drag-over'); 
+        }
+        function drop(e, newStatus, laneName) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('drag-over');
+            const id = parseInt(e.dataTransfer.getData("text/plain"));
+            
+            const transaction = db.transaction([STORE_NAME], "readwrite");
+            const store = transaction.objectStore(STORE_NAME);
+            
+            store.get(id).onsuccess = (event) => {
+                const task = event.target.result;
+                task.status = newStatus;
+                // 만약 드롭한 컬럼의 스윔레인이 기존과 다르다면 스윔레인도 변경 (선택적 기능)
+                task.swimlane = laneName; 
+                store.put(task);
+                transaction.oncomplete = () => loadTasks();
+            };
+        }
+        /**
+         * [통계 대시보드] 제어 및 데이터 분석 로직
+         */
+        function openDashboard() {
+            document.getElementById('dashboardModal').style.display = 'flex';
+            updateDashboardStats(); // 대시보드 열 때마다 최신 데이터로 갱신
+        }
+
+        function closeDashboard() {
+            document.getElementById('dashboardModal').style.display = 'none';
+        }
+
+        function updateDashboardStats() {
+            const transaction = db.transaction([STORE_NAME], "readonly");
+            const store = transaction.objectStore(STORE_NAME);
+            const request = store.getAll();
+
+            request.onsuccess = () => {
+                const tasks = request.result;
+                const total = tasks.length;
+
+                if (total === 0) {
+                    document.getElementById('statGrid').innerHTML = '<p style="grid-column: 1/-1; text-align:center; color:var(--text-sub);">데이터가 없습니다. 이슈를 생성해 주세요!</p>';
+                    document.getElementById('statusChart').innerHTML = '';
+                    document.getElementById('priorityChart').innerHTML = '';
+                    return;
+                }
+
+                // 1. 기초 통계 계산
+                const stats = {
+                    todo: tasks.filter(t => t.status === 'todo').length,
+                    inProgress: tasks.filter(t => t.status === 'in-progress').length,
+                    done: tasks.filter(t => t.status === 'done').length,
+                    highPrio: tasks.filter(t => t.priority === 'high').length,
+                    mediumPrio: tasks.filter(t => t.priority === 'medium').length,
+                    lowPrio: tasks.filter(t => t.priority === 'low').length,
+                };
+
+                const completionRate = Math.round((stats.done / total) * 100);
+                const pendingTasks = stats.todo + stats.inProgress;
+
+                // 2. 상단 요약 카드 렌더링
+                const statGrid = document.getElementById('statGrid');
+                statGrid.innerHTML = `
+                    <div class="stat-card">
+                        <span class="label">전체 이슈</span>
+                        <span class="value">${total}개</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="label">전체 완료율</span>
+                        <span class="value">${completionRate}%</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="label">미완료 작업</span>
+                        <span class="value">${pendingTasks}개</span>
+                    </div>
+                    <div class="stat-card" style="border-top: 4px solid var(--prio-high);">
+                        <span class="label">긴급(High) 이슈</span>
+                        <span class="value">${stats.highPrio}개</span>
+                    </div>
+                `;
+
+                // 3. 상태별 분포 차트 생성 (Todo, In Progress, Done)
+                const statusChart = document.getElementById('statusChart');
+                const statusData = [
+                    { label: 'Todo', value: stats.todo, color: 'var(--primary-blue)' },
+                    { label: 'In Progress', value: stats.inProgress, color: '#ffab00' },
+                    { label: 'Done', value: stats.done, color: '#4caf50' }
+                ];
+                statusChart.innerHTML = renderBarChart(statusData, total);
+
+                // 4. 우선순위별 분포 차트 생성 (High, Medium, Low)
+                const priorityChart = document.getElementById('priorityChart');
+                const priorityData = [
+                    { label: '높음', value: stats.highPrio, color: 'var(--prio-high)', class: 'high' },
+                    { label: '보통', value: stats.mediumPrio, color: 'var(--prio-medium)', class: 'medium' },
+                    { label: '낮음', value: stats.lowPrio, color: 'var(--prio-low)', class: 'low' }
+                ];
+                priorityChart.innerHTML = renderBarChart(priorityData, total);
+            };
+        }
+
+        /**
+         * 막대 그래프 HTML 생성 헬퍼 함수
+         */
+        function renderBarChart(data, total) {
+            return data.map(item => {
+                const percent = Math.round((item.value / total) * 100);
+                return `
+                    <div class="bar-group">
+                        <div class="bar-label">
+                            <span>${item.label}</span>
+                            <span>${item.value}개 (${percent}%)</span>
+                        </div>
+                        <div class="bar-bg">
+                            <div class="bar-fill ${item.class || ''}" style="width: ${percent}%; background-color: ${item.color};"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+    </script>
+</body>
+</html>
