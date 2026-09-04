@@ -1,143 +1,250 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PWA + Dexie.js 템플릿</title>
-    
-    <link rel="manifest" href="./manifest.json">
-    <meta name="theme-color" content="#4A90E2">
+  <meta charset="UTF-8">
+  <!-- 뷰포트: 모바일 최적화, 줌 금지(앱 느낌), 안전영역 지원 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0,-scalable=no, viewport-fit=cover">
+  
+  <!-- 👇 하위 경로 배포 시 주석 해제 및 경로 수정 (예: /my-todo-app/) -->
+  <!-- <base href="/your-repo-name/"> -->
 
-    <!-- Dexie.js CDN 불러오기 -->
-    <script src="https://unpkg.com/dexie@3/dist/dexie.js"></script>
-    
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            max-width: 500px;
-            margin: 0 auto;
-            padding: 30px;
-            background-color: #f4f7f6;
-            color: #333;
-        }
-        h1 { color: #4A90E2; text-align: center; }
-        .input-group {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        input {
-            flex: 1;
-            padding: 10px;
-            font-size: 16px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-        button {
-            padding: 10px 20px;
-            font-size: 16px;
-            background-color: #4A90E2;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        button:hover { background-color: #357abd; }
-        ul {
-            list-style: none;
-            padding: 0;
-        }
-        li {
-            background: white;
-            padding: 12px;
-            margin-bottom: 8px;
-            border-radius: 5px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-        .delete-btn {
-            background-color: #e74c3c;
-            padding: 5px 10px;
-            font-size: 14px;
-        }
-        .delete-btn:hover { background-color: #c0392b; }
-    </style>
+  <!-- PWA 메타 태그 (iOS/안드로이드 공통) -->
+  <meta name="theme-color" content="#FF8A7A" media="(prefers-color-scheme: light)">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="내 할 일">
+  <meta name="application-name" content="내 할 일">
+  <meta name="description" content="초등학생을 위한 귀여운 오프라인 할 일 메모장">
+  
+  <!-- 아이콘 (manifest.json과 중복되어도 안전하게 명시) -->
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="./icons/icon-512.png">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
+  <link rel="manifest" href="./manifest.json">
+  <link rel="stylesheet" href="./style.css">
+
+  <!-- CSP: GitHub Pages는 HTTP 헤더 수정 불가하므로 메타 태그로 설정 -->
+  <!-- 'unsafe-inline'은 style.css 내 @font-face base64 또는 인라인 스타일 용도 최소화 위해 허용 -->
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self'; 
+    script-src 'self'; 
+    style-src 'self' 'unsafe-inline'; 
+    img-src 'self' data: blob:; 
+    font-src 'self' data:; 
+    connect-src 'self'; 
+    media-src 'self' blob:; 
+    object-src 'none'; 
+    base-uri 'self'; 
+    form-action 'self';
+  ">
+  
+  <title>내 할 일 메모장 🎒</title>
 </head>
 <body>
 
-    <h1>오프라인 Todo 앱 📝</h1>
-    
-    <div class="input-group">
-        <input type="text" id="todoInput" placeholder="할 일을 입력하세요...">
-        <button onclick="addTodo()">추가</button>
+  <!-- ======================================================================
+       1. 접근성: 건너뛰기 링크
+       ====================================================================== -->
+  <a href="#main-content" class="skip-nav">본문으로 건너뛰기</a>
+
+  <!-- ======================================================================
+       2. 헤더 (상단 고정)
+       ====================================================================== -->
+  <header class="app-header" role="banner">
+    <div class="header-left">
+      <h1>오늘의 할 일 <span id="today-date" aria-live="polite"></span></h1>
     </div>
+    <div class="header-right">
+      <button 
+        id="btn-toggle-done" 
+        class="btn-icon" 
+        aria-label="끝난 일 보기/숨기기" 
+        aria-pressed="true"
+        title="완료한 일 접기/펼치기"
+      >
+        📂
+      </button>
+    </div>
+  </header>
 
-    <ul id="todoList"></ul>
+  <!-- ======================================================================
+       3. 메인 콘텐츠 영역
+       ====================================================================== -->
+  <main id="main-content" class="app-main" role="main">
+    <!-- 할 일 리스트 (UL) -->
+    <ul id="task-list" class="task-list" role="list" aria-label="할 일 목록"></ul>
 
-    <script>
-        // 1. Dexie DB 초기화 (이름: MyPWA_DB)
-        const db = new Dexie('MyPWA_DB');
-        
-        // 스키마 정의 (todos 테이블의 기본키는 id, 자동 증가)
-        db.version(1).stores({
-            todos: '++id, text'
-        });
+    <!-- 빈 상태 (할 일 없을 때) -->
+    <div id="empty-state" class="empty-state hidden" aria-live="polite">
+      <div class="empty-icon">📝</div>
+      <p>아직 할 일이 없어요!</p>
+      <span class="empty-hint">아래 <b>+ 버튼</b>을 눌러 추가해 보세요.</span>
+    </div>
+  </main>
 
-        // 화면에 할 일 목록 렌더링 함수
-        async function loadTodos() {
-            const listEl = document.getElementById('todoList');
-            listEl.innerHTML = '';
+  <!-- ======================================================================
+       4. 플로팅 액션 버튼 (FAB) - 할 일 추가
+       ====================================================================== -->
+  <button 
+    id="btn-add-task" 
+    class="fab" 
+    aria-label="새 할 일 추가" 
+    title="새 할 일 추가"
+  >
+    +
+  </button>
 
-            // Dexie로 데이터베이스에서 모든 데이터 가져오기
-            const allTodos = await db.todos.toArray();
+  <!-- ======================================================================
+       5. 할 일 추가/수정 다이얼로그 (네이티브 <dialog>)
+       ====================================================================== -->
+  <dialog id="task-dialog" class="task-dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
+    <form id="task-form" method="dialog" novalidate>
+      <!-- 헤더 -->
+      <header class="dialog-header">
+        <h2 id="dialog-title">새 할 일</h2>
+        <button 
+          type="button" 
+          id="btn-close-dialog" 
+          class="btn-icon" 
+          aria-label="닫기"
+        >
+          ✕
+        </button>
+      </header>
 
-            allTodos.forEach(todo => {
-                const li = document.createElement('li');
-                li.innerHTML = `
-                    <span>${todo.text}</span>
-                    <button class="delete-btn" onclick="deleteTodo(${todo.id})">삭제</button>
-                `;
-                listEl.appendChild(li);
-            });
-        }
+      <!-- 바디 -->
+      <div class="dialog-body">
+        <!-- 카테고리 선택 -->
+        <fieldset class="category-group">
+          <legend class="visually-hidden">카테고리 선택</legend>
+          <div class="category-picker" role="radiogroup" aria-label="할 일 종류">
+            <button type="button" class="category-btn" data-cat="🎒" role="radio" aria-checked="true" aria-label="가방 🎒">🎒</button>
+            <button type="button" class="category-btn" data-cat="📚" role="radio" aria-checked="false" aria-label="숙제 📚">📚</button>
+            <button type="button" class="category-btn" data-cat="🎨" role="radio" aria-checked="false" aria-label="준비물 🎨">🎨</button>
+            <button type="button" class="category-btn" data-cat="🏃" role="radio" aria-checked="false" aria-label="체육 🏃">🏃</button>
+            <button type="button" class="category-btn" data-cat="📝" role="radio" aria-checked="false" aria-label="기타 📝">📝</button>
+          </div>
+        </fieldset>
 
-        // 할 일 추가 함수
-        async function addTodo() {
-            const inputEl = document.getElementById('todoInput');
-            const text = inputEl.value.trim();
+        <!-- 제목 입력 + 음성 버튼 -->
+        <div class="input-group">
+          <label for="task-title" class="visually-hidden">할 일 내용</label>
+          <input 
+            type="text" 
+            id="task-title" 
+            placeholder="말하거나 적어보세요" 
+            required 
+            autocomplete="off"
+            aria-describedby="title-hint"
+            maxlength="100"
+          >
+          <span id="title-hint" class="visually-hidden">최대 100자까지 입력 가능합니다.</span>
+          <button 
+            type="button" 
+            id="btn-voice" 
+            class="btn-icon" 
+            aria-label="음성으로 입력하기" 
+            title="말해서 입력 (크롬/엣지/사파리 지원)"
+          >
+            🎤
+          </button>
+        </div>
 
-            if (!text) {
-                alert('내용을 입력해주세요!');
-                return;
-            }
+        <!-- 이미지 프리뷰 영역 (숨김 상태) -->
+        <div id="image-preview" class="image-preview hidden" role="img" aria-label="첨부 사진 미리보기">
+          <!-- <img src="blob:..." alt="첨부된 사진"> JS에서 동적 생성 -->
+          <button 
+            type="button" 
+            class="remove-img btn-icon" 
+            aria-label="사진 삭제"
+            title="사진 지우기"
+          >
+            ✕
+          </button>
+        </div>
 
-            // Dexie에 데이터 추가
-            await db.todos.add({ text: text });
-            inputEl.value = '';
-            loadTodos(); // 목록 새로고침
-        }
+        <!-- 카메라/앨범 버튼 -->
+        <button 
+          type="button" 
+          id="btn-camera" 
+          class="btn-secondary" 
+          aria-label="사진 촬영 또는 앨범에서 선택"
+        >
+          <span>📷</span> 사진 추가
+        </button>
+        <!-- 숨겨진 파일 인풋 (캡처 모드: 환경 카메라 우선) -->
+        <input 
+          type="file" 
+          id="input-camera" 
+          accept="image/*" 
+          capture="environment" 
+          hidden
+        >
 
-        // 할 일 삭제 함수
-        async function deleteTodo(id) {
-            await db.todos.delete(id);
-            loadTodos(); // 목록 새로고침
-        }
+      </div>
 
-        // 페이지 로드 시 데이터 불러오기
-        window.addEventListener('DOMContentLoaded', () => {
-            loadTodos();
-        });
+      <!-- 푸터 (버튼들) -->
+      <footer class="dialog-footer">
+        <button 
+          type="button" 
+          id="btn-delete-task" 
+          class="btn-danger hidden" 
+          aria-label="이 할 일 삭제"
+        >
+          🗑️ 지우기
+        </button>
+        <div class="spacer"></div>
+        <button 
+          type="submit" 
+          id="btn-save-task" 
+          class="btn-primary" 
+          disabled
+          aria-label="저장하기"
+        >
+          <span class="btn-text">저장하기</span> <span class="btn-icon-inline">✨</span>
+        </button>
+      </footer>
 
-        // 2. Service Worker 등록
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('Service Worker 등록 성공:', reg.scope))
-                    .catch(err => console.log('Service Worker 등록 실패:', err));
-            });
-        }
-    </script>
+      <!-- 히든 필드 (데이터 전송용) -->
+      <input type="hidden" id="task-id" name="id">
+      <input type="hidden" id="task-category" name="category" value="🎒">
+    </form>
+  </dialog>
+
+  <!-- ======================================================================
+       6. 자바스크립트 모듈 로드 (ES Module)
+       ====================================================================== -->
+  <!-- 앱 진입점 (type="module" 필수) -->
+  <script type="module" src="./app.js"></script>
+
+  <!-- ======================================================================
+       7. Service Worker 등록 (인라인 스크립트 - 모듈 아님)
+       ====================================================================== -->
+  <script>
+    // SW 등록은 모듈 로드와 독립적으로 즉시 실행
+    if ('serviceWorker' in navigator) {
+      // 페이지 로드 완료 후 등록 (성능 위해)
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js', { scope: './' })
+          .then(reg => {
+            console.log('[SW] 등록 성공:', reg.scope);
+            // 업데이트 체크 (30분마다 자동으로 app.js에서 돌지만 최초 1회)
+            reg.update().catch(err => console.log('[SW] 최초 업데이트 체크 실패:', err));
+          })
+          .catch(err => console.error('[SW] 등록 실패:', err));
+      });
+
+      // 컨트롤러 변경 감지 (새 SW 활성화 시 강제 리로드) - app.js에서도 하지만 여기서도 안전장치
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (refreshing) return;
+        refreshing = true;
+        console.log('[SW] 컨트롤러 변경됨, 페이지 새로고침');
+        window.location.reload();
+      });
+    } else {
+      console.warn('[SW] Service Worker 미지원 브라우저');
+    }
+  </script>
 </body>
 </html>

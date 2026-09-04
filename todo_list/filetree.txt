@@ -1,0 +1,13 @@
+📦 root (GitHub Pages Root)
+├── 📄 index.html          # 진입점, 구조, 메타태그, SW 등록, 모듈 로드
+├── 🎨 style.css           # 전체 스타일, 테마 변수, 애니메이션, 반응형
+├── ⚙️ app.js              # 메인 로직: 라우팅, 이벤트 바인딩, UI 상태 관리, SW 통신
+├── 🗄️ db.js               # IndexedDB 래퍼 (idb 기반 CRUD, 마이그레이션)
+├── 🧱 ui.js               # DOM 생성/갱신 헬퍼 (renderTask, showModal, toast 등)
+├── 📦 sw.js               # Service Worker (캐시 전략, 오프라인 페이지)
+├── 📜 manifest.json       # PWA 매니페스트
+├── 🖼️ icons/              # PWA 아이콘 세트 (maskable 포함)
+│   ├── icon-192.png
+│   ├── icon-512.png
+│   └── maskable-512.png
+└── 🔤 fonts/  
