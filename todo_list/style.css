@@ -51,8 +51,8 @@
   --icon-size-lg: 36px;
 
   /* --- Typography --- */
-  /* 시스템 폰트 스택 (오프라인 최우선) + 로컬 웹폰트 대체 */
-  --font-family: 'PretendardVariable', 'NanumSquareRound', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  /* 시스템 폰트 스택 (안드로이드: Roboto, 한글: Noto Sans KR 등) + 로컬 웹폰트 대체 */
+  --font-family: 'PretendardVariable', 'NanumSquareRound',-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --font-size-base: 1.125rem;   /* 18px */
   --font-size-lg: 1.25rem;      /* 20px */
   --font-size-xl: 1.5rem;       /* 24px */
@@ -73,7 +73,7 @@
   --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-bouncy: 350ms cubic-bezier(0.34, 1.56, 0.64, 1);
 
-  /* --- Safe Area (PWA Standalone) --- */
+  /* --- Safe Area (안드로이드 노치/펀치홀/하단 내비게이션 바 지원) --- */
   --safe-top: env(safe-area-inset-top, 0);
   --safe-bottom: env(safe-area-inset-bottom, 0);
   --safe-left: env(safe-area-inset-left, 0);
@@ -104,6 +104,7 @@
    2. 로컬 웹폰트 (@font-face) - 오프라인용
       * fonts/ 폴더에 woff2 파일 배치 필요 (예: PretendardVariable.woff2)
       * 파일이 없으면 시스템 폰트로 폴백됨.
+      * [중요] sw.js PRECACHE_ASSETS에도 반드시 추가해야 오프라인에서 폰트 깨짐 없음.
    ========================================================================== */
 @font-face {
   font-family: 'PretendardVariable';
@@ -123,8 +124,8 @@
 
 html {
   font-size: 16px; /* 1rem = 16px */
-  -webkit-text-size-adjust: 100%;
-  -webkit-tap-highlight-color: transparent; /* 터치 하이라이트 제거 */
+  text-size-adjust: 100%; /* 표준 속성 */
+  tap-highlight-color: transparent; /* 표준 속성 (크롬/안드로이드 지원) */
 }
 
 body {
@@ -134,16 +135,18 @@ body {
   color: var(--color-text);
   background-color: var(--color-bg);
   min-height: 100vh;
-  min-height: -webkit-fill-available; /* 모바일 주소창 숨김 대응 */
+  /* 뷰포트 단위 폴백 체인: 구형 웹뷰 -> 최신 표준 */
+  min-height: -webkit-fill-available; /* 구형 안드로이드 웹뷰/사파리 */
+  min-height: stretch;                /* 표준 (Chrome 104+, WebView 119+) */
   display: flex;
   flex-direction: column;
   padding-bottom: calc(var(--touch-target) * 2 + var(--safe-bottom)); /* FAB + 하단 여백 */
   overflow-x: hidden;
 }
 
-/* 스크롤바 숨김 (모바일 네이티브 느낌) */
+/* 스크롤바 숨김 (안드로이드 크롬/웹뷰에서는 -webkit- 필요) */
 ::-webkit-scrollbar { display: none; }
-html { scrollbar-width: none; -ms-overflow-style: none; }
+html { scrollbar-width: none; } /* Firefox/표준 */
 
 /* 포커스 가시성 (키보드/스위치 접근성) */
 :focus-visible {
@@ -164,7 +167,7 @@ html { scrollbar-width: none; -ms-overflow-style: none; }
 .app-header {
   position: sticky; top: 0; z-index: 10;
   background: linear-gradient(180deg, var(--color-bg) 0%, rgba(253,248,243,0.9) 100%);
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px); /* 표준 속성 (안드로이드 크롬 119+ 지원) */
   padding: calc(var(--space-md) + var(--safe-top)) var(--space-md) var(--space-md);
   border-bottom: 1px solid var(--color-border);
   display: flex; align-items: center; justify-content: space-between;
@@ -183,7 +186,7 @@ html { scrollbar-width: none; -ms-overflow-style: none; }
   font-size: var(--icon-size-lg); line-height: 1; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   transition: background-color var(--transition-fast), transform var(--transition-fast);
-  -webkit-tap-highlight-color: transparent;
+  tap-highlight-color: transparent; /* 표준 속성 */
 }
 .btn-icon:active { transform: scale(0.92); }
 .btn-icon:hover { background-color: var(--color-border); }
@@ -235,7 +238,7 @@ html { scrollbar-width: none; -ms-overflow-style: none; }
 
 /* 체크박스 (커스텀) */
 .task-checkbox {
-  appearance: none; -webkit-appearance: none;
+  appearance: none; /* 표준 속성 (-webkit-appearance 제거) */
   width: 36px; height: 36px; min-width: 36px;
   border: 3px solid var(--color-primary); border-radius: var(--radius-full);
   background: var(--color-card); cursor: pointer;
@@ -311,11 +314,14 @@ dialog.task-dialog {
   box-shadow: var(--shadow-modal); padding: 0; max-width: 100vw; width: 100%;
   margin: 0; position: fixed; bottom: 0; left: 0; right: 0;
   animation: slideUp var(--transition-normal) ease-out;
+  
   /* 모달 배경 오버레이 */
   &::backdrop {
     background: rgba(0,0,0,0.4); backdrop-filter: blur(4px);
     animation: fadeIn var(--transition-fast);
   }
+  
+  /* 닫기 애니메이션 트리거 클래스 */
   &.closing { animation: slideDown var(--transition-fast) forwards; }
 }
 
@@ -327,7 +333,8 @@ dialog.task-dialog {
 /* 카테고리 피커 */
 .category-picker { display: flex; gap: var(--space-sm); justify-content: center; }
 .category-btn {
-  appearance: none; border: 2px solid transparent; background: var(--color-border);
+  appearance: none; /* 표준 속성 */
+  border: 2px solid transparent; background: var(--color-border);
   font-size: 2rem; width: 64px; height: 64px; border-radius: var(--radius-md);
   cursor: pointer; transition: all var(--transition-fast);
   display: flex; align-items: center; justify-content: center;
@@ -363,7 +370,8 @@ dialog.task-dialog {
 
 /* 카메라 버튼 */
 .btn-secondary {
-  appearance: none; border: 2px dashed var(--color-border); background: var(--color-bg);
+  appearance: none; /* 표준 속성 */
+  border: 2px dashed var(--color-border); background: var(--color-bg);
   color: var(--color-text-light); font: inherit; font-size: var(--font-size-base);
   padding: var(--space-md); border-radius: var(--radius-md); cursor: pointer;
   display: flex; align-items: center; justify-content: center; gap: var(--space-sm);
@@ -378,7 +386,8 @@ dialog.task-dialog {
 
 /* 버튼 공통 */
 .btn-primary, .btn-danger {
-  appearance: none; border: none; border-radius: var(--radius-full); padding: 0 var(--space-xl);
+  appearance: none; /* 표준 속성 */
+  border: none; border-radius: var(--radius-full); padding: 0 var(--space-xl);
   height: var(--touch-target); font: inherit; font-size: var(--font-size-base); font-weight: var(--font-weight-bold);
   cursor: pointer; display: flex; align-items: center; justify-content: center; gap: var(--space-xs);
   transition: transform var(--transition-fast), box-shadow var(--transition-fast), opacity var(--transition-fast);
@@ -393,15 +402,39 @@ dialog.task-dialog {
 /* ==========================================================================
    9. 토스트/알림 (Toast Notification)
    ========================================================================== */
-.toast-container { position: fixed; bottom: calc(100px + var(--safe-bottom)); left: var(--space-md); right: var(--space-md); z-index: 100; display: flex; flex-direction: column-reverse; gap: var(--space-sm); pointer-events: none; }
-.toast { pointer-events: auto; background: var(--color-text); color: var(--color-bg); padding: var(--space-md) var(--space-lg); border-radius: var(--radius-md); box-shadow: var(--shadow-card); display: flex; align-items: center; gap: var(--space-md); animation: slideUpFade var(--transition-bouncy); max-width: 90%; }
+.toast-container { 
+  position: fixed; 
+  bottom: calc(100px + var(--safe-bottom)); 
+  left: var(--space-md); 
+  right: var(--space-md); 
+  z-index: 100; 
+  display: flex; 
+  flex-direction: column;
+  gap: var(--space-sm); 
+  pointer-events: none; 
+}
+.toast { 
+  pointer-events: auto; 
+  background: var(--color-text); 
+  color: var(--color-bg); 
+  padding: var(--space-md) var(--space-lg); 
+  border-radius: var(--radius-md); 
+  box-shadow: var(--shadow-card); 
+  display: flex; 
+  align-items: center; 
+  gap: var(--space-md); 
+  animation: slideUpFade var(--transition-bouncy); 
+  max-width: 90%; 
+  /* [추가] 퇴장 트랜지션 정의 (transitionend 발생 위해 필수) */
+  transition: opacity var(--transition-normal) ease, transform var(--transition-normal) ease; 
+}
 .toast.success { background: var(--color-success); color: var(--color-success-text); }
 .toast.error { background: var(--color-danger); color: white; }
 .toast button { background: transparent; border: none; color: inherit; font: inherit; padding: var(--space-xs); opacity: 0.7; cursor: pointer; }
 .toast button:hover { opacity: 1; }
 
 /* ==========================================================================
-   10. 로딩/스켈레톤/에러 폴백
+   10. 로딩/스켈레톤/오프라인 배너
    ========================================================================== */
 .skeleton { background: linear-gradient(90deg, var(--color-border) 25%, #fff5f0 50%, var(--color-border) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: var(--radius-sm); }
 .skeleton-text { height: 1.2em; width: 60%; }
@@ -409,7 +442,7 @@ dialog.task-dialog {
 .skeleton-img { aspect-ratio: 16/9; border-radius: var(--radius-md); }
 
 /* 오프라인 배너 */
-.offline-banner { position: fixed; top: 0; left: 0; right: 0; background: var(--color-danger); color: white; text-align: center; padding: var(--space-sm) var(--space-md); font-size: var(--font-size-sm); z-index: 200; animation: slideDown var(--transition-normal); display: none; }
+.offline-banner { position: fixed; top: 0; left: 0; right: 0; background: var(--color-danger); color: white; text-align: center; padding: var(--space-sm) var(--space-md); font-size: 0.875rem; z-index: 200; animation: slideDown var(--transition-normal); display: none; }
 .offline-banner.show { display: block; }
 
 /* ==========================================================================
@@ -422,7 +455,7 @@ dialog.task-dialog {
 @keyframes slideInUp { from { opacity: 0; transform: translateY(20px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @keyframes fabIn { from { opacity: 0; transform: translateY(40px) scale(0.8); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @keyframes checkPop { 0% { transform: scale(1); } 50% { transform: scale(1.3); } 100% { transform: scale(1); } }
-@keyframes checkDraw { from { stroke-dashoffset: 28; } to { stroke-dashoffset: 0; } } /* SVG 쓰는 경우 대체 */
+@keyframes checkDraw { from { stroke-dashoffset: 28; } to { stroke-dashoffset: 0; } }
 @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.02); } }
 @keyframes pulseMic { 0% { box-shadow: 0 0 0 0 rgba(255,107,107,0.7); } 70% { box-shadow: 0 0 0 10px rgba(255,107,107,0); } 100% { box-shadow: 0 0 0 0 rgba(255,107,107,0); } }
 @keyframes swipeOut { to { transform: translateX(-120%); opacity: 0; } }
@@ -443,4 +476,32 @@ dialog.task-dialog {
 @keyframes confettiFall { 
   0% { transform: translateY(0) rotate(0deg); opacity: 1; } 
   100% { transform: translateY(200px) rotate(720deg); opacity: 0; } 
+}
+
+/* -------------------------------------------------------------------------- */
+/* Skip Navigation Link - 키보드 포커스 시에만 표시                            */
+/* -------------------------------------------------------------------------- */
+.skip-nav {
+  position: absolute;
+  top: -100%;           /* 기본: 화면 위로 숨김 */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10000;       /* 최상단 레이어 */
+  padding: var(--space-md) var(--space-xl);
+  background: var(--color-primary);
+  color: var(--color-primary-text);
+  font-weight: var(--font-weight-bold);
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  box-shadow: var(--shadow-card);
+  text-decoration: none;
+  font-size: var(--font-size-base);
+  white-space: nowrap;
+  transition: top var(--transition-fast);
+}
+
+/* Tab 키로 포커스 받을 때만 화면에 나타남 */
+.skip-nav:focus {
+  top: 0;
+  outline: 3px solid var(--color-primary-press);
+  outline-offset: 2px;
 }

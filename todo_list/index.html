@@ -2,29 +2,25 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <!-- 뷰포트: 모바일 최적화, 줌 금지(앱 느낌), 안전영역 지원 -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0,-scalable=no, viewport-fit=cover">
   
   <!-- 👇 하위 경로 배포 시 주석 해제 및 경로 수정 (예: /my-todo-app/) -->
   <!-- <base href="/your-repo-name/"> -->
 
-  <!-- PWA 메타 태그 (iOS/안드로이드 공통) -->
+  <!-- PWA 메타 태그 (안드로이드/표준) -->
   <meta name="theme-color" content="#FF8A7A" media="(prefers-color-scheme: light)">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="내 할 일">
+  <meta name="theme-color" content="#2D2D2D" media="(prefers-color-scheme: dark)">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="application-name" content="내 할 일">
   <meta name="description" content="초등학생을 위한 귀여운 오프라인 할 일 메모장">
   
-  <!-- 아이콘 (manifest.json과 중복되어도 안전하게 명시) -->
+  <!-- 아이콘 -->
   <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
   <link rel="icon" type="image/png" sizes="512x512" href="./icons/icon-512.png">
-  <link rel="apple-touch-icon" href="./icons/icon-192.png">
   <link rel="manifest" href="./manifest.json">
   <link rel="stylesheet" href="./style.css">
 
-  <!-- CSP: GitHub Pages는 HTTP 헤더 수정 불가하므로 메타 태그로 설정 -->
-  <!-- 'unsafe-inline'은 style.css 내 @font-face base64 또는 인라인 스타일 용도 최소화 위해 허용 -->
+  <!-- CSP: script-src 'self' 이므로 인라인 스크립트 금지. 외부 파일만 허용. -->
   <meta http-equiv="Content-Security-Policy" content="
     default-src 'self'; 
     script-src 'self'; 
@@ -42,14 +38,10 @@
 </head>
 <body>
 
-  <!-- ======================================================================
-       1. 접근성: 건너뛰기 링크
-       ====================================================================== -->
+  <!-- 접근성: 건너뛰기 링크 -->
   <a href="#main-content" class="skip-nav">본문으로 건너뛰기</a>
 
-  <!-- ======================================================================
-       2. 헤더 (상단 고정)
-       ====================================================================== -->
+  <!-- 헤더 (상단 고정) -->
   <header class="app-header" role="banner">
     <div class="header-left">
       <h1>오늘의 할 일 <span id="today-date" aria-live="polite"></span></h1>
@@ -67,14 +59,10 @@
     </div>
   </header>
 
-  <!-- ======================================================================
-       3. 메인 콘텐츠 영역
-       ====================================================================== -->
+  <!-- 메인 콘텐츠 영역 -->
   <main id="main-content" class="app-main" role="main">
-    <!-- 할 일 리스트 (UL) -->
     <ul id="task-list" class="task-list" role="list" aria-label="할 일 목록"></ul>
 
-    <!-- 빈 상태 (할 일 없을 때) -->
     <div id="empty-state" class="empty-state hidden" aria-live="polite">
       <div class="empty-icon">📝</div>
       <p>아직 할 일이 없어요!</p>
@@ -82,9 +70,7 @@
     </div>
   </main>
 
-  <!-- ======================================================================
-       4. 플로팅 액션 버튼 (FAB) - 할 일 추가
-       ====================================================================== -->
+  <!-- 플로팅 액션 버튼 (FAB) -->
   <button 
     id="btn-add-task" 
     class="fab" 
@@ -94,12 +80,9 @@
     +
   </button>
 
-  <!-- ======================================================================
-       5. 할 일 추가/수정 다이얼로그 (네이티브 <dialog>)
-       ====================================================================== -->
+  <!-- 할 일 추가/수정 다이얼로그 -->
   <dialog id="task-dialog" class="task-dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
     <form id="task-form" method="dialog" novalidate>
-      <!-- 헤더 -->
       <header class="dialog-header">
         <h2 id="dialog-title">새 할 일</h2>
         <button 
@@ -112,9 +95,7 @@
         </button>
       </header>
 
-      <!-- 바디 -->
       <div class="dialog-body">
-        <!-- 카테고리 선택 -->
         <fieldset class="category-group">
           <legend class="visually-hidden">카테고리 선택</legend>
           <div class="category-picker" role="radiogroup" aria-label="할 일 종류">
@@ -126,7 +107,6 @@
           </div>
         </fieldset>
 
-        <!-- 제목 입력 + 음성 버튼 -->
         <div class="input-group">
           <label for="task-title" class="visually-hidden">할 일 내용</label>
           <input 
@@ -144,15 +124,13 @@
             id="btn-voice" 
             class="btn-icon" 
             aria-label="음성으로 입력하기" 
-            title="말해서 입력 (크롬/엣지/사파리 지원)"
+            title="말해서 입력 (크롬/안드로이드 웹뷰 지원)"
           >
             🎤
           </button>
         </div>
 
-        <!-- 이미지 프리뷰 영역 (숨김 상태) -->
         <div id="image-preview" class="image-preview hidden" role="img" aria-label="첨부 사진 미리보기">
-          <!-- <img src="blob:..." alt="첨부된 사진"> JS에서 동적 생성 -->
           <button 
             type="button" 
             class="remove-img btn-icon" 
@@ -163,7 +141,6 @@
           </button>
         </div>
 
-        <!-- 카메라/앨범 버튼 -->
         <button 
           type="button" 
           id="btn-camera" 
@@ -172,7 +149,6 @@
         >
           <span>📷</span> 사진 추가
         </button>
-        <!-- 숨겨진 파일 인풋 (캡처 모드: 환경 카메라 우선) -->
         <input 
           type="file" 
           id="input-camera" 
@@ -183,7 +159,6 @@
 
       </div>
 
-      <!-- 푸터 (버튼들) -->
       <footer class="dialog-footer">
         <button 
           type="button" 
@@ -205,7 +180,6 @@
         </button>
       </footer>
 
-      <!-- 히든 필드 (데이터 전송용) -->
       <input type="hidden" id="task-id" name="id">
       <input type="hidden" id="task-category" name="category" value="🎒">
     </form>
@@ -214,37 +188,11 @@
   <!-- ======================================================================
        6. 자바스크립트 모듈 로드 (ES Module)
        ====================================================================== -->
-  <!-- 앱 진입점 (type="module" 필수) -->
   <script type="module" src="./app.js"></script>
 
   <!-- ======================================================================
-       7. Service Worker 등록 (인라인 스크립트 - 모듈 아님)
+       7. Service Worker 등록 (외부 파일로 분리하여 CSP 준수)
        ====================================================================== -->
-  <script>
-    // SW 등록은 모듈 로드와 독립적으로 즉시 실행
-    if ('serviceWorker' in navigator) {
-      // 페이지 로드 완료 후 등록 (성능 위해)
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js', { scope: './' })
-          .then(reg => {
-            console.log('[SW] 등록 성공:', reg.scope);
-            // 업데이트 체크 (30분마다 자동으로 app.js에서 돌지만 최초 1회)
-            reg.update().catch(err => console.log('[SW] 최초 업데이트 체크 실패:', err));
-          })
-          .catch(err => console.error('[SW] 등록 실패:', err));
-      });
-
-      // 컨트롤러 변경 감지 (새 SW 활성화 시 강제 리로드) - app.js에서도 하지만 여기서도 안전장치
-      let refreshing = false;
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-        if (refreshing) return;
-        refreshing = true;
-        console.log('[SW] 컨트롤러 변경됨, 페이지 새로고침');
-        window.location.reload();
-      });
-    } else {
-      console.warn('[SW] Service Worker 미지원 브라우저');
-    }
-  </script>
+  <script src="./sw-register.js"></script>
 </body>
 </html>

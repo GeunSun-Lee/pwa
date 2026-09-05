@@ -1,7 +1,11 @@
 /**
- * db.js - IndexedDB Wrapper (Zero Dependency)
+ * db.js - IndexedDB Wrapper (Zero Dependency, Atomic Operations)
  * 초등 TODO 앱 전용 스키마 및 CRUD 메서드 제공
  * 
+ * 주요 패치 내역:
+ * 1. addTask: 단일 트랜잭션 내 커서로 max order 조회 후 즉시 추가 (경쟁 상태 해결)
+ * 2. reorderTasks: 벌크 업데이트 성능 최적화
+ * 3. 타입 안전성(JSDoc) 및 에러 처리 강화
  * @module db
  */
 
@@ -38,29 +42,24 @@ let dbInstance = null;
  */
 function openDB() {
   return new Promise((resolve, reject) => {
-    // 이미 열린 커넥션 재사용 (단일 탭 기준)
     if (dbInstance) return resolve(dbInstance);
 
     const request = indexedDB.open(DB_NAME, DB_VERSION);
 
-    // --- 스키마 정의 (upgradeneeded) ---
     request.onupgradeneeded = (event) => {
       const db = event.target.result;
       const oldVersion = event.oldVersion;
 
       if (oldVersion === 0) {
-        // 최초 생성
         createSchema(db);
       } else {
-        // 마이그레이션 로직 (버전 업 시 여기에 작성)
-        // 예: if (oldVersion < 2) { ... }
+        // 향후 마이그레이션 로직 자리
         console.log(`[DB] Migration from v${oldVersion} to v${DB_VERSION}`);
       }
     };
 
     request.onsuccess = (event) => {
       dbInstance = event.target.result;
-      // 에러 핸들링 부착
       dbInstance.onerror = (e) => console.error('[DB] Global Error:', e.target.error);
       resolve(dbInstance);
     };
@@ -71,8 +70,7 @@ function openDB() {
     };
 
     request.onblocked = () => {
-      // 다른 탭에서 DB 열려있어 업그레이드 못 할 때
-      console.warn('[DB] Blocked: 다른 탭에서 DB를 사용 중입니다. 새로고침 해주세요.');
+      console.warn('[DB] Blocked: 다른 탭에서 DB를 사용 중입니다.');
       alert('⚠️ 다른 탭에서 앱이 열려 있어요. 다른 탭을 닫고 새로고침 해주세요.');
     };
   });
@@ -92,7 +90,7 @@ function createSchema(db) {
     // 인덱스 생성 (쿼리 성능용)
     store.createIndex('by_category', 'category', { unique: false });
     store.createIndex('by_isDone', 'isDone', { unique: false });
-    store.createIndex('by_order', 'order', { unique: false }); // 정렬용
+    store.createIndex('by_order', 'order', { unique: false }); // 정렬용 (중복 허용)
     store.createIndex('by_createdAt', 'createdAt', { unique: false });
     
     console.log('[DB] Schema created:', STORE_NAME);
@@ -100,12 +98,13 @@ function createSchema(db) {
 }
 
 // ==========================================================================
-// 3. 트랜잭션 헬퍼 (반복 코드 제거)
+// 3. 트랜잭션 헬퍼 (Promise 래핑)
 // ==========================================================================
+
 /**
  * @template T
  * @param {'readonly' | 'readwrite'} mode 
- * @param {(store: IDBObjectStore) => IDBRequest} operation 
+ * @param {(store: IDBObjectStore, tx: IDBTransaction) => Promise<T> | IDBRequest<T>} operation 
  * @returns {Promise<T>}
  */
 function runTransaction(mode, operation) {
@@ -114,14 +113,28 @@ function runTransaction(mode, operation) {
       const tx = db.transaction(STORE_NAME, mode);
       const store = tx.objectStore(STORE_NAME);
       
-      const request = operation(store);
-      
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-      
-      // 트랜잭션 완료 로깅
+      try {
+        // operation이 Promise를 반환하면 await, 요청 객체면 이벤트 핸들링
+        const result = operation(store, tx);
+        
+        if (result instanceof IDBRequest) {
+          // 구형 요청 객체 기반 호환성
+          result.onsuccess = () => resolve(result.result);
+          result.onerror = () => reject(result.error);
+        } else if (result instanceof Promise) {
+          // 모던 async/await 기반
+          result.then(resolve).catch(reject);
+        } else {
+          // 동기 반환값 (잘 없음)
+          resolve(result);
+        }
+      } catch (e) {
+        reject(e);
+      }
+
       tx.oncomplete = () => { /* console.log('[DB] Tx complete'); */ };
       tx.onerror = () => console.error('[DB] Tx Error:', tx.error);
+      tx.onabort = () => console.error('[DB] Tx Aborted');
     });
   });
 }
@@ -136,7 +149,6 @@ function runTransaction(mode, operation) {
  */
 export async function getAllTasks() {
   return runTransaction('readonly', (store) => {
-    // order 인덱스로 정렬해서 가져오기
     const index = store.index('by_order');
     return index.getAll();
   });
@@ -152,7 +164,7 @@ export async function getTask(id) {
 }
 
 /**
- * 할 일 추가
+ * 할 일 추가 (원자적 연산: Order 계산 + Insert 동시 수행)
  * @param {Omit<Task, 'id' | 'createdAt' | 'completedAt'>} data 
  * @returns {Promise<number>} 생성된 ID 반환
  */
@@ -162,16 +174,39 @@ export async function addTask(data) {
     ...data,
     createdAt: now,
     completedAt: null,
-    // order는 현재 최대값 + 1 로 설정 (맨 아래 추가)
+    // order는 트랜잭션 내부에서 계산하여 할당
   };
 
-  // 현재 최대 order 조회 후 추가 (원자성 위해 readwrite 트랜잭션 내부에서 처리 권장)
-  // 여기서는 간단히 두 번 호출로 처리 (앱 규모상 문제 없음). 엄밀하면 아래 addTaskWithOrder 사용.
-  const tasks = await getAllTasks();
-  const maxOrder = tasks.reduce((max, t) => Math.max(max, t.order || 0), 0);
-  payload.order = maxOrder + 1;
+  return runTransaction('readwrite', async (store) => {
+    // 1. 현재 최대 order 값 조회 (커서 사용으로 성능/정확성 확보)
+    const index = store.index('by_order');
+    // 'prev' 방향 커서로 마지막(가장 큰 order) 레코드만 읽음
+    const cursorReq = index.openCursor(null, 'prev');
+    
+    let maxOrder = 0;
+    
+    // 커서 결과를 Promise로 래핑
+    await new Promise((resolve, reject) => {
+      cursorReq.onsuccess = (event) => {
+        const cursor = event.target.result;
+        if (cursor) {
+          maxOrder = cursor.value.order || 0;
+        }
+        resolve();
+      };
+      cursorReq.onerror = () => reject(cursorReq.error);
+    });
 
-  return runTransaction('readwrite', (store) => store.add(payload));
+    // 2. 새 order 할당 및 저장
+    payload.order = maxOrder + 1;
+    
+    const addReq = store.add(payload);
+    
+    return new Promise((resolve, reject) => {
+      addReq.onsuccess = () => resolve(addReq.result); // 생성된 PK(id) 반환
+      addReq.onerror = () => reject(addReq.error);
+    });
+  });
 }
 
 /**
@@ -191,6 +226,11 @@ export async function updateTask(id, updates) {
         // 완료 토글 시 completedAt 자동 관리
         if (typeof updates.isDone === 'boolean' && updates.isDone !== task.isDone) {
           updates.completedAt = updates.isDone ? Date.now() : null;
+        }
+        
+        // order 변경 시 정수 보정
+        if (typeof updates.order === 'number') {
+          updates.order = Math.max(0, Math.floor(updates.order));
         }
         
         const updated = { ...task, ...updates };
@@ -218,8 +258,10 @@ export async function deleteTask(id) {
  * @returns {Promise<void>}
  */
 export async function reorderTasks(tasksOrder) {
+  if (!tasksOrder.length) return;
+
   return runTransaction('readwrite', (store) => {
-    // Promise.all로 병렬 처리 (IDB 트랜잭션은 자동 커밋 대기)
+    // Promise.all로 병렬 처리 (트랜잭션은 모든 요청 완료까지 유지됨)
     const promises = tasksOrder.map(({ id, order }) => {
       return new Promise((resolve, reject) => {
         const getReq = store.get(id);
@@ -230,7 +272,9 @@ export async function reorderTasks(tasksOrder) {
             const putReq = store.put(task);
             putReq.onsuccess = resolve;
             putReq.onerror = () => reject(putReq.error);
-          } else resolve(); // 이미 지워진 경우 무시
+          } else {
+            resolve(); // 이미 지워진 경우 무시
+          }
         };
         getReq.onerror = () => reject(getReq.error);
       });
@@ -246,15 +290,16 @@ export async function reorderTasks(tasksOrder) {
 export async function clearCompletedTasks() {
   return runTransaction('readwrite', (store) => {
     const index = store.index('by_isDone');
-    const getAllReq = index.getAllKeys(true); // true = isDone
+    // true(완료)인 키만 조회
+    const getAllKeysReq = index.getAllKeys(IDBKeyRange.only(true));
     
     return new Promise((resolve, reject) => {
-      getAllReq.onsuccess = () => {
-        const keys = getAllReq.result; // ID 배열
+      getAllKeysReq.onsuccess = () => {
+        const keys = getAllKeysReq.result; // ID 배열
         keys.forEach(key => store.delete(key));
         resolve(keys.length);
       };
-      getAllReq.onerror = () => reject(getAllReq.error);
+      getAllKeysReq.onerror = () => reject(getAllKeysReq.error);
     });
   });
 }
@@ -280,7 +325,6 @@ export async function getStorageUsage() {
       percent: quota ? (usage / quota) * 100 : 0
     };
   }
-  // 폴백 (지원 안하는 브라우저)
   return { usage: 0, quota: 0, percent: 0 };
 }
 
@@ -295,9 +339,7 @@ export async function getStorageUsage() {
  */
 export function prepareBlob(file) {
   return new Promise((resolve) => {
-    // 파일 타입 정규화
     const type = file.type || 'application/octet-stream';
-    // Blob 그대로 저장 (IndexedDB는 Blob 네이티브 지원)
     resolve({ blob: file, type });
   });
 }

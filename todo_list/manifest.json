@@ -1,13 +1,16 @@
 {
   "name": "내 할 일 메모장",
   "short_name": "할일",
-  "description": "초등학생을 위한 귀여운 오프라인 할 일 관리 앱",
+  "description": "초등학생을 위한 귀여운 오프라인 할 일 관리 앱. 음성 입력, 사진 첨부, 드래그 정렬 지원.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#FDF8F3",
   "theme_color": "#FF8A7A",
+  "lang": "ko-KR",
+  "dir": "ltr",
+  
   "icons": [
     {
       "src": "./icons/icon-192.png",
@@ -20,16 +23,46 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
-    },
-    {
-      "src": "./icons/maskable-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
     }
   ],
+
+  "shortcuts": [
+    {
+      "name": "새 할 일 추가",
+      "short_name": "추가",
+      "description": "새로운 할 일을 바로 추가합니다",
+      "url": "./?action=add",
+      "icons": [
+        { "src": "./icons/icon-192.png", "sizes": "192x192" }
+      ]
+    },
+    {
+      "name": "끝난 일 보기",
+      "short_name": "완료",
+      "description": "완료된 할 일 목록을 확인합니다",
+      "url": "./?filter=done",
+      "icons": [
+        { "src": "./icons/icon-192.png", "sizes": "192x192" }
+      ]
+    }
+  ],
+
   "categories": ["education", "productivity", "kids"],
-  "lang": "ko-KR",
-  "dir": "ltr",
-  "prefer_related_applications": false
+  "prefer_related_applications": false,
+
+  "related_applications": [],
+  "protocol_handlers": [
+    {
+      "protocol": "web+todolist",
+      "url": "./?action=%s"
+    }
+  ],
+  
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  
+  "launch_handler": {
+    "client_mode": "focus-existing"
+  }
 }
