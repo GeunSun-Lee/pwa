@@ -1,0 +1,52 @@
+{
+  "name": "첫걸음 산수",
+  "short_name": "산수",
+  "description": "초등학교 입학 전후 어린이를 위한 덧셈/뺄셈 연습 앱. 완전 오프라인 지원.",
+  "start_url": "./index.html",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#F8FAFC",
+  "theme_color": "#2563EB",
+  "lang": "ko-KR",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["education", "kids"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "연습 모드",
+      "short_name": "연습",
+      "description": "제한 시간 없이 여유롭게 연습합니다.",
+      "url": "./index.html#mode=practice",
+      "icons": [{ "src": "assets/icons/shortcut-practice.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "도전 모드",
+      "short_name": "도전",
+      "description": "시간 제한 속에서 실력을 시험합니다.",
+      "url": "./index.html#mode=challenge",
+      "icons": [{ "src": "assets/icons/shortcut-challenge.png", "sizes": "192x192" }]
+    }
+  ],
+  "prefer_related_applications": false,
+  "related_applications": [],
+  "protocol_handlers": [],
+  "file_handlers": [],
+  "launch_handler": {
+    "client_mode": "focus-existing"
+  }
+}
