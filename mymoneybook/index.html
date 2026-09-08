@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>나의 스마트 용돈기입장</title>
+    <style>
+        :root {
+            --primary-color: #4A90E2;
+            --income-color: #2ECC71;
+            --expense-color: #E74C3C;
+            --bg-color: #F4F7F9;
+            --card-bg: #FFFFFF;
+            --text-color: #333333;
+            --border-radius: 12px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 20px 10px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        header h1 {
+            font-size: 1.5rem;
+            color: var(--primary-color);
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+
+        /* 요약 섹션 */
+        .summary-title {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .balance {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            text-align: center;
+        }
+
+        .summary-item {
+            padding: 10px;
+            border-radius: 8px;
+            background: #F8F9FA;
+        }
+
+        .summary-item.income span { color: var(--income-color); font-weight: bold; }
+        .summary-item.expense span { color: var(--expense-color); font-weight: bold; }
+
+        /* 입력 폼 */
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            margin-bottom: 5px;
+            color: #555;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #DDD;
+            border-radius: 6px;
+            font-size: 0.95rem;
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .radio-group label {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            background: #EEE;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .radio-group input[type="radio"] {
+            display: none;
+        }
+
+        .radio-group input[type="radio"]:checked + span {
+            color: white;
+        }
+
+        .radio-group label:has(input[value="income"]:checked) {
+            background-color: var(--income-color);
+            color: white;
+        }
+
+        .radio-group label:has(input[value="expense"]:checked) {
+            background-color: var(--expense-color);
+            color: white;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            background-color: var(--primary-color);
+            color: white;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .btn-danger {
+            background-color: var(--expense-color);
+        }
+
+        .btn-secondary {
+            background-color: #7F8C8D;
+        }
+
+        /* 내역 리스트 */
+        .filter-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .transaction-list {
+            list-style: none;
+        }
+
+        .transaction-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #EEE;
+        }
+
+        .transaction-item:last-child {
+            border-bottom: none;
+        }
+
+        .t-info .t-title {
+            font-weight: bold;
+            font-size: 0.95rem;
+        }
+
+        .t-info .t-sub {
+            font-size: 0.75rem;
+            color: #888;
+            margin-top: 3px;
+        }
+
+        .t-amount {
+            font-weight: bold;
+            font-size: 1rem;
+        }
+
+        .t-amount.income { color: var(--income-color); }
+        .t-amount.expense { color: var(--expense-color); }
+
+        .btn-del {
+            background: none;
+            border: none;
+            color: #CCC;
+            margin-left: 10px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .btn-del:hover { color: var(--expense-color); }
+
+        /* 데이터 백업/복구 */
+        .settings-btns {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .settings-btns button, .settings-btns label {
+            flex: 1;
+            text-align: center;
+            font-size: 0.8rem;
+            padding: 8px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>✏️ 스마트 용돈기입장</h1>
+    </header>
+
+    <!-- 요약 대시보드 -->
+    <section class="card">
+        <div class="summary-title">
+            <span>이번 달 잔액</span>
+            <input type="month" id="currentMonth" class="form-control" style="width: auto; padding: 4px 8px;">
+        </div>
+        <div class="balance" id="totalBalance">0 원</div>
+        <div class="summary-grid">
+            <div class="summary-item income">
+                <div>총 수입</div>
+                <span id="totalIncome">+0 원</span>
+            </div>
+            <div class="summary-item expense">
+                <div>총 지출</div>
+                <span id="totalExpense">-0 원</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- 내역 입력 폼 -->
+    <section class="card">
+        <form id="transactionForm">
+            <div class="form-group radio-group">
+                <label>
+                    <input type="radio" name="type" value="income" checked onchange="updateCategories()">
+                    <span>수입</span>
+                </label>
+                <label>
+                    <input type="radio" name="type" value="expense" onchange="updateCategories()">
+                    <span>지출</span>
+                </label>
+            </div>
+
+            <div class="form-group">
+                <label for="date">날짜</label>
+                <input type="date" id="date" class="form-control" required>
+            </div>
+
+            <div class="form-group">
+                <label for="category">카테고리</label>
+                <select id="category" class="form-control" required></select>
+            </div>
+
+            <div class="form-group">
+                <label for="amount">금액 (원)</label>
+                <input type="number" id="amount" class="form-control" placeholder="예: 5000" min="1" step="1" required>
+            </div>
+
+            <div class="form-group">
+                <label for="memo">내용</label>
+                <input type="text" id="memo" class="form-control" placeholder="예: 편의점 간식, 용돈 등" required>
+            </div>
+
+            <button type="submit" class="btn">내역 추가하기</button>
+        </form>
+    </section>
+
+    <!-- 내역 리스트 -->
+    <section class="card">
+        <div class="filter-container">
+            <h3>사용 내역</h3>
+        </div>
+        <ul id="transactionList" class="transaction-list">
+            <!-- 내역이 동적으로 추가됨 -->
+        </ul>
+    </section>
+
+    <!-- 데이터 관리 (백업/복구) -->
+    <section class="card">
+        <div class="summary-title">⚙️ 데이터 백업 및 복구</div>
+        <div class="settings-btns">
+            <button type="button" class="btn btn-secondary" onclick="exportData()">백업 (JSON 저장)</button>
+            <label class="btn btn-secondary" style="margin:0;">
+                복구 (JSON 불러오기)
+                <input type="file" id="importFile" accept=".json" onchange="importData(event)">
+            </label>
+        </div>
+    </section>
+
+    <script>
+        // --- 카테고리 정의 ---
+        const categories = {
+            income: ['정기용돈', '특별용돈', '심부름/상금', '기타수입'],
+            expense: ['간식/식비', '문구/공부', '취미/놀이', '교통비', '기타지출']
+        };
+
+        // --- IndexedDB 설정 ---
+        const DB_NAME = 'PocketMoneyDB';
+        const DB_VERSION = 1;
+        const STORE_NAME = 'transactions';
+        let db = null;
+
+        function initDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+                request.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains(STORE_NAME)) {
+                        const store = db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
+                        store.createIndex('date', 'date', { unique: false });
+                    }
+                };
+
+                request.onsuccess = (e) => {
+                    db = e.target.result;
+                    resolve(db);
+                };
+
+                request.onerror = (e) => {
+                    console.error('IndexedDB 오류:', e.target.error);
+                    reject(e.target.error);
+                };
+            });
+        }
+
+        // --- 초기화 ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 오늘 날짜 및 현재 월 설정
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('date').value = today;
+            document.getElementById('currentMonth').value = today.substring(0, 7);
+
+            updateCategories();
+            
+            try {
+                await initDB();
+                loadTransactions();
+            } catch (err) {
+                alert('데이터베이스를 초기화하는데 실패했습니다.');
+            }
+
+            // 월 변경 이벤트
+            document.getElementById('currentMonth').addEventListener('change', loadTransactions);
+        });
+
+        // 수입/지출에 따른 카테고리 셀렉트박스 변경
+        function updateCategories() {
+            const type = document.querySelector('input[name="type"]:checked').value;
+            const categorySelect = document.getElementById('category');
+            categorySelect.innerHTML = '';
+
+            categories[type].forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat;
+                option.textContent = cat;
+                categorySelect.appendChild(option);
+            });
+        }
+
+        // --- CRUD 및 DB 조작 ---
+
+        // 1. 내역 추가
+        document.getElementById('transactionForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const transaction = {
+                type: document.querySelector('input[name="type"]:checked').value,
+                date: document.getElementById('date').value,
+                category: document.getElementById('category').value,
+                amount: parseInt(document.getElementById('amount').value, 10),
+                memo: document.getElementById('memo').value
+            };
+
+            const tx = db.transaction(STORE_NAME, 'readwrite');
+            const store = tx.objectStore(STORE_NAME);
+            
+            store.add(transaction);
+
+            tx.oncomplete = () => {
+                document.getElementById('amount').value = '';
+                document.getElementById('memo').value = '';
+                loadTransactions();
+            };
+        });
+
+        // 2. 내역 불러오기 및 계산
+        function loadTransactions() {
+            const selectedMonth = document.getElementById('currentMonth').value; // YYYY-MM
+            const tx = db.transaction(STORE_NAME, 'readonly');
+            const store = tx.objectStore(STORE_NAME);
+            const request = store.getAll();
+
+            request.onsuccess = () => {
+                const allData = request.result;
+                
+                // 선택한 월 데이터만 필터링
+                const monthData = allData.filter(item => item.date.startsWith(selectedMonth));
+                
+                // 날짜 내림차순 정렬
+                monthData.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                renderUI(monthData);
+            };
+        }
+
+        // 3. UI 렌더링
+        function renderUI(data) {
+            const listEl = document.getElementById('transactionList');
+            listEl.innerHTML = '';
+
+            let totalInc = 0;
+            let totalExp = 0;
+
+            if (data.length === 0) {
+                listEl.innerHTML = '<li style="text-align:center; color:#999; padding: 20px 0;">등록된 내역이 없습니다.</li>';
+            }
+
+            data.forEach(item => {
+                if (item.type === 'income') totalInc += item.amount;
+                else totalExp += item.amount;
+
+                const li = document.createElement('li');
+                li.className = 'transaction-item';
+                li.innerHTML = `
+                    <div class="t-info">
+                        <div class="t-title">${escapeHtml(item.memo)}</div>
+                        <div class="t-sub">${item.date} | ${item.category}</div>
+                    </div>
+                    <div>
+                        <span class="t-amount ${item.type}">
+                            ${item.type === 'income' ? '+' : '-'}${item.amount.toLocaleString()}원
+                        </span>
+                        <button class="btn-del" onclick="deleteTransaction(${item.id})">✖</button>
+                    </div>
+                `;
+                listEl.appendChild(li);
+            });
+
+            // 요약 갱신
+            document.getElementById('totalIncome').textContent = `+${totalInc.toLocaleString()} 원`;
+            document.getElementById('totalExpense').textContent = `-${totalExp.toLocaleString()} 원`;
+            
+            const balance = totalInc - totalExp;
+            const balanceEl = document.getElementById('totalBalance');
+            balanceEl.textContent = `${balance.toLocaleString()} 원`;
+            balanceEl.style.color = balance < 0 ? 'var(--expense-color)' : 'var(--text-color)';
+        }
+
+        // 4. 내역 삭제
+        function deleteTransaction(id) {
+            if (!confirm('이 내역을 삭제하시겠습니까?')) return;
+
+            const tx = db.transaction(STORE_NAME, 'readwrite');
+            const store = tx.objectStore(STORE_NAME);
+            store.delete(id);
+
+            tx.oncomplete = () => {
+                loadTransactions();
+            };
+        }
+
+        // --- 백업 및 복구 기능 ---
+
+        // 백업 (JSON 파일 다운로드)
+        function exportData() {
+            const tx = db.transaction(STORE_NAME, 'readonly');
+            const store = tx.objectStore(STORE_NAME);
+            const request = store.getAll();
+
+            request.onsuccess = () => {
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(request.result));
+                const downloadAnchor = document.createElement('a');
+                downloadAnchor.setAttribute("href", dataStr);
+                downloadAnchor.setAttribute("download", `용돈기입장_백업_${new Date().toISOString().split('T')[0]}.json`);
+                document.body.appendChild(downloadAnchor);
+                downloadAnchor.click();
+                downloadAnchor.remove();
+            };
+        }
+
+        // 복구 (JSON 파일 업로드)
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    if (!Array.isArray(importedData)) throw new Error('올바르지 않은 파일 형식입니다.');
+
+                    if (confirm('기존 데이터에 덮어씌우거나 추가됩니다. 진행하시겠습니까?')) {
+                        const tx = db.transaction(STORE_NAME, 'readwrite');
+                        const store = tx.objectStore(STORE_NAME);
+
+                        importedData.forEach(item => {
+                            delete item.id; // 기존 id 중복 방지
+                            store.add(item);
+                        });
+
+                        tx.oncomplete = () => {
+                            alert('성공적으로 데이터를 불러왔습니다.');
+                            loadTransactions();
+                        };
+                    }
+                } catch (err) {
+                    alert('파일을 읽는 중 오류가 발생했습니다: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // XSS 방지용 문자열 이스케이프 함수
+        function escapeHtml(text) {
+            return text.replace(/[&<>"']/g, function(m) {
+                return {
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#039;'
+                }[m];
+            });
+        }
+    </script>
+</body>
+</html>
