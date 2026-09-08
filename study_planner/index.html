@@ -1,437 +1,832 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="description" content="중학생을 위한 심플하고 직관적인 스터디 플래너. 나만의 공부 루틴을 만들고 성취감을 기록하세요.">
-  <meta name="theme-color" content="#2563eb" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#1e293b" media="(prefers-color-scheme: dark)">
-  
-  <!-- PWA Manifest -->
-  <link rel="manifest" href="./manifest.json">
-  <link rel="apple-touch-icon" href="./icons/icon-192.png">
-  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
-  <link rel="icon" type="image/png" sizes="512x512" href="./icons/icon-512.png">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="스터디플래너">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>중1 열공 스터디 플래너</title>
+    <style>
+        :root {
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --primary-color: #7b61ff;
+            --primary-light: #eef0ff;
+            --accent-color: #ff7675;
+            --border-color: #e0e0e0;
+            --success-color: #00b894;
+        }
 
-  <title>나의 공부 루틴 📝</title>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Pretendard', 'Apple SD Gothic Neo', sans-serif;
+        }
 
-  <!-- Stylesheet -->
-  <link rel="stylesheet" href="./style.css">
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 20px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
 
-  <!-- Main Script (defer로 DOM 파싱 후 실행 보장) -->
-  <script src="./script.js" defer></script>
+        header {
+            background: linear-gradient(135deg, #7b61ff, #a29bfe);
+            color: white;
+            padding: 20px;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(123, 97, 255, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .user-info h1 {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+        }
+
+        .user-info p {
+            font-size: 0.95rem;
+            opacity: 0.9;
+        }
+
+        .d-day-card {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(5px);
+            padding: 10px 18px;
+            border-radius: 12px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .d-day-card .title { font-size: 0.8rem; opacity: 0.8; }
+        .d-day-card .days { font-size: 1.4rem; color: #ffeaa7; }
+
+        .date-navigator {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--card-bg);
+            padding: 12px 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .date-navigator button {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 6px;
+        }
+
+        .date-navigator button:hover { background: var(--primary-light); }
+        .date-navigator input[type="date"] {
+            font-size: 1.1rem;
+            font-weight: bold;
+            border: none;
+            background: transparent;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .grid-container { grid-template-columns: 1fr; }
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+            margin-bottom: 20px;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            margin-bottom: 20px;
+        }
+
+        .progress-bar {
+            height: 12px;
+            background: #e0e0e0;
+            border-radius: 6px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #7b61ff, #00b894);
+            width: 0%;
+            transition: width 0.4s ease;
+        }
+
+        /* Todo Form & List */
+        .todo-form {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .todo-form select, .todo-form input {
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            outline: none;
+        }
+
+        .todo-form select { flex: 1; min-width: 90px; }
+        .todo-form input[type="text"] { flex: 3; min-width: 150px; }
+
+        .btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: opacity 0.2s;
+        }
+
+        .btn:hover { opacity: 0.9; }
+        .btn-secondary { background: #6c757d; }
+        .btn-danger { background: var(--accent-color); }
+
+        .todo-list {
+            list-style: none;
+        }
+
+        .todo-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 1px solid #f0f0f0;
+            gap: 10px;
+        }
+
+        .todo-item.completed .todo-text {
+            text-decoration: line-through;
+            color: #888;
+        }
+
+        .todo-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+        }
+
+        .badge {
+            font-size: 0.75rem;
+            padding: 3px 8px;
+            border-radius: 12px;
+            background: var(--primary-light);
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+
+        .todo-actions button {
+            background: none;
+            border: none;
+            color: #999;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .todo-actions button:hover { color: var(--accent-color); }
+
+        /* Timetable Grid */
+        .timetable {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .time-slot {
+            padding: 8px;
+            font-size: 0.8rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            text-align: center;
+            cursor: pointer;
+            user-select: none;
+            background: #fafafa;
+        }
+
+        .time-slot.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        /* Review & Emoji */
+        .emoji-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .emoji-btn {
+            font-size: 1.5rem;
+            background: none;
+            border: 2px solid transparent;
+            border-radius: 50%;
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        .emoji-btn.selected {
+            border-color: var(--primary-color);
+            background: var(--primary-light);
+        }
+
+        textarea {
+            width: 100%;
+            height: 70px;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            resize: none;
+            outline: none;
+        }
+
+        /* Settings Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 25px;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 400px;
+        }
+
+        .modal-content h2 { margin-bottom: 15px; font-size: 1.2rem; }
+        .modal-content label { font-size: 0.85rem; color: #666; display: block; margin-top: 10px; }
+        .modal-content input { width: 100%; padding: 8px; margin-top: 4px; border: 1px solid var(--border-color); border-radius: 6px; }
+        .modal-actions { margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end; }
+    </style>
 </head>
 <body>
-  <!-- 화면 판독기용 건너뛰기 링크 -->
-  <a href="#main-content" class="skip-link">메인 콘텐츠로 바로가기</a>
 
-  <!-- ============================================================
-       헤더: 상단 고정 바 (날짜, 스트릭, 전역 액션)
-       ============================================================ -->
-  <header class="app-header" role="banner">
-    <div class="header-left">
-      <h1 class="app-title" aria-label="스터디 플래너 홈으로 이동">
-        <span class="title-icon" aria-hidden="true">📝</span>
-        <span class="title-text">나의 공부 루틴</span>
-      </h1>
+    <!-- 헤더 영역 -->
+    <header>
+        <div class="user-info">
+            <h1 id="headerName">열공 모드! ✏️</h1>
+            <p id="headerGoal">오늘의 한마디를 등록하세요!</p>
+        </div>
+        <div class="d-day-card">
+            <div class="title" id="ddayTitle">목표 D-Day</div>
+            <div class="days" id="ddayCount">D-0</div>
+        </div>
+        <button class="btn btn-secondary" onclick="openSettings()" style="font-size:0.8rem; padding: 6px 10px;">⚙️ 설정</button>
+    </header>
+
+    <!-- 날짜 이동 바 -->
+    <div class="date-navigator">
+        <button onclick="changeDate(-1)">◀</button>
+        <input type="date" id="currentDate" onchange="loadDailyData()">
+        <button onclick="changeDate(1)">▶</button>
     </div>
 
-    <div class="header-center">
-      <time id="today-date" datetime="" class="today-date" aria-live="polite"></time>
-      <div id="streak-badge" class="streak-badge" aria-live="polite" aria-atomic="true">
-        <span class="streak-fire" aria-hidden="true">🔥</span>
-        <span id="streak-count">0</span>일 연속
-      </div>
-    </div>
-
-    <div class="header-right">
-      <button id="btn-export" class="icon-btn" type="button" aria-label="데이터 백업 (JSON 다운로드)" title="백업하기">
-        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
-      </button>
-      <button id="btn-import-trigger" class="icon-btn" type="button" aria-label="데이터 복구 (JSON 업로드)" title="복구하기">
-        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/></svg>
-      </button>
-      <input type="file" id="input-import" accept=".json" hidden aria-hidden="true">
-      <button id="btn-settings" class="icon-btn" type="button" aria-label="설정 열기" title="설정" data-view="settings">
-        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
-      </button>
-    </div>
-  </header>
-
-  <!-- ============================================================
-       메인 콘텐츠 영역 (뷰 전환 컨테이너)
-       ============================================================ -->
-  <main id="main-content" class="main-content" role="main">
-    
-    <!-- ----------------------------------------------------------
-         View 1: 오늘 (대시보드 / 타임테이블)
-         ---------------------------------------------------------- -->
-    <section id="view-today" class="view-panel active" role="region" aria-label="오늘의 계획" aria-labelledby="view-today-heading">
-      <h2 id="view-today-heading" class="visually-hidden">오늘의 공부 계획</h2>
-      
-      <!-- 타임 그리드 (시간표) -->
-      <div class="time-grid-wrapper" role="grid" aria-label="시간별 공부 블록">
-        <div class="time-gutter" aria-hidden="true">
-          <!-- 시간 레이블(06:00~24:00)은 JS로 동적 생성 -->
-        </div>
-        <div id="time-grid" class="time-grid" role="rowgroup">
-          <!-- 
-            JS가 생성할 블록 구조 예시:
-            <div class="time-row" role="row" data-time="06:00">
-              <div class="time-label" role="rowheader">06:00</div>
-              <div class="time-cell" role="gridcell" data-time="06:00"></div>
-            </div>
-          -->
-        </div>
-      </div>
-
-      <!-- 일일 통계 요약 -->
-      <section class="daily-summary" aria-label="오늘의 통계">
-        <div class="summary-stats">
-          <div class="stat-item">
-            <span class="stat-label">목표 시간</span>
-            <time id="stat-target" class="stat-value" datetime="PT0H">0시간 0분</time>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">계획 시간</span>
-            <time id="stat-planned" class="stat-value" datetime="PT0H">0시간 0분</time>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">완료 시간</span>
-            <time id="stat-done" class="stat-value" datetime="PT0H">0시간 0분</time>
-          </div>
-        </div>
-        <div class="summary-chart" role="img" aria-label="과목별 공부 비율 차트">
-          <canvas id="chart-subject-donut" width="200" height="200" aria-hidden="true"></canvas>
-          <div id="chart-legend" class="chart-legend" aria-live="polite"></div>
-        </div>
-      </section>
-
-      <!-- 플로팅 액션 버튼 (블록 추가) -->
-      <button id="btn-add-block" class="fab" type="button" aria-label="공부 블록 추가" title="공부 추가">
-        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-      </button>
-    </section>
-
-    <!-- ----------------------------------------------------------
-         View 2: 주간 플래너
-         ---------------------------------------------------------- -->
-    <section id="view-week" class="view-panel" role="region" aria-label="주간 계획" aria-labelledby="view-week-heading" hidden>
-      <h2 id="view-week-heading" class="visually-hidden">주간 공부 계획</h2>
-      <div class="week-header">
-        <button id="btn-prev-week" class="nav-btn" type="button" aria-label="지난 주"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg></button>
-        <h3 id="week-range" class="week-title" aria-live="polite"></h3>
-        <button id="btn-next-week" class="nav-btn" type="button" aria-label="다음 주"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.59 16.59L10 18l6-6-6-6-1.41 1.41L13.17 12z"/></svg></button>
-      </div>
-      <div id="week-grid" class="week-grid" role="grid" aria-label="주간 시간표">
-        <!-- JS로 요일별 컬럼 생성 -->
-      </div>
-      <button id="btn-apply-routine" class="btn btn-secondary week-action" type="button" hidden>
-        루틴 템플릿 적용
-      </button>
-    </section>
-
-    <!-- ----------------------------------------------------------
-         View 3: 통계 & 뱃지 (기록)
-         ---------------------------------------------------------- -->
-    <section id="view-stats" class="view-panel" role="region" aria-label="학습 기록 및 뱃지" aria-labelledby="view-stats-heading" hidden>
-      <h2 id="view-stats-heading" class="visually-hidden">학습 통계</h2>
-      
-      <!-- 스트릭 캘린더 (GitHub Contribution 스타일) -->
-      <article class="stats-card streak-card">
-        <h3 class="card-title">연속 학습 <span id="streak-count-large" class="streak-large">0</span>일 🔥</h3>
-        <div id="streak-calendar" class="streak-calendar" role="img" aria-label="최근 7주간의 학습 활동 히트맵"></div>
-        <p class="streak-hint" id="streak-hint">오늘 공부하면 스트릭이 이어져요!</p>
-      </article>
-
-      <!-- 주간/월간 차트 -->
-      <article class="stats-card chart-card">
-        <div class="chart-header">
-          <h3 class="card-title">주간 공부 시간</h3>
-          <select id="chart-period" class="select-sm" aria-label="기간 선택">
-            <option value="week">최근 7일</option>
-            <option value="month">최근 30일</option>
-          </select>
-        </div>
-        <div class="chart-wrapper" role="img" aria-label="일별 공부 시간 막대 그래프">
-          <canvas id="chart-weekly-bar" width="320" height="160" aria-hidden="true"></canvas>
-        </div>
-        <dl id="weekly-stats-detail" class="stats-detail" aria-label="요일별 상세 시간"></dl>
-      </article>
-
-      <!-- 뱃지 컬렉션 -->
-      <article class="stats-card badges-card">
-        <h3 class="card-title">획득한 뱃지</h3>
-        <div id="badges-grid" class="badges-grid" role="list" aria-label="뱃지 목록">
-          <!-- JS로 뱃지 카드 렌더링 -->
-        </div>
-        <p class="empty-hint" id="badges-empty" hidden>아직 뱃지가 없어요. 첫 계획을 세워보세요!</p>
-      </article>
-    </section>
-
-    <!-- ----------------------------------------------------------
-         View 4: 설정
-         ---------------------------------------------------------- -->
-    <section id="view-settings" class="view-panel" role="region" aria-label="설정" aria-labelledby="view-settings-heading" hidden>
-      <h2 id="view-settings-heading" class="visually-hidden">설정</h2>
-      
-      <form id="settings-form" class="settings-form">
-        <!-- 과목 관리 -->
-        <fieldset class="setting-section">
-          <legend>📚 과목 관리</legend>
-          <p class="setting-desc">드래그하여 순서 변경, 색상/아이콘 수정 가능</p>
-          <ul id="subject-list" class="subject-list" role="list" aria-label="과목 리스트"></ul>
-          <button type="button" id="btn-add-subject" class="btn btn-outline">+ 과목 추가</button>
-        </fieldset>
-
-        <!-- 루틴 템플릿 -->
-        <fieldset class="setting-section">
-          <legend>⏰ 루틴 템플릿</legend>
-          <p class="setting-desc">자주 쓰는 시간표를 저장해 두고 '주간' 뷰에서 한 번에 적용하세요.</p>
-          <ul id="routine-list" class="routine-list" role="list" aria-label="루틴 템플릿 리스트"></ul>
-          <button type="button" id="btn-add-routine" class="btn btn-outline">+ 템플릿 만들기</button>
-        </fieldset>
-
-        <!-- 알림/기타 -->
-        <fieldset class="setting-section">
-          <legend>🔔 알림 및 기타</legend>
-          <div class="toggle-row">
-            <label for="toggle-notify">일일 알림 (오후 6시)</label>
-            <label class="switch">
-              <input type="checkbox" id="toggle-notify" role="switch">
-              <span class="slider"></span>
-            </label>
-          </div>
-          <div class="toggle-row">
-            <label for="toggle-dark">다크 모드 강제 적용</label>
-            <label class="switch">
-              <input type="checkbox" id="toggle-dark" role="switch">
-              <span class="slider"></span>
-            </label>
-          </div>
-        </fieldset>
-
-        <!-- 데이터 관리 -->
-        <fieldset class="setting-section danger-zone">
-          <legend>💾 데이터 관리</legend>
-          <div class="btn-group">
-            <button type="button" id="btn-export-data" class="btn btn-secondary">JSON 백업 다운로드</button>
-            <label class="btn btn-secondary" for="input-import-data">JSON 복구하기
-              <input type="file" id="input-import-data" accept=".json" hidden>
-            </label>
-          </div>
-          <button type="button" id="btn-reset-data" class="btn btn-danger">모든 데이터 초기화</button>
-        </fieldset>
-      </form>
-    </section>
-	  <!-- ============================================================
-       온보딩 모달 (최초 실행 1회만 표시)
-       ============================================================ -->
-  <dialog id="modal-onboarding" class="modal modal-large" role="dialog" aria-modal="true" aria-labelledby="onboarding-title">
-    <div class="onboarding-content">
-      <!-- 진행 표시기 -->
-      <div class="onboarding-progress" role="status" aria-live="polite">
-        <div class="progress-step active" data-step="1"><span>1</span> 과목 선택</div>
-        <div class="progress-step" data-step="2"><span>2</span> 첫 루틴</div>
-        <div class="progress-step" data-step="3"><span>3</span> 시작하기</div>
-      </div>
-
-      <!-- Step 1: 과목 선택 -->
-      <div class="onboarding-step active" data-step="1">
-        <h3 id="onboarding-title">🎒 나만의 과목 꾸미기</h3>
-        <p class="onboarding-desc">공부할 과목을 골라보세요. (최소 3개 이상 권장)</p>
-        <div id="onboarding-subject-list" class="onboarding-subject-grid" role="group" aria-label="과목 선택"></div>
-        <div class="onboarding-selected-count">선택됨: <strong id="ob-selected-count">0</strong>/8</div>
-      </div>
-
-      <!-- Step 2: 루틴 만들기 -->
-      <div class="onboarding-step" data-step="2" hidden>
-        <h3>⏰ 첫 공부 루틴 만들기</h3>
-        <p class="onboarding-desc">평일 방과 후 시간을 예약해봐요. (나중에 수정 가능)</p>
-        <div id="onboarding-routine-form" class="onboarding-routine-form">
-          <!-- JS로 동적 생성: 과목별 시간 입력란 -->
-        </div>
-        <button type="button" id="btn-ob-add-routine-block" class="btn btn-outline btn-sm">+ 시간 추가</button>
-      </div>
-
-      <!-- Step 3: 완료 -->
-      <div class="onboarding-step" data-step="3" hidden>
-        <div class="onboarding-success">🎉</div>
-        <h3>준비 완료!</h3>
-        <p>이제 <strong>'오늘'</strong> 탭에서 공부를 기록해보세요.</p>
-        <p class="onboarding-hint">💡 화면 아래 <strong>+ 버튼</strong>으로 바로 계획을 추가할 수 있어요.</p>
-      </div>
-
-      <!-- 네비게이션 버튼 -->
-      <div class="onboarding-nav">
-        <button type="button" id="btn-ob-prev" class="btn btn-secondary" hidden>이전</button>
-        <button type="button" id="btn-ob-next" class="btn btn-primary">다음</button>
-        <button type="button" id="btn-ob-finish" class="btn btn-primary" hidden>시작하기</button>
-      </div>
-    </div>
-  </dialog>
-  </main>
-
-  <!-- ============================================================
-       하단 네비게이션 바 (모바일 앱 스타일)
-       ============================================================ -->
-  <nav class="bottom-nav" role="navigation" aria-label="메인 메뉴" aria-orientation="horizontal">
-    <button class="nav-item active" data-view="today" type="button" aria-selected="true">
-      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-      <span>오늘</span>
-    </button>
-    <button class="nav-item" data-view="week" type="button" aria-selected="false">
-      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>
-      <span>주간</span>
-    </button>
-    <button class="nav-item" data-view="stats" type="button" aria-selected="false">
-      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
-      <span>기록</span>
-    </button>
-    <button class="nav-item" data-view="settings" type="button" aria-selected="false">
-      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
-      <span>설정</span>
-    </button>
-  </nav>
-
-  <!-- ============================================================
-       모달 다이얼로그 (블록 추가/수정, 과목 추가, 루틴 추가 공용)
-       ============================================================ -->
-  <dialog id="modal-block" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-    <form id="form-block" class="modal-form" method="dialog">
-      <header class="modal-header">
-        <h3 id="modal-title">공부 블록 추가</h3>
-        <button type="submit" formmethod="dialog" class="modal-close" aria-label="닫기" value="cancel">
-			<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-		</button>
-      </header>
-      <div class="modal-body">
-        <input type="hidden" name="blockId" id="input-block-id">
-        <input type="hidden" name="date" id="input-block-date">
+    <!-- 메인 컨텐츠 레이아웃 -->
+    <div class="grid-container">
         
-        <div class="form-group">
-          <label for="select-subject">과목 <span class="required" aria-hidden="true">*</span></label>
-          <select name="subjectId" id="select-subject" required aria-required="true"></select>
+        <!-- 왼쪽: 할 일 (Todo) -->
+        <div class="main-column">
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">📌 오늘의 공부 계획</span>
+                    <span id="progressPercent" style="font-size:0.9rem; font-weight:bold; color:var(--primary-color);">0%</span>
+                </div>
+                
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                </div>
+
+                <form class="todo-form" onsubmit="addTodo(event)">
+                    <select id="todoSubject">
+                        <option value="국어">국어</option>
+                        <option value="수학">수학</option>
+                        <option value="영어">영어</option>
+                        <option value="과학">과학</option>
+                        <option value="사회">사회</option>
+                        <option value="기타" selected>기타</option>
+                    </select>
+                    <input type="text" id="todoInput" placeholder="할 일을 입력하세요..." required>
+                    <button type="submit" class="btn">추가</button>
+                </form>
+
+                <ul class="todo-list" id="todoList"></ul>
+            </div>
         </div>
 
-        <div class="form-row">
-          <div class="form-group">
-            <label for="input-start">시작 <span class="required" aria-hidden="true">*</span></label>
-            <input type="time" name="startTime" id="input-start" required aria-required="true">
-          </div>
-          <div class="form-group">
-            <label for="input-end">끝 <span class="required" aria-hidden="true">*</span></label>
-            <input type="time" name="endTime" id="input-end" required aria-required="true">
-          </div>
-        </div>
+        <!-- 오른쪽: 타임테이블 및 하루 회고 -->
+        <div class="side-column">
+            
+            <!-- 타임테이블 (공부 시간 셀렉터) -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">⏰ 공부 시간 기록</span>
+                    <span id="totalStudyTime" style="font-size: 0.85rem; color:#666;">총 0시간 0분</span>
+                </div>
+                <p style="font-size:0.75rem; color:#888; margin-bottom:10px;">공부한 시간 블록을 클릭하여 색칠하세요 (1칸=1시간)</p>
+                <div class="timetable" id="timetable"></div>
+            </div>
 
-        <div class="form-group">
-          <label for="input-memo">메모</label>
-          <textarea name="memo" id="input-memo" rows="2" placeholder="예: 1단원 연습문제 p.20, 단어장 Day 5"></textarea>
-        </div>
+            <!-- 하루 회고 -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">📝 오늘의 회고</span>
+                </div>
+                <div class="emoji-selector">
+                    <button class="emoji-btn" onclick="selectEmoji('😊')">😊</button>
+                    <button class="emoji-btn" onclick="selectEmoji('🔥')">🔥</button>
+                    <button class="emoji-btn" onclick="selectEmoji('💧')">💧</button>
+                    <button class="emoji-btn" onclick="selectEmoji('😴')">😴</button>
+                </div>
+                <textarea id="dailyReview" placeholder="오늘 하루는 어땠나요? 피드백을 남겨보세요." onchange="saveReview()"></textarea>
+            </div>
 
-        <div class="form-group checkbox-group">
-          <label class="checkbox-label">
-            <input type="checkbox" name="repeat" id="input-repeat" value="weekly">
-            <span class="checkmark"></span>
-            매주 같은 요일 반복
-          </label>
         </div>
-      </div>
-      <footer class="modal-footer">
-        <button type="submit" formmethod="dialog" class="btn btn-secondary" value="cancel">취소</button>
-        <button type="button" class="btn btn-danger" id="btn-delete-block" hidden>삭제</button>
-        <button type="submit" class="btn btn-primary" id="btn-save-block">저장</button>
-      </footer>
-    </form>
-  </dialog>
+    </div>
 
-  <!-- 과목 추가/수정 모달 -->
-  <dialog id="modal-subject" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-subject-title">
-    <form id="form-subject" class="modal-form" method="dialog">
-      <header class="modal-header">
-        <h3 id="modal-subject-title">과목 추가</h3>
-        <button type="submit" formmethod="dialog" class="modal-close" aria-label="닫기" value="cancel">
-			<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-		</button>
-      </header>
-      <div class="modal-body">
-        <input type="hidden" name="subjectId" id="input-subject-id">
-        <div class="form-group">
-          <label for="input-subject-name">과목명 <span class="required" aria-hidden="true">*</span></label>
-          <input type="text" name="name" id="input-subject-name" maxlength="10" required placeholder="예: 수학, 영어, 코딩">
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>색상</label>
-            <div id="subject-color-picker" class="color-picker" role="radiogroup" aria-label="과목 색상 선택"></div>
-          </div>
-          <div class="form-group">
-            <label for="input-subject-icon">아이콘/이모지</label>
-            <input type="text" name="icon" id="input-subject-icon" maxlength="2" placeholder="📖" value="📖">
-          </div>
-        </div>
-      </div>
-      <footer class="modal-footer">
-        <button type="submit" formmethod="dialog" class="btn btn-secondary" value="cancel">취소</button>
-        <button type="submit" class="btn btn-primary">저장</button>
-      </footer>
-    </form>
-  </dialog>
+    <!-- 설정 모달 -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <h2>⚙️ 환경 설정 및 데이터</h2>
+            <label>학생 이름</label>
+            <input type="text" id="settingName" placeholder="이름 입력">
+            
+            <label>목표 한마디</label>
+            <input type="text" id="settingGoal" placeholder="예: 매일 2시간씩 꼭 공부하기">
 
-  <!-- 루틴 템플릿 추가/수정 모달 -->
-  <dialog id="modal-routine" class="modal modal-large" role="dialog" aria-modal="true" aria-labelledby="modal-routine-title">
-    <form id="form-routine" class="modal-form" method="dialog">
-      <header class="modal-header">
-        <h3 id="modal-routine-title">루틴 템플릿 만들기</h3>
-        <button type="submit" formmethod="dialog" class="modal-close" aria-label="닫기" value="cancel">
-			<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-		</button>
-      </header>
-      <div class="modal-body">
-        <input type="hidden" name="routineId" id="input-routine-id">
-        <div class="form-group">
-          <label for="input-routine-name">템플릿 이름 <span class="required" aria-hidden="true">*</span></label>
-          <input type="text" name="name" id="input-routine-name" required placeholder="예: 평일 기본 루틴, 주말 몰입 루틴">
-        </div>
-        <fieldset class="form-group">
-          <legend>적용 요일</legend>
-          <div class="day-toggle" role="group" aria-label="반복 요일 선택">
-            <label><input type="checkbox" name="days" value="0" class="day-check"> 일</label>
-            <label><input type="checkbox" name="days" value="1" class="day-check"> 월</label>
-            <label><input type="checkbox" name="days" value="2" class="day-check"> 화</label>
-            <label><input type="checkbox" name="days" value="3" class="day-check"> 수</label>
-            <label><input type="checkbox" name="days" value="4" class="day-check"> 목</label>
-            <label><input type="checkbox" name="days" value="5" class="day-check"> 금</label>
-            <label><input type="checkbox" name="days" value="6" class="day-check"> 토</label>
-          </div>
-        </fieldset>
-        <div id="routine-blocks" class="routine-blocks" aria-label="루틴 구성 블록 목록">
-          <!-- JS로 블록 행 동적 추가 -->
-        </div>
-        <button type="button" id="btn-add-routine-block" class="btn btn-outline btn-sm">+ 시간 블록 추가</button>
-      </div>
-      <footer class="modal-footer">
-        <button type="submit" formmethod="dialog" class="btn btn-secondary" value="cancel">취소</button>
-        <button type="button" class="btn btn-danger" id="btn-delete-routine" hidden>삭제</button>
-        <button type="submit" class="btn btn-primary">저장</button>
-      </footer>
-    </form>
-  </dialog>
+            <label>D-Day 제목</label>
+            <input type="text" id="settingDdayTitle" placeholder="예: 기말고사">
 
-  <!-- 토스트/알림 컨테이너 -->
-  <div id="toast-container" class="toast-container" role="status" aria-live="polite" aria-atomic="true"></div>
+            <label>D-Day 날짜</label>
+            <input type="date" id="settingDdayDate">
 
-  <!-- Service Worker Registration (인라인 스크립트로 바로 등록) -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').catch(() => { /* 무시 */ });
-      });
-    }
-  </script>
+            <div style="margin-top:20px; border-top:1px solid #eee; padding-top:15px;">
+                <label style="font-weight:bold;">데이터 백업 & 복원</label>
+                <div style="display:flex; gap:8px; margin-top:8px;">
+                    <button class="btn btn-secondary" style="flex:1; font-size:0.8rem;" onclick="exportData()">내보내기 (JSON)</button>
+                    <button class="btn btn-secondary" style="flex:1; font-size:0.8rem;" onclick="document.getElementById('importFile').click()">불러오기</button>
+                    <input type="file" id="importFile" accept=".json" style="display:none;" onchange="importData(event)">
+                </div>
+                <button class="btn btn-danger" style="width:100%; margin-top:8px; font-size:0.8rem;" onclick="resetAllData()">전체 데이터 초기화</button>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeSettings()">취소</button>
+                <button class="btn" onclick="saveSettings()">저장</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. IndexedDB 설정 ---
+        const DB_NAME = 'StudyPlannerDB';
+        const DB_VERSION = 1;
+        let db = null;
+
+        function initDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+                request.onupgradeneeded = (e) => {
+                    db = e.target.result;
+                    if (!db.objectStoreNames.contains('todos')) {
+                        const todoStore = db.createObjectStore('todos', { keyPath: 'id', autoIncrement: true });
+                        todoStore.createIndex('date', 'date', { unique: false });
+                    }
+                    if (!db.objectStoreNames.contains('timetrack')) {
+                        const timeStore = db.createObjectStore('timetrack', { keyPath: 'date' });
+                    }
+                    if (!db.objectStoreNames.contains('reviews')) {
+                        const reviewStore = db.createObjectStore('reviews', { keyPath: 'date' });
+                    }
+                    if (!db.objectStoreNames.contains('settings')) {
+                        db.createObjectStore('settings', { keyPath: 'key' });
+                    }
+                };
+
+                request.onsuccess = (e) => {
+                    db = e.target.result;
+                    resolve(db);
+                };
+
+                request.onerror = (e) => reject('IndexedDB 열기 실패: ' + e.target.errorCode);
+            });
+        }
+
+        // --- 2. 상태 관리 및 상태 초기화 ---
+        let selectedEmoji = '';
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await initDB();
+            // 오늘 날짜 기본 설정
+            document.getElementById('currentDate').value = new Date().toISOString().substring(0, 10);
+            renderTimetableGrid();
+            await loadUserSettings();
+            await loadDailyData();
+        });
+
+        function getCurrentDateStr() {
+            return document.getElementById('currentDate').value;
+        }
+
+        function changeDate(days) {
+            const dateInput = document.getElementById('currentDate');
+            const currentDate = new Date(dateInput.value);
+            currentDate.setDate(currentDate.getDate() + days);
+            dateInput.value = currentDate.toISOString().substring(0, 10);
+            loadDailyData();
+        }
+
+        // --- 3. 데이터 로드 및 UI 렌더링 ---
+        async function loadDailyData() {
+            const dateStr = getCurrentDateStr();
+            await loadTodos(dateStr);
+            await loadTimetable(dateStr);
+            await loadReview(dateStr);
+        }
+
+        // --- 3.1 Todo 기능 ---
+        function addTodo(e) {
+            e.preventDefault();
+            const subject = document.getElementById('todoSubject').value;
+            const input = document.getElementById('todoInput');
+            const text = input.value.trim();
+
+            if (!text) return;
+
+            const todo = {
+                date: getCurrentDateStr(),
+                subject: subject,
+                text: text,
+                completed: false
+            };
+
+            const tx = db.transaction('todos', 'readwrite');
+            const store = tx.objectStore('todos');
+            store.add(todo);
+
+            tx.oncomplete = () => {
+                input.value = '';
+                loadTodos(getCurrentDateStr());
+            };
+        }
+
+        function loadTodos(dateStr) {
+            return new Promise((resolve) => {
+                const tx = db.transaction('todos', 'readonly');
+                const store = tx.objectStore('todos');
+                const index = store.index('date');
+                const request = index.getAll(dateStr);
+
+                request.onsuccess = () => {
+                    const todos = request.result;
+                    const listEl = document.getElementById('todoList');
+                    listEl.innerHTML = '';
+
+                    let completedCount = 0;
+
+                    todos.forEach(todo => {
+                        if (todo.completed) completedCount++;
+
+                        const li = document.createElement('li');
+                        li.className = `todo-item ${todo.completed ? 'completed' : ''}`;
+                        li.innerHTML = `
+                            <div class="todo-left">
+                                <input type="checkbox" ${todo.completed ? 'checked' : ''} onchange="toggleTodo(${todo.id}, ${!todo.completed})">
+                                <span class="badge">${todo.subject}</span>
+                                <span class="todo-text">${escapeHtml(todo.text)}</span>
+                            </div>
+                            <div class="todo-actions">
+                                <button onclick="deleteTodo(${todo.id})">🗑️</button>
+                            </div>
+                        `;
+                        listEl.appendChild(li);
+                    });
+
+                    // 프로그레스 바 업데이트
+                    const total = todos.length;
+                    const percent = total === 0 ? 0 : Math.round((completedCount / total) * 100);
+                    document.getElementById('progressFill').style.width = `${percent}%`;
+                    document.getElementById('progressPercent').innerText = `${percent}%`;
+
+                    resolve();
+                };
+            });
+        }
+
+        function toggleTodo(id, completed) {
+            const tx = db.transaction('todos', 'readwrite');
+            const store = tx.objectStore('todos');
+            const req = store.get(id);
+            req.onsuccess = () => {
+                const data = req.result;
+                data.completed = completed;
+                store.put(data);
+                tx.oncomplete = () => loadTodos(getCurrentDateStr());
+            };
+        }
+
+        function deleteTodo(id) {
+            const tx = db.transaction('todos', 'readwrite');
+            const store = tx.objectStore('todos');
+            store.delete(id);
+            tx.oncomplete = () => loadTodos(getCurrentDateStr());
+        }
+
+        // --- 3.2 타임테이블 기능 ---
+        function renderTimetableGrid() {
+            const grid = document.getElementById('timetable');
+            grid.innerHTML = '';
+            // 06:00 ~ 25:00 (다음날 01시)
+            for (let i = 6; i < 24; i++) {
+                const hourStr = i < 10 ? `0${i}:00` : `${i}:00`;
+                const slot = document.createElement('div');
+                slot.className = 'time-slot';
+                slot.dataset.hour = i;
+                slot.innerText = hourStr;
+                slot.onclick = () => toggleTimeSlot(i);
+                grid.appendChild(slot);
+            }
+        }
+
+        function toggleTimeSlot(hour) {
+            const dateStr = getCurrentDateStr();
+            const tx = db.transaction('timetrack', 'readwrite');
+            const store = tx.objectStore('timetrack');
+            
+            const req = store.get(dateStr);
+            req.onsuccess = () => {
+                let data = req.result || { date: dateStr, hours: [] };
+                const index = data.hours.indexOf(hour);
+                if (index > -1) {
+                    data.hours.splice(index, 1);
+                } else {
+                    data.hours.push(hour);
+                }
+                store.put(data);
+                tx.oncomplete = () => loadTimetable(dateStr);
+            };
+        }
+
+        function loadTimetable(dateStr) {
+            return new Promise((resolve) => {
+                const tx = db.transaction('timetrack', 'readonly');
+                const store = tx.objectStore('timetrack');
+                const req = store.get(dateStr);
+
+                req.onsuccess = () => {
+                    const activeHours = req.result ? req.result.hours : [];
+                    const slots = document.querySelectorAll('.time-slot');
+                    
+                    slots.forEach(slot => {
+                        const hour = parseInt(slot.dataset.hour);
+                        if (activeHours.includes(hour)) {
+                            slot.classList.add('active');
+                        } else {
+                            slot.classList.remove('active');
+                        }
+                    });
+
+                    document.getElementById('totalStudyTime').innerText = `총 ${activeHours.length}시간 공부`;
+                    resolve();
+                };
+            });
+        }
+
+        // --- 3.3 회고 및 이모지 기능 ---
+        function selectEmoji(emoji) {
+            selectedEmoji = emoji;
+            document.querySelectorAll('.emoji-btn').forEach(btn => {
+                btn.classList.toggle('selected', btn.innerText === emoji);
+            });
+            saveReview();
+        }
+
+        function saveReview() {
+            const dateStr = getCurrentDateStr();
+            const text = document.getElementById('dailyReview').value;
+            
+            const tx = db.transaction('reviews', 'readwrite');
+            const store = tx.objectStore('reviews');
+            store.put({ date: dateStr, emoji: selectedEmoji, text: text });
+        }
+
+        function loadReview(dateStr) {
+            return new Promise((resolve) => {
+                const tx = db.transaction('reviews', 'readonly');
+                const store = tx.objectStore('reviews');
+                const req = store.get(dateStr);
+
+                req.onsuccess = () => {
+                    const data = req.result || { emoji: '', text: '' };
+                    selectedEmoji = data.emoji || '';
+                    document.getElementById('dailyReview').value = data.text || '';
+                    
+                    document.querySelectorAll('.emoji-btn').forEach(btn => {
+                        btn.classList.toggle('selected', btn.innerText === selectedEmoji);
+                    });
+                    resolve();
+                };
+            });
+        }
+
+        // --- 4. 사용자 설정 및 D-Day ---
+        function openSettings() {
+            document.getElementById('settingsModal').style.display = 'flex';
+        }
+
+        function closeSettings() {
+            document.getElementById('settingsModal').style.display = 'none';
+        }
+
+        function saveSettings() {
+            const settings = {
+                name: document.getElementById('settingName').value,
+                goal: document.getElementById('settingGoal').value,
+                ddayTitle: document.getElementById('settingDdayTitle').value,
+                ddayDate: document.getElementById('settingDdayDate').value
+            };
+
+            const tx = db.transaction('settings', 'readwrite');
+            const store = tx.objectStore('settings');
+            store.put({ key: 'userConfig', value: settings });
+
+            tx.oncomplete = () => {
+                closeSettings();
+                applyUserSettings(settings);
+            };
+        }
+
+        function loadUserSettings() {
+            return new Promise((resolve) => {
+                const tx = db.transaction('settings', 'readonly');
+                const store = tx.objectStore('settings');
+                const req = store.get('userConfig');
+
+                req.onsuccess = () => {
+                    if (req.result) {
+                        const config = req.result.value;
+                        document.getElementById('settingName').value = config.name || '';
+                        document.getElementById('settingGoal').value = config.goal || '';
+                        document.getElementById('settingDdayTitle').value = config.ddayTitle || '';
+                        document.getElementById('settingDdayDate').value = config.ddayDate || '';
+                        applyUserSettings(config);
+                    }
+                    resolve();
+                };
+            });
+        }
+
+        function applyUserSettings(config) {
+            if (config.name) document.getElementById('headerName').innerText = `${config.name}의 플래너 ✏️`;
+            if (config.goal) document.getElementById('headerGoal').innerText = config.goal;
+            if (config.ddayTitle) document.getElementById('ddayTitle').innerText = config.ddayTitle;
+
+            if (config.ddayDate) {
+                const today = new Date();
+                today.setHours(0,0,0,0);
+                const target = new Date(config.ddayDate);
+                target.setHours(0,0,0,0);
+                
+                const diffTime = target - today;
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                if (diffDays === 0) {
+                    document.getElementById('ddayCount').innerText = 'D-DAY';
+                } else if (diffDays > 0) {
+                    document.getElementById('ddayCount').innerText = `D-${diffDays}`;
+                } else {
+                    document.getElementById('ddayCount').innerText = `D+${Math.abs(diffDays)}`;
+                }
+            }
+        }
+
+        // --- 5. 백업 & 복원 & 초기화 ---
+        async function exportData() {
+            const data = {};
+            const stores = ['todos', 'timetrack', 'reviews', 'settings'];
+
+            for (const storeName of stores) {
+                data[storeName] = await new Promise((resolve) => {
+                    const tx = db.transaction(storeName, 'readonly');
+                    const store = tx.objectStore(storeName);
+                    const req = store.getAll();
+                    req.onsuccess = () => resolve(req.result);
+                });
+            }
+
+            const jsonStr = JSON.stringify(data, null, 2);
+            const blob = new Blob([jsonStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `study_planner_backup_${getCurrentDateStr()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importData(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+                try {
+                    const data = JSON.parse(event.target.result);
+                    const stores = ['todos', 'timetrack', 'reviews', 'settings'];
+
+                    for (const storeName of stores) {
+                        if (data[storeName]) {
+                            const tx = db.transaction(storeName, 'readwrite');
+                            const store = tx.objectStore(storeName);
+                            store.clear(); // 기존 데이터 삭제 후 복원
+                            data[storeName].forEach(item => store.put(item));
+                        }
+                    }
+
+                    alert('데이터 복원이 완료되었습니다!');
+                    location.reload();
+                } catch (err) {
+                    alert('올바르지 않은 백업 파일입니다.');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function resetAllData() {
+            if (confirm('정말로 모든 학습 데이터를 초기화하시겠습니까? 복구할 수 없습니다.')) {
+                const stores = ['todos', 'timetrack', 'reviews', 'settings'];
+                const tx = db.transaction(stores, 'readwrite');
+                stores.forEach(s => tx.objectStore(s).clear());
+                tx.oncomplete = () => {
+                    alert('초기화가 완료되었습니다.');
+                    location.reload();
+                };
+            }
+        }
+
+        // 유틸리티 함수 (XSS 방지)
+        function escapeHtml(text) {
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+    </script>
 </body>
 </html>
