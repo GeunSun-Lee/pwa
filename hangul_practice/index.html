@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>신나는 한글 쓰기 교실 - 칭찬 스티커판</title>
+    <title>신나는 한글 쓰기 교실 - 전체 자모음 & 단어 추가</title>
     <style>
         * {
             box-sizing: border-box;
@@ -38,6 +38,8 @@
             display: flex;
             gap: 10px;
             margin-bottom: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
         }
 
         .btn {
@@ -112,7 +114,7 @@
         }
 
         .current-word-title {
-            font-size: 1.5rem;
+            font-size: 1.6rem;
             font-weight: bold;
             color: #1e293b;
         }
@@ -284,7 +286,6 @@
             max-width: 450px;
         }
 
-        /* --- 칭찬 스티커판 모달 스타일 --- */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -376,7 +377,6 @@
             color: #475569;
         }
 
-        /* 동물 스티커 그리드판 */
         .sticker-board {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
@@ -449,7 +449,6 @@
             font-size: 1rem;
         }
 
-        /* 완성 축하 메시지 상자 */
         .reward-banner {
             display: none;
             background: #dcfce7;
@@ -470,7 +469,6 @@
             50% { transform: scale(1.02); }
         }
 
-        /* 폭죽 캔버스 */
         #confettiCanvas {
             position: fixed;
             top: 0;
@@ -486,12 +484,13 @@
 
     <header>
         <h1>✏️ 신나는 한글 쓰기</h1>
-        <p>좋아하는 색 연필로 예쁘게 글씨를 써봐요!</p>
+        <p>좋아하는 색 연필로 글자와 단어를 예쁘게 써봐요!</p>
     </header>
 
     <div class="category-nav">
-        <button class="btn btn-category active" onclick="switchCategory('자음')">자음</button>
-        <button class="btn btn-category" onclick="switchCategory('모음')">모음</button>
+        <button class="btn btn-category active" onclick="switchCategory('자음')">자음 (14자)</button>
+        <button class="btn btn-category" onclick="switchCategory('모음')">모음 (10자)</button>
+        <button class="btn btn-category" onclick="switchCategory('단어')">예시 단어 🍎</button>
     </div>
 
     <div class="practice-container">
@@ -546,13 +545,12 @@
         </div>
 
         <div class="controls">
-            <button class="btn btn-anim" onclick="playStrokeAnimation()">▶ 획순 보기</button>
+            <button class="btn btn-anim" id="animBtn" onclick="playStrokeAnimation()">▶ 획순 보기</button>
             <button class="btn btn-danger" onclick="clearCanvas()">전체 지우기</button>
             <button class="btn btn-action" onclick="evaluateAndComplete()">채점하기 💯</button>
         </div>
     </div>
 
-    <!-- 스티커 상태 바 및 모달 열기 버튼 -->
     <div class="stats-card">
         <div>
             <span>내 칭찬 스티커:</span>
@@ -561,7 +559,6 @@
         <button class="btn btn-sticker" onclick="openStickerModal()">🎨 스티커판 보기</button>
     </div>
 
-    <!-- 칭찬 스티커판 모달 UI -->
     <div id="stickerModalOverlay" class="modal-overlay">
         <div class="sticker-modal">
             <div class="modal-header">
@@ -578,7 +575,6 @@
                 🎉 축하합니다! 모든 동물 스티커 모으기 성공! 🎉
             </div>
 
-            <!-- 10개 동물 스티커 슬롯 -->
             <div id="stickerBoard" class="sticker-board"></div>
 
             <div class="modal-actions">
@@ -588,12 +584,11 @@
         </div>
     </div>
 
-    <!-- 폭죽 효과 캔버스 -->
     <canvas id="confettiCanvas"></canvas>
 
     <script>
         // --- 1. IndexedDB 설정 ---
-        const DB_NAME = 'HangeulPracticeDB';
+        const DB_NAME = 'HangeulPracticeFullDB';
         const DB_VERSION = 1;
         let db;
 
@@ -605,13 +600,18 @@
                     if (!db.objectStoreNames.contains('words')) {
                         const wordStore = db.createObjectStore('words', { keyPath: 'id', autoIncrement: true });
                         wordStore.createIndex('category', 'category', { unique: false });
-                        const defaultWords = [
-                            { category: '자음', text: 'ㄱ' }, { category: '자음', text: 'ㄴ' }, 
-                            { category: '자음', text: 'ㄷ' }, { category: '자음', text: 'ㄹ' },
-                            { category: '모음', text: 'ㅏ' }, { category: '모음', text: 'ㅑ' }, 
-                            { category: '모음', text: 'ㅓ' }, { category: '모음', text: 'ㅕ' }
-                        ];
-                        defaultWords.forEach(w => wordStore.add(w));
+
+                        // 전체 자음 14자
+                        const consonants = ['ㄱ', 'ㄴ', 'ㄷ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅅ', 'ㅇ', 'ㅈ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
+                        consonants.forEach(c => wordStore.add({ category: '자음', text: c }));
+
+                        // 전체 모음 10자
+                        const vowels = ['ㅏ', 'ㅑ', 'ㅓ', 'ㅕ', 'ㅗ', 'ㅛ', 'ㅜ', 'ㅠ', 'ㅡ', 'ㅣ'];
+                        vowels.forEach(v => wordStore.add({ category: '모음', text: v }));
+
+                        // 예시 단어 추가
+                        const words = ['가방', '나비', '다람쥐', '라디오', '마스크', '바나나', '사자', '아기', '자전거', '차표', '카메라', '타조', '파도', '하늘'];
+                        words.forEach(w => wordStore.add({ category: '단어', text: w }));
                     }
                     if (!db.objectStoreNames.contains('progress')) {
                         db.createObjectStore('progress', { keyPath: 'key' });
@@ -622,7 +622,7 @@
             });
         }
 
-        // --- 2. 획순 경로 데이터 ---
+        // --- 2. 기본 자모음 획순 경로 데이터 ---
         const STROKE_DATA = {
             'ㄱ': [{ path: 'M 70,80 L 250,80 L 250,250', numPos: { x: 50, y: 75 } }],
             'ㄴ': [{ path: 'M 90,70 L 90,240 L 250,240', numPos: { x: 70, y: 65 } }],
@@ -634,6 +634,53 @@
                 { path: 'M 80,70 L 240,70 L 240,145', numPos: { x: 60, y: 65 } },
                 { path: 'M 80,145 L 240,145', numPos: { x: 60, y: 140 } },
                 { path: 'M 80,145 L 80,240 L 240,240', numPos: { x: 60, y: 200 } }
+            ],
+            'ㅁ': [
+                { path: 'M 80,70 L 80,250', numPos: { x: 60, y: 70 } },
+                { path: 'M 80,70 L 240,70 L 240,250', numPos: { x: 160, y: 55 } },
+                { path: 'M 80,250 L 240,250', numPos: { x: 160, y: 270 } }
+            ],
+            'ㅂ': [
+                { path: 'M 90,70 L 90,240', numPos: { x: 70, y: 70 } },
+                { path: 'M 230,70 L 230,240', numPos: { x: 250, y: 70 } },
+                { path: 'M 90,150 L 230,150', numPos: { x: 160, y: 135 } },
+                { path: 'M 90,240 L 230,240', numPos: { x: 160, y: 260 } }
+            ],
+            'ㅅ': [
+                { path: 'M 160,60 L 70,250', numPos: { x: 140, y: 50 } },
+                { path: 'M 140,130 L 250,250', numPos: { x: 210, y: 170 } }
+            ],
+            'ㅇ': [{ path: 'M 160,60 A 90,90 0 1,0 160,240 A 90,90 0 1,0 160,60', numPos: { x: 160, y: 40 } }],
+            'ㅈ': [
+                { path: 'M 70,80 L 250,80', numPos: { x: 50, y: 75 } },
+                { path: 'M 160,80 L 70,250', numPos: { x: 130, y: 150 } },
+                { path: 'M 160,80 L 250,250', numPos: { x: 210, y: 150 } }
+            ],
+            'ㅊ': [
+                { path: 'M 110,50 L 210,50', numPos: { x: 160, y: 35 } },
+                { path: 'M 70,100 L 250,100', numPos: { x: 50, y: 95 } },
+                { path: 'M 160,100 L 70,250', numPos: { x: 130, y: 170 } },
+                { path: 'M 160,100 L 250,250', numPos: { x: 210, y: 170 } }
+            ],
+            'ㅋ': [
+                { path: 'M 70,70 L 250,70 L 250,250', numPos: { x: 50, y: 65 } },
+                { path: 'M 70,150 L 250,150', numPos: { x: 50, y: 145 } }
+            ],
+            'ㅌ': [
+                { path: 'M 80,70 L 240,70', numPos: { x: 60, y: 65 } },
+                { path: 'M 80,155 L 220,155', numPos: { x: 60, y: 150 } },
+                { path: 'M 80,70 L 80,240 L 240,240', numPos: { x: 60, y: 200 } }
+            ],
+            'ㅍ': [
+                { path: 'M 70,80 L 250,80', numPos: { x: 50, y: 75 } },
+                { path: 'M 120,80 L 120,230', numPos: { x: 105, y: 150 } },
+                { path: 'M 200,80 L 200,230', numPos: { x: 215, y: 150 } },
+                { path: 'M 70,230 L 250,230', numPos: { x: 50, y: 245 } }
+            ],
+            'ㅎ': [
+                { path: 'M 120,50 L 200,50', numPos: { x: 160, y: 35 } },
+                { path: 'M 70,95 L 250,95', numPos: { x: 50, y: 90 } },
+                { path: 'M 160,150 A 55,55 0 1,0 160,260 A 55,55 0 1,0 160,150', numPos: { x: 160, y: 130 } }
             ],
             'ㅏ': [
                 { path: 'M 140,50 L 140,270', numPos: { x: 120, y: 50 } },
@@ -652,11 +699,30 @@
                 { path: 'M 80,120 L 180,120', numPos: { x: 110, y: 100 } },
                 { path: 'M 80,200 L 180,200', numPos: { x: 110, y: 180 } },
                 { path: 'M 180,50 L 180,270', numPos: { x: 200, y: 50 } }
-            ]
+            ],
+            'ㅗ': [
+                { path: 'M 160,70 L 160,180', numPos: { x: 160, y: 50 } },
+                { path: 'M 60,180 L 260,180', numPos: { x: 40, y: 180 } }
+            ],
+            'ㅛ': [
+                { path: 'M 120,70 L 120,180', numPos: { x: 120, y: 50 } },
+                { path: 'M 200,70 L 200,180', numPos: { x: 200, y: 50 } },
+                { path: 'M 60,180 L 260,180', numPos: { x: 40, y: 180 } }
+            ],
+            'ㅜ': [
+                { path: 'M 60,120 L 260,120', numPos: { x: 40, y: 120 } },
+                { path: 'M 160,120 L 160,240', numPos: { x: 160, y: 260 } }
+            ],
+            'ㅠ': [
+                { path: 'M 60,120 L 260,120', numPos: { x: 40, y: 120 } },
+                { path: 'M 120,120 L 120,240', numPos: { x: 120, y: 260 } },
+                { path: 'M 200,120 L 200,240', numPos: { x: 200, y: 260 } }
+            ],
+            'ㅡ': [{ path: 'M 50,160 L 270,160', numPos: { x: 30, y: 160 } }],
+            'ㅣ': [{ path: 'M 160,50 L 160,270', numPos: { x: 160, y: 30 } }]
         };
 
-        // 동물 스티커 캐릭터 라이브러리 (총 10개)
-        const ANIMAL_STICKERS = ['🐶', '🐱', '🐰', '🦊', '🐻', '🐼', 'koala' && '🐨', '🐯', '🦁', '🦄'];
+        const ANIMAL_STICKERS = ['🐶', '🐱', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🦄'];
         const MAX_STICKERS = 10;
 
         let currentCategory = '자음';
@@ -700,11 +766,9 @@
             store.put({ key: 'stickers', count: count });
         }
 
-        // --- 3. 스티커판 모달 로직 ---
         function openStickerModal() {
             renderStickerBoard();
             document.getElementById('stickerModalOverlay').classList.add('active');
-
             if (totalStickers >= MAX_STICKERS) {
                 launchConfetti();
                 playVictorySound();
@@ -718,13 +782,11 @@
         function renderStickerBoard() {
             const board = document.getElementById('stickerBoard');
             board.innerHTML = '';
-
             const unlockedCount = Math.min(totalStickers, MAX_STICKERS);
 
             for (let i = 0; i < MAX_STICKERS; i++) {
                 const slot = document.createElement('div');
                 const isUnlocked = i < unlockedCount;
-
                 slot.className = `sticker-slot ${isUnlocked ? 'unlocked' : 'locked'}`;
 
                 const numSpan = document.createElement('span');
@@ -741,18 +803,12 @@
                 board.appendChild(slot);
             }
 
-            // 프로그레스 바 및 텍스트 업데이트
             const percentage = (unlockedCount / MAX_STICKERS) * 100;
             document.getElementById('progressBarFill').style.width = `${percentage}%`;
             document.getElementById('progressText').innerText = `${unlockedCount} / ${MAX_STICKERS} 모음`;
 
-            // 완료 배너 노출 처리
             const rewardBanner = document.getElementById('rewardBanner');
-            if (unlockedCount >= MAX_STICKERS) {
-                rewardBanner.style.display = 'block';
-            } else {
-                rewardBanner.style.display = 'none';
-            }
+            rewardBanner.style.display = unlockedCount >= MAX_STICKERS ? 'block' : 'none';
         }
 
         function resetStickers() {
@@ -764,7 +820,6 @@
             }
         }
 
-        // --- 4. 폭죽(Confetti) 파티클 애니메이션 ---
         function launchConfetti() {
             const canvas = document.getElementById('confettiCanvas');
             const ctx = canvas.getContext('2d');
@@ -789,13 +844,12 @@
             function renderConfetti() {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 let alive = false;
-
                 particles.forEach(p => {
                     if (p.life > 0) {
                         alive = true;
                         p.x += p.vx;
                         p.y += p.vy;
-                        p.vy += 0.2; // Gravity
+                        p.vy += 0.2;
                         p.life -= 1.5;
 
                         ctx.fillStyle = p.color;
@@ -805,13 +859,9 @@
                     }
                 });
 
-                if (alive) {
-                    requestAnimationFrame(renderConfetti);
-                } else {
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-                }
+                if (alive) requestAnimationFrame(renderConfetti);
+                else ctx.clearRect(0, 0, canvas.width, canvas.height);
             }
-
             renderConfetti();
         }
 
@@ -834,12 +884,10 @@
             });
         }
 
-        // --- 5. 툴바 제어 함수 ---
         function selectColor(color, el) {
             strokeColor = color;
             isEraserMode = false;
             document.getElementById('eraserBtn').classList.remove('active');
-
             document.querySelectorAll('.color-btn').forEach(btn => btn.classList.remove('active'));
             el.classList.add('active');
         }
@@ -853,14 +901,10 @@
         function toggleEraser() {
             isEraserMode = !isEraserMode;
             const eraserBtn = document.getElementById('eraserBtn');
-            if (isEraserMode) {
-                eraserBtn.classList.add('active');
-            } else {
-                eraserBtn.classList.remove('active');
-            }
+            if (isEraserMode) eraserBtn.classList.add('active');
+            else eraserBtn.classList.remove('active');
         }
 
-        // --- 6. 캔버스 및 드로잉 ---
         const guideCanvas = document.getElementById('guideCanvas');
         const guideCtx = guideCanvas.getContext('2d');
         const animCanvas = document.getElementById('animCanvas');
@@ -926,6 +970,7 @@
             hasDrawn = false;
         }
 
+        // 단어 및 글자 가이드 그리기 (단어 길이 자동 대응)
         function drawGridAndNumbers(text) {
             guideCtx.clearRect(0, 0, guideCanvas.width, guideCanvas.height);
 
@@ -939,7 +984,10 @@
             guideCtx.setLineDash([]);
 
             const strokes = STROKE_DATA[text];
+
+            // 1. 단어/자모음 경로(SVG Path) 데이터가 있는 경우 (획순 번호 표시)
             if (strokes) {
+                document.getElementById('animBtn').style.display = 'inline-block';
                 guideCtx.lineWidth = 26;
                 guideCtx.lineCap = 'round';
                 guideCtx.lineJoin = 'round';
@@ -962,10 +1010,26 @@
                     guideCtx.textBaseline = 'middle';
                     guideCtx.fillText(idx + 1, pos.x, pos.y);
                 });
+            } 
+            // 2. 단어(2자 이상)인 경우 - 텍스트 안내선 그리기
+            else {
+                document.getElementById('animBtn').style.display = 'none'; // 단어는 획순 버튼 비활성화
+                guideCtx.fillStyle = '#cbd5e1';
+                
+                // 단어 길이에 따른 글자 크기 조정
+                let fontSize = 180;
+                if (text.length === 2) fontSize = 130;
+                else if (text.length === 3) fontSize = 90;
+                else if (text.length >= 4) fontSize = 70;
+
+                guideCtx.font = `bold ${fontSize}px 'Malgun Gothic', sans-serif`;
+                guideCtx.textAlign = 'center';
+                guideCtx.textBaseline = 'middle';
+                guideCtx.fillText(text, 160, 160);
             }
         }
 
-        // --- 7. 채점 알고리즘 ---
+        // 채점 알고리즘
         function calculateScore() {
             if (!hasDrawn) return { score: 0, reason: 'empty' };
 
@@ -979,16 +1043,28 @@
 
             const text = document.getElementById('targetWord').innerText;
             const strokes = STROKE_DATA[text];
-            if (!strokes) return { score: 80, reason: 'good' };
 
-            maskCtx.lineWidth = 36;
-            maskCtx.lineCap = 'round';
-            maskCtx.lineJoin = 'round';
-            maskCtx.strokeStyle = '#000000';
-            strokes.forEach(s => {
-                const path = new Path2D(s.path);
-                maskCtx.stroke(path);
-            });
+            if (strokes) {
+                maskCtx.lineWidth = 36;
+                maskCtx.lineCap = 'round';
+                maskCtx.lineJoin = 'round';
+                maskCtx.strokeStyle = '#000000';
+                strokes.forEach(s => {
+                    const path = new Path2D(s.path);
+                    maskCtx.stroke(path);
+                });
+            } else {
+                let fontSize = 180;
+                if (text.length === 2) fontSize = 130;
+                else if (text.length === 3) fontSize = 90;
+                else if (text.length >= 4) fontSize = 70;
+
+                maskCtx.fillStyle = '#000000';
+                maskCtx.font = `bold ${fontSize}px 'Malgun Gothic', sans-serif`;
+                maskCtx.textAlign = 'center';
+                maskCtx.textBaseline = 'middle';
+                maskCtx.fillText(text, 160, 160);
+            }
 
             const maskData = maskCtx.getImageData(0, 0, width, height).data;
             const drawData = drawCtx.getImageData(0, 0, width, height).data;
@@ -1014,12 +1090,8 @@
             const coverageRatio = insideGuidePixels / totalGuidePixels;
 
             let score = 100;
-            if (outOfBoundsRatio > 0.15) {
-                score -= (outOfBoundsRatio - 0.15) * 80;
-            }
-            if (coverageRatio < 0.25) {
-                score -= (0.25 - coverageRatio) * 60;
-            }
+            if (outOfBoundsRatio > 0.18) score -= (outOfBoundsRatio - 0.18) * 80;
+            if (coverageRatio < 0.20) score -= (0.20 - coverageRatio) * 60;
 
             score = Math.max(0, Math.min(100, Math.round(score)));
             return { score, reason: 'done' };
@@ -1039,13 +1111,13 @@
 
             scoreEl.innerText = `${score}점`;
 
-            if (score >= 85) {
+            if (score >= 80) {
                 msgEl.innerText = '참 잘했어요! 완벽해요 🌟';
                 playSuccessSound();
                 totalStickers++;
                 document.getElementById('stickerCount').innerText = totalStickers;
                 saveStickers(totalStickers);
-            } else if (score >= 60) {
+            } else if (score >= 50) {
                 msgEl.innerText = '좋아요! 조금만 더 선을 따라 써볼까요? 👍';
             } else {
                 msgEl.innerText = '선 밖으로 나가지 않게 다시 천천히 써봐요! ✏️';
@@ -1061,7 +1133,7 @@
             const scoreText = document.getElementById('feedbackScore').innerText;
             const score = parseInt(scoreText);
 
-            if (score >= 85) {
+            if (score >= 80) {
                 setTimeout(() => {
                     if (currentIndex < wordList.length - 1) {
                         nextWord();
@@ -1153,7 +1225,7 @@
         function switchCategory(category) {
             currentCategory = category;
             document.querySelectorAll('.btn-category').forEach(btn => {
-                if(btn.innerText === category) btn.classList.add('active');
+                if(btn.innerText.includes(category)) btn.classList.add('active');
                 else btn.classList.remove('active');
             });
             loadCategoryData(category);
