@@ -1,0 +1,1196 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>신나는 한글 쓰기 교실 - 칭찬 스티커판</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Malgun Gothic', '맑은 고딕', sans-serif;
+            user-select: none;
+        }
+
+        body {
+            background-color: #f0f9ff;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        h1 {
+            color: #0284c7;
+            font-size: 2rem;
+            margin-bottom: 6px;
+        }
+
+        .category-nav {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .btn {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 20px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        .btn-category {
+            background-color: #e0f2fe;
+            color: #0369a1;
+        }
+
+        .btn-category.active {
+            background-color: #0284c7;
+            color: white;
+        }
+
+        .btn-action {
+            background-color: #22c55e;
+            color: white;
+        }
+
+        .btn-danger {
+            background-color: #ef4444;
+            color: white;
+        }
+
+        .btn-sound {
+            background-color: #f59e0b;
+            color: white;
+        }
+
+        .btn-anim {
+            background-color: #8b5cf6;
+            color: white;
+        }
+
+        .btn-sticker {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+            box-shadow: 0 4px 10px rgba(245, 158, 11, 0.4);
+        }
+
+        .practice-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: white;
+            padding: 20px;
+            border-radius: 24px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+            width: 100%;
+            max-width: 450px;
+        }
+
+        .word-selector {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            margin-bottom: 12px;
+        }
+
+        .current-word-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #1e293b;
+        }
+
+        .drawing-toolbar {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 100%;
+            background-color: #f8fafc;
+            padding: 12px;
+            border-radius: 16px;
+            margin-bottom: 12px;
+            border: 2px dashed #cbd5e1;
+        }
+
+        .toolbar-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .color-palette {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .color-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 3px solid white;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+            transition: transform 0.15s ease;
+        }
+
+        .color-btn.active {
+            transform: scale(1.25);
+            border-color: #38bdf8;
+        }
+
+        .size-palette {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .size-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: white;
+            border: 2px solid #e2e8f0;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .size-btn.active {
+            border-color: #0284c7;
+            background-color: #e0f2fe;
+        }
+
+        .size-dot {
+            background-color: #334155;
+            border-radius: 50%;
+        }
+
+        .tool-btn {
+            padding: 6px 12px;
+            font-size: 0.9rem;
+            border-radius: 12px;
+            border: 2px solid #e2e8f0;
+            background: white;
+            cursor: pointer;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .tool-btn.active {
+            border-color: #ef4444;
+            background-color: #fef2f2;
+            color: #ef4444;
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            width: 320px;
+            height: 320px;
+            border: 4px solid #38bdf8;
+            border-radius: 16px;
+            background-color: #fff;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .feedback-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            z-index: 10;
+        }
+
+        .feedback-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .feedback-score {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #0284c7;
+            margin-bottom: 8px;
+        }
+
+        .feedback-msg {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #334155;
+            margin-bottom: 16px;
+        }
+
+        .stats-card {
+            margin-top: 15px;
+            background-color: #fef3c7;
+            padding: 12px 20px;
+            border-radius: 18px;
+            color: #92400e;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 450px;
+        }
+
+        /* --- 칭찬 스티커판 모달 스타일 --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            z-index: 100;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .sticker-modal {
+            background: white;
+            width: 90%;
+            max-width: 440px;
+            border-radius: 28px;
+            padding: 24px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            position: relative;
+            transform: translateY(20px);
+            transition: transform 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .modal-overlay.active .sticker-modal {
+            transform: translateY(0);
+        }
+
+        .modal-header {
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            color: #d97706;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .modal-subtitle {
+            font-size: 0.9rem;
+            color: #64748b;
+            margin-top: 4px;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            background-color: #f1f5f9;
+            height: 18px;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            border: 2px solid #e2e8f0;
+            position: relative;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #f59e0b, #fbbf24);
+            width: 0%;
+            transition: width 0.5s ease;
+            border-radius: 8px;
+        }
+
+        .progress-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: #475569;
+        }
+
+        /* 동물 스티커 그리드판 */
+        .sticker-board {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+            width: 100%;
+            background-color: #fffbeb;
+            padding: 16px;
+            border-radius: 20px;
+            border: 2px dashed #fde68a;
+            margin-bottom: 20px;
+        }
+
+        .sticker-slot {
+            aspect-ratio: 1;
+            background: white;
+            border-radius: 16px;
+            border: 2px solid #fef3c7;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            position: relative;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.03);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .sticker-slot.locked {
+            background: #f8fafc;
+            border-color: #e2e8f0;
+            opacity: 0.5;
+            font-size: 1.2rem;
+            filter: grayscale(100%);
+        }
+
+        .sticker-slot.unlocked {
+            animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            background: #ffffff;
+            border-color: #f59e0b;
+            box-shadow: 0 4px 8px rgba(245, 158, 11, 0.2);
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0); opacity: 0; }
+            80% { transform: scale(1.15); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .sticker-num {
+            position: absolute;
+            top: 3px;
+            left: 5px;
+            font-size: 0.65rem;
+            font-weight: 800;
+            color: #cbd5e1;
+        }
+
+        .sticker-slot.unlocked .sticker-num {
+            color: #f59e0b;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .modal-actions .btn {
+            flex: 1;
+            padding: 12px 0;
+            font-size: 1rem;
+        }
+
+        /* 완성 축하 메시지 상자 */
+        .reward-banner {
+            display: none;
+            background: #dcfce7;
+            border: 2px solid #86efac;
+            color: #166534;
+            padding: 10px 14px;
+            border-radius: 14px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 16px;
+            width: 100%;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        /* 폭죽 캔버스 */
+        #confettiCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 150;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>✏️ 신나는 한글 쓰기</h1>
+        <p>좋아하는 색 연필로 예쁘게 글씨를 써봐요!</p>
+    </header>
+
+    <div class="category-nav">
+        <button class="btn btn-category active" onclick="switchCategory('자음')">자음</button>
+        <button class="btn btn-category" onclick="switchCategory('모음')">모음</button>
+    </div>
+
+    <div class="practice-container">
+        <div class="word-selector">
+            <button class="btn btn-category" onclick="prevWord()">◀ 이전</button>
+            <div style="display:flex; align-items:center; gap: 8px;">
+                <span id="targetWord" class="current-word-title">ㄱ</span>
+                <button class="btn btn-sound" onclick="speakCurrentWord()">🔊</button>
+            </div>
+            <button class="btn btn-category" onclick="nextWord()">다음 ▶</button>
+        </div>
+
+        <div class="drawing-toolbar">
+            <div class="toolbar-row">
+                <div class="color-palette">
+                    <div class="color-btn active" style="background-color: #0284c7;" onclick="selectColor('#0284c7', this)"></div>
+                    <div class="color-btn" style="background-color: #ef4444;" onclick="selectColor('#ef4444', this)"></div>
+                    <div class="color-btn" style="background-color: #22c55e;" onclick="selectColor('#22c55e', this)"></div>
+                    <div class="color-btn" style="background-color: #f59e0b;" onclick="selectColor('#f59e0b', this)"></div>
+                    <div class="color-btn" style="background-color: #8b5cf6;" onclick="selectColor('#8b5cf6', this)"></div>
+                    <div class="color-btn" style="background-color: #ec4899;" onclick="selectColor('#ec4899', this)"></div>
+                </div>
+                <button id="eraserBtn" class="tool-btn" onclick="toggleEraser()">🧹 지우개</button>
+            </div>
+
+            <div class="toolbar-row" style="justify-content: flex-start; gap: 12px;">
+                <span style="font-size:0.85rem; font-weight:bold; color:#64748b;">두께:</span>
+                <div class="size-palette">
+                    <div class="size-btn" onclick="selectLineWidth(8, this)">
+                        <div class="size-dot" style="width: 6px; height: 6px;"></div>
+                    </div>
+                    <div class="size-btn active" onclick="selectLineWidth(14, this)">
+                        <div class="size-dot" style="width: 12px; height: 12px;"></div>
+                    </div>
+                    <div class="size-btn" onclick="selectLineWidth(22, this)">
+                        <div class="size-dot" style="width: 18px; height: 18px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="canvas-wrapper">
+            <canvas id="guideCanvas" width="320" height="320"></canvas>
+            <canvas id="animCanvas" width="320" height="320"></canvas>
+            <canvas id="drawCanvas" width="320" height="320"></canvas>
+
+            <div id="feedbackOverlay" class="feedback-overlay">
+                <div id="feedbackScore" class="feedback-score">100점</div>
+                <div id="feedbackMsg" class="feedback-msg">완벽해요! 최고예요 🌟</div>
+                <button class="btn btn-action" onclick="closeFeedback()">확인</button>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-anim" onclick="playStrokeAnimation()">▶ 획순 보기</button>
+            <button class="btn btn-danger" onclick="clearCanvas()">전체 지우기</button>
+            <button class="btn btn-action" onclick="evaluateAndComplete()">채점하기 💯</button>
+        </div>
+    </div>
+
+    <!-- 스티커 상태 바 및 모달 열기 버튼 -->
+    <div class="stats-card">
+        <div>
+            <span>내 칭찬 스티커:</span>
+            <span id="stickerCount" style="font-size: 1.3rem;">0</span>개 ⭐
+        </div>
+        <button class="btn btn-sticker" onclick="openStickerModal()">🎨 스티커판 보기</button>
+    </div>
+
+    <!-- 칭찬 스티커판 모달 UI -->
+    <div id="stickerModalOverlay" class="modal-overlay">
+        <div class="sticker-modal">
+            <div class="modal-header">
+                <div class="modal-title">🦁 동물 스티커 모음판</div>
+                <div class="modal-subtitle">글씨를 잘 쓰면 귀여운 동물 친구들이 찾아와요!</div>
+            </div>
+
+            <div class="progress-bar-container">
+                <div id="progressBarFill" class="progress-bar-fill"></div>
+                <div id="progressText" class="progress-text">0 / 10 완주 준비 중</div>
+            </div>
+
+            <div id="rewardBanner" class="reward-banner">
+                🎉 축하합니다! 모든 동물 스티커 모으기 성공! 🎉
+            </div>
+
+            <!-- 10개 동물 스티커 슬롯 -->
+            <div id="stickerBoard" class="sticker-board"></div>
+
+            <div class="modal-actions">
+                <button class="btn btn-danger" style="background-color: #94a3b8;" onclick="resetStickers()">초기화</button>
+                <button class="btn btn-action" onclick="closeStickerModal()">닫기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 폭죽 효과 캔버스 -->
+    <canvas id="confettiCanvas"></canvas>
+
+    <script>
+        // --- 1. IndexedDB 설정 ---
+        const DB_NAME = 'HangeulPracticeDB';
+        const DB_VERSION = 1;
+        let db;
+
+        function initDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+                request.onupgradeneeded = (e) => {
+                    db = e.target.result;
+                    if (!db.objectStoreNames.contains('words')) {
+                        const wordStore = db.createObjectStore('words', { keyPath: 'id', autoIncrement: true });
+                        wordStore.createIndex('category', 'category', { unique: false });
+                        const defaultWords = [
+                            { category: '자음', text: 'ㄱ' }, { category: '자음', text: 'ㄴ' }, 
+                            { category: '자음', text: 'ㄷ' }, { category: '자음', text: 'ㄹ' },
+                            { category: '모음', text: 'ㅏ' }, { category: '모음', text: 'ㅑ' }, 
+                            { category: '모음', text: 'ㅓ' }, { category: '모음', text: 'ㅕ' }
+                        ];
+                        defaultWords.forEach(w => wordStore.add(w));
+                    }
+                    if (!db.objectStoreNames.contains('progress')) {
+                        db.createObjectStore('progress', { keyPath: 'key' });
+                    }
+                };
+                request.onsuccess = (e) => { db = e.target.result; resolve(db); };
+                request.onerror = (e) => reject('IndexedDB 에러: ' + e.target.error);
+            });
+        }
+
+        // --- 2. 획순 경로 데이터 ---
+        const STROKE_DATA = {
+            'ㄱ': [{ path: 'M 70,80 L 250,80 L 250,250', numPos: { x: 50, y: 75 } }],
+            'ㄴ': [{ path: 'M 90,70 L 90,240 L 250,240', numPos: { x: 70, y: 65 } }],
+            'ㄷ': [
+                { path: 'M 80,80 L 240,80', numPos: { x: 60, y: 75 } },
+                { path: 'M 80,80 L 80,240 L 240,240', numPos: { x: 60, y: 160 } }
+            ],
+            'ㄹ': [
+                { path: 'M 80,70 L 240,70 L 240,145', numPos: { x: 60, y: 65 } },
+                { path: 'M 80,145 L 240,145', numPos: { x: 60, y: 140 } },
+                { path: 'M 80,145 L 80,240 L 240,240', numPos: { x: 60, y: 200 } }
+            ],
+            'ㅏ': [
+                { path: 'M 140,50 L 140,270', numPos: { x: 120, y: 50 } },
+                { path: 'M 140,160 L 240,160', numPos: { x: 175, y: 140 } }
+            ],
+            'ㅑ': [
+                { path: 'M 120,50 L 120,270', numPos: { x: 100, y: 50 } },
+                { path: 'M 120,120 L 220,120', numPos: { x: 155, y: 100 } },
+                { path: 'M 120,200 L 220,200', numPos: { x: 155, y: 180 } }
+            ],
+            'ㅓ': [
+                { path: 'M 80,160 L 180,160', numPos: { x: 110, y: 140 } },
+                { path: 'M 180,50 L 180,270', numPos: { x: 200, y: 50 } }
+            ],
+            'ㅕ': [
+                { path: 'M 80,120 L 180,120', numPos: { x: 110, y: 100 } },
+                { path: 'M 80,200 L 180,200', numPos: { x: 110, y: 180 } },
+                { path: 'M 180,50 L 180,270', numPos: { x: 200, y: 50 } }
+            ]
+        };
+
+        // 동물 스티커 캐릭터 라이브러리 (총 10개)
+        const ANIMAL_STICKERS = ['🐶', '🐱', '🐰', '🦊', '🐻', '🐼', 'koala' && '🐨', '🐯', '🦁', '🦄'];
+        const MAX_STICKERS = 10;
+
+        let currentCategory = '자음';
+        let wordList = [];
+        let currentIndex = 0;
+        let totalStickers = 0;
+        let animRequestId = null;
+        let hasDrawn = false;
+
+        let strokeColor = '#0284c7';
+        let strokeWidth = 14;
+        let isEraserMode = false;
+
+        async function loadCategoryData(category) {
+            const tx = db.transaction('words', 'readonly');
+            const store = tx.objectStore('words');
+            const index = store.index('category');
+            const request = index.getAll(category);
+            request.onsuccess = () => {
+                wordList = request.result.map(item => item.text);
+                currentIndex = 0;
+                updateDisplay();
+            };
+        }
+
+        async function loadProgress() {
+            const tx = db.transaction('progress', 'readonly');
+            const store = tx.objectStore('progress');
+            const request = store.get('stickers');
+            request.onsuccess = () => {
+                if (request.result) {
+                    totalStickers = request.result.count;
+                    document.getElementById('stickerCount').innerText = totalStickers;
+                }
+            };
+        }
+
+        function saveStickers(count) {
+            const tx = db.transaction('progress', 'readwrite');
+            const store = tx.objectStore('progress');
+            store.put({ key: 'stickers', count: count });
+        }
+
+        // --- 3. 스티커판 모달 로직 ---
+        function openStickerModal() {
+            renderStickerBoard();
+            document.getElementById('stickerModalOverlay').classList.add('active');
+
+            if (totalStickers >= MAX_STICKERS) {
+                launchConfetti();
+                playVictorySound();
+            }
+        }
+
+        function closeStickerModal() {
+            document.getElementById('stickerModalOverlay').classList.remove('active');
+        }
+
+        function renderStickerBoard() {
+            const board = document.getElementById('stickerBoard');
+            board.innerHTML = '';
+
+            const unlockedCount = Math.min(totalStickers, MAX_STICKERS);
+
+            for (let i = 0; i < MAX_STICKERS; i++) {
+                const slot = document.createElement('div');
+                const isUnlocked = i < unlockedCount;
+
+                slot.className = `sticker-slot ${isUnlocked ? 'unlocked' : 'locked'}`;
+
+                const numSpan = document.createElement('span');
+                numSpan.className = 'sticker-num';
+                numSpan.innerText = i + 1;
+                slot.appendChild(numSpan);
+
+                if (isUnlocked) {
+                    slot.appendChild(document.createTextNode(ANIMAL_STICKERS[i]));
+                } else {
+                    slot.appendChild(document.createTextNode('🔒'));
+                }
+
+                board.appendChild(slot);
+            }
+
+            // 프로그레스 바 및 텍스트 업데이트
+            const percentage = (unlockedCount / MAX_STICKERS) * 100;
+            document.getElementById('progressBarFill').style.width = `${percentage}%`;
+            document.getElementById('progressText').innerText = `${unlockedCount} / ${MAX_STICKERS} 모음`;
+
+            // 완료 배너 노출 처리
+            const rewardBanner = document.getElementById('rewardBanner');
+            if (unlockedCount >= MAX_STICKERS) {
+                rewardBanner.style.display = 'block';
+            } else {
+                rewardBanner.style.display = 'none';
+            }
+        }
+
+        function resetStickers() {
+            if (confirm('모은 스티커를 정말 초기화할까요?')) {
+                totalStickers = 0;
+                document.getElementById('stickerCount').innerText = 0;
+                saveStickers(0);
+                renderStickerBoard();
+            }
+        }
+
+        // --- 4. 폭죽(Confetti) 파티클 애니메이션 ---
+        function launchConfetti() {
+            const canvas = document.getElementById('confettiCanvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const particles = [];
+            const colors = ['#f59e0b', '#ef4444', '#22c55e', '#0284c7', '#8b5cf6', '#ec4899'];
+
+            for (let i = 0; i < 80; i++) {
+                particles.push({
+                    x: canvas.width / 2,
+                    y: canvas.height / 2,
+                    vx: (Math.random() - 0.5) * 14,
+                    vy: (Math.random() - 0.7) * 14,
+                    size: Math.random() * 8 + 4,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    life: 100
+                });
+            }
+
+            function renderConfetti() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                let alive = false;
+
+                particles.forEach(p => {
+                    if (p.life > 0) {
+                        alive = true;
+                        p.x += p.vx;
+                        p.y += p.vy;
+                        p.vy += 0.2; // Gravity
+                        p.life -= 1.5;
+
+                        ctx.fillStyle = p.color;
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                });
+
+                if (alive) {
+                    requestAnimationFrame(renderConfetti);
+                } else {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                }
+            }
+
+            renderConfetti();
+        }
+
+        function playVictorySound() {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContext) return;
+            const ctx = new AudioContext();
+            const notes = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99];
+            notes.forEach((freq, index) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.value = freq;
+                gain.gain.setValueAtTime(0.12, ctx.currentTime + index * 0.1);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + index * 0.1 + 0.3);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(ctx.currentTime + index * 0.1);
+                osc.stop(ctx.currentTime + index * 0.1 + 0.3);
+            });
+        }
+
+        // --- 5. 툴바 제어 함수 ---
+        function selectColor(color, el) {
+            strokeColor = color;
+            isEraserMode = false;
+            document.getElementById('eraserBtn').classList.remove('active');
+
+            document.querySelectorAll('.color-btn').forEach(btn => btn.classList.remove('active'));
+            el.classList.add('active');
+        }
+
+        function selectLineWidth(width, el) {
+            strokeWidth = width;
+            document.querySelectorAll('.size-btn').forEach(btn => btn.classList.remove('active'));
+            el.classList.add('active');
+        }
+
+        function toggleEraser() {
+            isEraserMode = !isEraserMode;
+            const eraserBtn = document.getElementById('eraserBtn');
+            if (isEraserMode) {
+                eraserBtn.classList.add('active');
+            } else {
+                eraserBtn.classList.remove('active');
+            }
+        }
+
+        // --- 6. 캔버스 및 드로잉 ---
+        const guideCanvas = document.getElementById('guideCanvas');
+        const guideCtx = guideCanvas.getContext('2d');
+        const animCanvas = document.getElementById('animCanvas');
+        const animCtx = animCanvas.getContext('2d');
+        const drawCanvas = document.getElementById('drawCanvas');
+        const drawCtx = drawCanvas.getContext('2d');
+
+        let isDrawing = false;
+
+        function initCanvasEvents() {
+            drawCanvas.addEventListener('mousedown', startDrawing);
+            drawCanvas.addEventListener('mousemove', draw);
+            drawCanvas.addEventListener('mouseup', stopDrawing);
+            drawCanvas.addEventListener('mouseleave', stopDrawing);
+
+            drawCanvas.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                startDrawing(e.touches[0]);
+            });
+            drawCanvas.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                draw(e.touches[0]);
+            });
+            drawCanvas.addEventListener('touchend', stopDrawing);
+        }
+
+        function getCanvasPos(e) {
+            const rect = drawCanvas.getBoundingClientRect();
+            return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+        }
+
+        function startDrawing(e) {
+            isDrawing = true;
+            hasDrawn = true;
+            const pos = getCanvasPos(e);
+            drawCtx.beginPath();
+            drawCtx.moveTo(pos.x, pos.y);
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            const pos = getCanvasPos(e);
+
+            if (isEraserMode) {
+                drawCtx.globalCompositeOperation = 'destination-out';
+                drawCtx.lineWidth = strokeWidth * 1.5;
+            } else {
+                drawCtx.globalCompositeOperation = 'source-over';
+                drawCtx.lineWidth = strokeWidth;
+                drawCtx.strokeStyle = strokeColor;
+            }
+
+            drawCtx.lineCap = 'round';
+            drawCtx.lineJoin = 'round';
+            drawCtx.lineTo(pos.x, pos.y);
+            drawCtx.stroke();
+        }
+
+        function stopDrawing() { isDrawing = false; }
+
+        function clearCanvas() {
+            drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+            hasDrawn = false;
+        }
+
+        function drawGridAndNumbers(text) {
+            guideCtx.clearRect(0, 0, guideCanvas.width, guideCanvas.height);
+
+            guideCtx.strokeStyle = '#e2e8f0';
+            guideCtx.lineWidth = 2;
+            guideCtx.setLineDash([6, 6]);
+            guideCtx.beginPath();
+            guideCtx.moveTo(160, 0); guideCtx.lineTo(160, 320);
+            guideCtx.moveTo(0, 160); guideCtx.lineTo(320, 160);
+            guideCtx.stroke();
+            guideCtx.setLineDash([]);
+
+            const strokes = STROKE_DATA[text];
+            if (strokes) {
+                guideCtx.lineWidth = 26;
+                guideCtx.lineCap = 'round';
+                guideCtx.lineJoin = 'round';
+                guideCtx.strokeStyle = '#e2e8f0';
+                strokes.forEach(s => {
+                    const path = new Path2D(s.path);
+                    guideCtx.stroke(path);
+                });
+
+                strokes.forEach((s, idx) => {
+                    const pos = s.numPos;
+                    guideCtx.beginPath();
+                    guideCtx.arc(pos.x, pos.y, 14, 0, Math.PI * 2);
+                    guideCtx.fillStyle = '#ef4444';
+                    guideCtx.fill();
+
+                    guideCtx.fillStyle = 'white';
+                    guideCtx.font = 'bold 14px sans-serif';
+                    guideCtx.textAlign = 'center';
+                    guideCtx.textBaseline = 'middle';
+                    guideCtx.fillText(idx + 1, pos.x, pos.y);
+                });
+            }
+        }
+
+        // --- 7. 채점 알고리즘 ---
+        function calculateScore() {
+            if (!hasDrawn) return { score: 0, reason: 'empty' };
+
+            const width = drawCanvas.width;
+            const height = drawCanvas.height;
+
+            const maskCanvas = document.createElement('canvas');
+            maskCanvas.width = width;
+            maskCanvas.height = height;
+            const maskCtx = maskCanvas.getContext('2d');
+
+            const text = document.getElementById('targetWord').innerText;
+            const strokes = STROKE_DATA[text];
+            if (!strokes) return { score: 80, reason: 'good' };
+
+            maskCtx.lineWidth = 36;
+            maskCtx.lineCap = 'round';
+            maskCtx.lineJoin = 'round';
+            maskCtx.strokeStyle = '#000000';
+            strokes.forEach(s => {
+                const path = new Path2D(s.path);
+                maskCtx.stroke(path);
+            });
+
+            const maskData = maskCtx.getImageData(0, 0, width, height).data;
+            const drawData = drawCtx.getImageData(0, 0, width, height).data;
+
+            let totalUserPixels = 0;
+            let insideGuidePixels = 0;
+            let totalGuidePixels = 0;
+
+            for (let i = 0; i < maskData.length; i += 4) {
+                const isMaskPixel = maskData[i + 3] > 0;
+                const isDrawPixel = drawData[i + 3] > 0;
+
+                if (isMaskPixel) totalGuidePixels++;
+                if (isDrawPixel) {
+                    totalUserPixels++;
+                    if (isMaskPixel) insideGuidePixels++;
+                }
+            }
+
+            if (totalUserPixels === 0) return { score: 0, reason: 'empty' };
+
+            const outOfBoundsRatio = (totalUserPixels - insideGuidePixels) / totalUserPixels;
+            const coverageRatio = insideGuidePixels / totalGuidePixels;
+
+            let score = 100;
+            if (outOfBoundsRatio > 0.15) {
+                score -= (outOfBoundsRatio - 0.15) * 80;
+            }
+            if (coverageRatio < 0.25) {
+                score -= (0.25 - coverageRatio) * 60;
+            }
+
+            score = Math.max(0, Math.min(100, Math.round(score)));
+            return { score, reason: 'done' };
+        }
+
+        function evaluateAndComplete() {
+            const { score, reason } = calculateScore();
+
+            if (reason === 'empty') {
+                alert('글자를 먼저 캔버스에 써주세요!');
+                return;
+            }
+
+            const overlay = document.getElementById('feedbackOverlay');
+            const scoreEl = document.getElementById('feedbackScore');
+            const msgEl = document.getElementById('feedbackMsg');
+
+            scoreEl.innerText = `${score}점`;
+
+            if (score >= 85) {
+                msgEl.innerText = '참 잘했어요! 완벽해요 🌟';
+                playSuccessSound();
+                totalStickers++;
+                document.getElementById('stickerCount').innerText = totalStickers;
+                saveStickers(totalStickers);
+            } else if (score >= 60) {
+                msgEl.innerText = '좋아요! 조금만 더 선을 따라 써볼까요? 👍';
+            } else {
+                msgEl.innerText = '선 밖으로 나가지 않게 다시 천천히 써봐요! ✏️';
+            }
+
+            overlay.classList.add('show');
+        }
+
+        function closeFeedback() {
+            const overlay = document.getElementById('feedbackOverlay');
+            overlay.classList.remove('show');
+
+            const scoreText = document.getElementById('feedbackScore').innerText;
+            const score = parseInt(scoreText);
+
+            if (score >= 85) {
+                setTimeout(() => {
+                    if (currentIndex < wordList.length - 1) {
+                        nextWord();
+                    } else {
+                        openStickerModal();
+                    }
+                }, 300);
+            }
+        }
+
+        function playStrokeAnimation() {
+            if (animRequestId) cancelAnimationFrame(animRequestId);
+            animCtx.clearRect(0, 0, animCanvas.width, animCanvas.height);
+
+            const text = document.getElementById('targetWord').innerText;
+            const strokes = STROKE_DATA[text];
+            if (!strokes) return;
+
+            let strokeIndex = 0;
+            let progress = 0;
+            const speed = 4;
+
+            function animate() {
+                if (strokeIndex >= strokes.length) {
+                    setTimeout(() => { animCtx.clearRect(0, 0, animCanvas.width, animCanvas.height); }, 1000);
+                    return;
+                }
+
+                const stroke = strokes[strokeIndex];
+                const path = new Path2D(stroke.path);
+                const svgPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                svgPath.setAttribute('d', stroke.path);
+                const pathLength = svgPath.getTotalLength();
+
+                progress += speed;
+                if (progress > pathLength) progress = pathLength;
+
+                animCtx.lineWidth = 16;
+                animCtx.lineCap = 'round';
+                animCtx.lineJoin = 'round';
+                animCtx.strokeStyle = '#8b5cf6';
+
+                animCtx.save();
+                animCtx.setLineDash([progress, pathLength]);
+                animCtx.stroke(path);
+                animCtx.restore();
+
+                if (progress < pathLength) {
+                    animRequestId = requestAnimationFrame(animate);
+                } else {
+                    strokeIndex++;
+                    progress = 0;
+                    setTimeout(() => { animRequestId = requestAnimationFrame(animate); }, 200);
+                }
+            }
+            animRequestId = requestAnimationFrame(animate);
+        }
+
+        function speakCurrentWord() {
+            const text = document.getElementById('targetWord').innerText;
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'ko-KR';
+                utterance.rate = 0.8;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        function playSuccessSound() {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContext) return;
+            const ctx = new AudioContext();
+            const notes = [261.63, 329.63, 392.00, 523.25];
+            notes.forEach((freq, index) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.value = freq;
+                gain.gain.setValueAtTime(0.1, ctx.currentTime + index * 0.12);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + index * 0.12 + 0.25);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(ctx.currentTime + index * 0.12);
+                osc.stop(ctx.currentTime + index * 0.12 + 0.25);
+            });
+        }
+
+        function switchCategory(category) {
+            currentCategory = category;
+            document.querySelectorAll('.btn-category').forEach(btn => {
+                if(btn.innerText === category) btn.classList.add('active');
+                else btn.classList.remove('active');
+            });
+            loadCategoryData(category);
+        }
+
+        function updateDisplay() {
+            if (wordList.length === 0) return;
+            if (animRequestId) cancelAnimationFrame(animRequestId);
+            animCtx.clearRect(0, 0, animCanvas.width, animCanvas.height);
+
+            const currentWord = wordList[currentIndex];
+            document.getElementById('targetWord').innerText = currentWord;
+            drawGridAndNumbers(currentWord);
+            clearCanvas();
+            speakCurrentWord();
+        }
+
+        function prevWord() {
+            if (currentIndex > 0) {
+                currentIndex--;
+                updateDisplay();
+            }
+        }
+
+        function nextWord() {
+            if (currentIndex < wordList.length - 1) {
+                currentIndex++;
+                updateDisplay();
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            initCanvasEvents();
+            await initDB();
+            await loadProgress();
+            await loadCategoryData(currentCategory);
+        });
+    </script>
+</body>
+</html>
