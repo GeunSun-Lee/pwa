@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>신나는 한글 쓰기 교실 - 전체 자모음 & 단어 추가</title>
+    <title>신나는 한글 쓰기 교실</title>
     <style>
         * {
             box-sizing: border-box;
@@ -84,6 +84,11 @@
 
         .btn-anim {
             background-color: #8b5cf6;
+            color: white;
+        }
+
+        .btn-random {
+            background-color: #ec4899;
             color: white;
         }
 
@@ -490,7 +495,7 @@
     <div class="category-nav">
         <button class="btn btn-category active" onclick="switchCategory('자음')">자음 (14자)</button>
         <button class="btn btn-category" onclick="switchCategory('모음')">모음 (10자)</button>
-        <button class="btn btn-category" onclick="switchCategory('단어')">예시 단어 🍎</button>
+        <button class="btn btn-category" onclick="switchCategory('단어')">단어 연습🍎</button>
     </div>
 
     <div class="practice-container">
@@ -546,6 +551,7 @@
 
         <div class="controls">
             <button class="btn btn-anim" id="animBtn" onclick="playStrokeAnimation()">▶ 획순 보기</button>
+            <button class="btn btn-random" onclick="randomWord()">🎲 다른 단어</button>
             <button class="btn btn-danger" onclick="clearCanvas()">전체 지우기</button>
             <button class="btn btn-action" onclick="evaluateAndComplete()">채점하기 💯</button>
         </div>
@@ -587,10 +593,24 @@
     <canvas id="confettiCanvas"></canvas>
 
     <script>
-        // --- 1. IndexedDB 설정 ---
-        const DB_NAME = 'HangeulPracticeFullDB';
+        // --- 1. IndexedDB 및 100가지 예시 단어 설정 ---
+        const DB_NAME = 'HangeulPracticeFullDB_v2';
         const DB_VERSION = 1;
         let db;
+
+        // 아이들이 배우기 쉬운 100가지 예시 단어 목록
+        const WORDS_100 = [
+            '가방', '나비', '다람쥐', '라디오', '마스크', '바나나', '사자', '아기', '자전거', '차표',
+            '카메라', '타조', '파도', '하늘', '고양이', '강아지', '구름', '기차', '나무', '오리',
+            '토끼', '호랑이', '사과', '포도', '수박', '딸기', '참외', '복숭아', '감자', '고구마',
+            '당근', '양파', '버섯', '우유', '치즈', '과자', '사탕', '아이스크림', '피자', '햄버거',
+            '선생님', '친구', '학교', '교실', '책상', '의자', '연필', '지우개', '공책', '가방',
+            '시계', '모자', '안경', '신발', '양말', '바지', '치마', '장갑', '우산', '비행기',
+            '자동차', '버스', '택시', '자전거', '배', '헬리콥터', '소방차', '경찰차', '구급차', '포크레인',
+            '해님', '달님', '별님', '무지개', '바다', '강산', '바람', '눈사람', '단풍', '꽃집',
+            '장미', '해바라기', '개구리', '병아리', '돼지', '소', '말', '양', '염소', '코끼리',
+            '기린', '악어', '고래', '상어', '오징어', '문어', '거북이', '팽귄', '다람쥐', '부엉이'
+        ];
 
         function initDB() {
             return new Promise((resolve, reject) => {
@@ -609,9 +629,8 @@
                         const vowels = ['ㅏ', 'ㅑ', 'ㅓ', 'ㅕ', 'ㅗ', 'ㅛ', 'ㅜ', 'ㅠ', 'ㅡ', 'ㅣ'];
                         vowels.forEach(v => wordStore.add({ category: '모음', text: v }));
 
-                        // 예시 단어 추가
-                        const words = ['가방', '나비', '다람쥐', '라디오', '마스크', '바나나', '사자', '아기', '자전거', '차표', '카메라', '타조', '파도', '하늘'];
-                        words.forEach(w => wordStore.add({ category: '단어', text: w }));
+                        // 100가지 예시 단어 추가
+                        WORDS_100.forEach(w => wordStore.add({ category: '단어', text: w }));
                     }
                     if (!db.objectStoreNames.contains('progress')) {
                         db.createObjectStore('progress', { keyPath: 'key' });
@@ -736,13 +755,29 @@
         let strokeWidth = 14;
         let isEraserMode = false;
 
+        // 배열 셔플 함수 (랜덤 섞기)
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
         async function loadCategoryData(category) {
             const tx = db.transaction('words', 'readonly');
             const store = tx.objectStore('words');
             const index = store.index('category');
             const request = index.getAll(category);
             request.onsuccess = () => {
-                wordList = request.result.map(item => item.text);
+                let fetchedWords = request.result.map(item => item.text);
+                
+                // 단어 카테고리인 경우 매번 순서를 랜덤으로 섞음
+                if (category === '단어') {
+                    fetchedWords = shuffleArray(fetchedWords);
+                }
+                
+                wordList = fetchedWords;
                 currentIndex = 0;
                 updateDisplay();
             };
@@ -970,7 +1005,6 @@
             hasDrawn = false;
         }
 
-        // 단어 및 글자 가이드 그리기 (단어 길이 자동 대응)
         function drawGridAndNumbers(text) {
             guideCtx.clearRect(0, 0, guideCanvas.width, guideCanvas.height);
 
@@ -985,7 +1019,6 @@
 
             const strokes = STROKE_DATA[text];
 
-            // 1. 단어/자모음 경로(SVG Path) 데이터가 있는 경우 (획순 번호 표시)
             if (strokes) {
                 document.getElementById('animBtn').style.display = 'inline-block';
                 guideCtx.lineWidth = 26;
@@ -1010,17 +1043,14 @@
                     guideCtx.textBaseline = 'middle';
                     guideCtx.fillText(idx + 1, pos.x, pos.y);
                 });
-            } 
-            // 2. 단어(2자 이상)인 경우 - 텍스트 안내선 그리기
-            else {
-                document.getElementById('animBtn').style.display = 'none'; // 단어는 획순 버튼 비활성화
+            } else {
+                document.getElementById('animBtn').style.display = 'none';
                 guideCtx.fillStyle = '#cbd5e1';
-                
-                // 단어 길이에 따른 글자 크기 조정
+
                 let fontSize = 180;
-                if (text.length === 2) fontSize = 130;
-                else if (text.length === 3) fontSize = 90;
-                else if (text.length >= 4) fontSize = 70;
+                if (text.length === 2) fontSize = 120;
+                else if (text.length === 3) fontSize = 85;
+                else if (text.length >= 4) fontSize = 65;
 
                 guideCtx.font = `bold ${fontSize}px 'Malgun Gothic', sans-serif`;
                 guideCtx.textAlign = 'center';
@@ -1029,7 +1059,6 @@
             }
         }
 
-        // 채점 알고리즘
         function calculateScore() {
             if (!hasDrawn) return { score: 0, reason: 'empty' };
 
@@ -1055,9 +1084,9 @@
                 });
             } else {
                 let fontSize = 180;
-                if (text.length === 2) fontSize = 130;
-                else if (text.length === 3) fontSize = 90;
-                else if (text.length >= 4) fontSize = 70;
+                if (text.length === 2) fontSize = 120;
+                else if (text.length === 3) fontSize = 85;
+                else if (text.length >= 4) fontSize = 65;
 
                 maskCtx.fillStyle = '#000000';
                 maskCtx.font = `bold ${fontSize}px 'Malgun Gothic', sans-serif`;
@@ -1243,18 +1272,33 @@
             speakCurrentWord();
         }
 
+        // 임의의 다른 단어로 랜덤 점프
+        function randomWord() {
+            if (wordList.length <= 1) return;
+            let newIndex = Math.floor(Math.random() * wordList.length);
+            while (newIndex === currentIndex) {
+                newIndex = Math.floor(Math.random() * wordList.length);
+            }
+            currentIndex = newIndex;
+            updateDisplay();
+        }
+
         function prevWord() {
             if (currentIndex > 0) {
                 currentIndex--;
-                updateDisplay();
+            } else {
+                currentIndex = wordList.length - 1; // 처음이면 끝으로
             }
+            updateDisplay();
         }
 
         function nextWord() {
             if (currentIndex < wordList.length - 1) {
                 currentIndex++;
-                updateDisplay();
+            } else {
+                currentIndex = 0; // 끝이면 다시 처음으로
             }
+            updateDisplay();
         }
 
         window.addEventListener('DOMContentLoaded', async () => {
