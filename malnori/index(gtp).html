@@ -1,0 +1,3699 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#6C63FF">
+<title>말랑말랑 언어놀이</title>
+
+<style>
+/* =========================================================
+   RESET / VARIABLES
+========================================================= */
+:root {
+  --primary: #6C63FF;
+  --primary-dark: #5548e8;
+  --primary-light: #eeecff;
+  --secondary: #ffb84d;
+  --success: #38c878;
+  --success-light: #e5f9ee;
+  --danger: #ef6262;
+  --danger-light: #fff0f0;
+  --info: #4aa3df;
+  --bg: #f6f7fb;
+  --card: #ffffff;
+  --text: #292b38;
+  --muted: #7d8190;
+  --border: #e6e7ee;
+  --shadow: 0 8px 24px rgba(38, 41, 66, .08);
+  --radius: 22px;
+  --small-radius: 14px;
+  --max-width: 1100px;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    "Apple SD Gothic Neo",
+    "Noto Sans KR",
+    "Malgun Gothic",
+    sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+  border: 0;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: .5;
+}
+
+img {
+  max-width: 100%;
+}
+
+/* =========================================================
+   LAYOUT
+========================================================= */
+#app {
+  min-height: 100vh;
+}
+
+.app-header {
+  height: 68px;
+  background: rgba(255,255,255,.96);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(12px);
+}
+
+.header-inner {
+  width: min(100% - 32px, var(--max-width));
+  margin: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 900;
+  font-size: 20px;
+  color: var(--primary);
+}
+
+.logo-mark {
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #817aff, #5a50ed);
+  display: grid;
+  place-items: center;
+  color: white;
+  font-size: 22px;
+  box-shadow: 0 6px 15px rgba(108,99,255,.25);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.main {
+  width: min(100% - 32px, var(--max-width));
+  margin: 0 auto;
+  padding: 28px 0 60px;
+}
+
+.screen {
+  display: none;
+}
+
+.screen.active {
+  display: block;
+}
+
+.narrow {
+  max-width: 760px;
+  margin: auto;
+}
+
+/* =========================================================
+   COMMON UI
+========================================================= */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+}
+
+.card + .card {
+  margin-top: 18px;
+}
+
+.section-title {
+  margin: 0 0 18px;
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.sub-title {
+  margin: 0 0 8px;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.small {
+  font-size: 13px;
+}
+
+.big {
+  font-size: 30px;
+  font-weight: 900;
+}
+
+.btn {
+  min-height: 48px;
+  padding: 0 18px;
+  border-radius: 15px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 800;
+  transition: transform .15s, box-shadow .15s, background .15s;
+}
+
+.btn:active {
+  transform: scale(.97);
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: white;
+  box-shadow: 0 7px 16px rgba(108,99,255,.22);
+}
+
+.btn-primary:hover {
+  background: var(--primary-dark);
+}
+
+.btn-secondary {
+  background: var(--primary-light);
+  color: var(--primary);
+}
+
+.btn-success {
+  background: var(--success);
+  color: white;
+}
+
+.btn-danger {
+  background: var(--danger-light);
+  color: var(--danger);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--muted);
+}
+
+.btn-light {
+  background: #f2f3f7;
+  color: var(--text);
+}
+
+.btn-lg {
+  min-height: 60px;
+  padding: 0 26px;
+  border-radius: 18px;
+  font-size: 17px;
+}
+
+.btn-xl {
+  width: 100%;
+  min-height: 68px;
+  border-radius: 20px;
+  font-size: 19px;
+}
+
+.grid {
+  display: grid;
+  gap: 18px;
+}
+
+.grid-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.grid-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.grid-4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.row-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.wrap {
+  flex-wrap: wrap;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.divider {
+  height: 1px;
+  background: var(--border);
+  margin: 20px 0;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--primary-light);
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.badge.success {
+  background: var(--success-light);
+  color: #19985b;
+}
+
+.badge.warning {
+  background: #fff4dc;
+  color: #b87300;
+}
+
+.badge.danger {
+  background: var(--danger-light);
+  color: var(--danger);
+}
+
+/* =========================================================
+   FORMS
+========================================================= */
+.form-group {
+  margin-bottom: 18px;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.input,
+.select,
+.textarea {
+  width: 100%;
+  border: 1px solid var(--border);
+  background: white;
+  border-radius: 14px;
+  min-height: 50px;
+  padding: 12px 14px;
+  outline: none;
+}
+
+.textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+
+.input:focus,
+.select:focus,
+.textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(108,99,255,.10);
+}
+
+/* =========================================================
+   HOME
+========================================================= */
+.hero {
+  background: linear-gradient(135deg, #7068ff 0%, #8c82ff 100%);
+  color: white;
+  border-radius: 30px;
+  padding: 32px;
+  min-height: 230px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 16px 35px rgba(108,99,255,.22);
+}
+
+.hero::after {
+  content: "💬";
+  position: absolute;
+  right: 28px;
+  bottom: -15px;
+  font-size: 130px;
+  opacity: .18;
+}
+
+.hero h1 {
+  margin: 0 0 10px;
+  font-size: clamp(28px, 5vw, 42px);
+}
+
+.hero p {
+  margin: 0;
+  opacity: .88;
+  font-size: 16px;
+  line-height: 1.6;
+  max-width: 550px;
+}
+
+.hero-actions {
+  margin-top: 24px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.hero .btn-primary {
+  background: white;
+  color: var(--primary);
+}
+
+.stat-card {
+  padding: 20px;
+  border-radius: 20px;
+  background: white;
+  border: 1px solid var(--border);
+}
+
+.stat-icon {
+  font-size: 27px;
+  margin-bottom: 8px;
+}
+
+.stat-number {
+  font-size: 28px;
+  font-weight: 900;
+}
+
+.stat-label {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 3px;
+}
+
+.activity-card {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 20px;
+  transition: transform .15s, box-shadow .15s;
+}
+
+.activity-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+.activity-icon {
+  width: 58px;
+  height: 58px;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  font-size: 30px;
+  margin-bottom: 14px;
+}
+
+.activity-card h3 {
+  margin: 0 0 6px;
+  font-size: 17px;
+}
+
+.activity-card p {
+  margin: 0 0 16px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* =========================================================
+   CHILD PICKER
+========================================================= */
+.child-card {
+  border: 2px solid transparent;
+  padding: 22px;
+  border-radius: 22px;
+  background: white;
+  cursor: pointer;
+  transition: .15s;
+}
+
+.child-card:hover {
+  border-color: var(--primary);
+  transform: translateY(-2px);
+}
+
+.child-avatar {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #eeeaff;
+  font-size: 42px;
+  margin-bottom: 12px;
+}
+
+/* =========================================================
+   ACTIVITY
+========================================================= */
+.activity-shell {
+  max-width: 780px;
+  margin: auto;
+}
+
+.activity-progress {
+  height: 8px;
+  background: #e7e8ef;
+  border-radius: 99px;
+  overflow: hidden;
+  margin: 12px 0 24px;
+}
+
+.activity-progress > div {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary), #9b94ff);
+  transition: width .3s;
+}
+
+.activity-question {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.activity-question .emoji {
+  font-size: 110px;
+  line-height: 1.1;
+  margin: 10px 0 20px;
+}
+
+.question-text {
+  font-size: clamp(24px, 5vw, 34px);
+  font-weight: 900;
+  line-height: 1.4;
+  margin-bottom: 24px;
+}
+
+.options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  gap: 14px;
+}
+
+.option-btn {
+  min-height: 110px;
+  background: white;
+  border: 3px solid var(--border);
+  border-radius: 22px;
+  font-size: 20px;
+  font-weight: 900;
+  padding: 15px;
+  transition: .15s;
+}
+
+.option-btn:hover {
+  border-color: var(--primary);
+  background: var(--primary-light);
+}
+
+.option-btn.correct {
+  border-color: var(--success);
+  background: var(--success-light);
+  color: #158d51;
+}
+
+.option-btn.wrong {
+  border-color: var(--danger);
+  background: var(--danger-light);
+}
+
+.word-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 14px 20px;
+  margin: 5px;
+  border-radius: 16px;
+  background: var(--primary-light);
+  color: var(--primary);
+  font-size: 18px;
+  font-weight: 900;
+  cursor: pointer;
+  border: 2px solid transparent;
+}
+
+.word-chip.selected {
+  background: var(--primary);
+  color: white;
+}
+
+.sentence-area {
+  min-height: 90px;
+  padding: 15px;
+  border: 2px dashed #cfd0dc;
+  border-radius: 18px;
+  margin: 20px 0;
+  text-align: center;
+}
+
+.sentence-result {
+  font-size: 23px;
+  font-weight: 900;
+  line-height: 1.6;
+}
+
+.feedback {
+  padding: 18px;
+  border-radius: 18px;
+  text-align: center;
+  font-weight: 900;
+  margin-top: 18px;
+}
+
+.feedback.success {
+  background: var(--success-light);
+  color: #168c50;
+}
+
+.feedback.retry {
+  background: var(--danger-light);
+  color: #c63f3f;
+}
+
+.hint-box {
+  background: #fff8e9;
+  color: #95630a;
+  border-radius: 16px;
+  padding: 14px;
+  margin-top: 15px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* =========================================================
+   RECORDING
+========================================================= */
+.recorder {
+  padding: 18px;
+  background: #f7f7fa;
+  border-radius: 18px;
+  text-align: center;
+  margin-top: 20px;
+}
+
+.record-indicator {
+  width: 18px;
+  height: 18px;
+  background: #ccc;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+.record-indicator.recording {
+  background: #ed5252;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%,100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.3); opacity: .6; }
+}
+
+.timer {
+  font-size: 22px;
+  font-weight: 900;
+  margin: 8px 0 14px;
+}
+
+audio {
+  width: 100%;
+  max-width: 420px;
+}
+
+/* =========================================================
+   DASHBOARD
+========================================================= */
+.progress-bar {
+  height: 10px;
+  border-radius: 99px;
+  overflow: hidden;
+  background: #ececf2;
+}
+
+.progress-bar > div {
+  height: 100%;
+  background: var(--primary);
+  border-radius: inherit;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 650px;
+}
+
+.data-table th,
+.data-table td {
+  padding: 13px 10px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  font-size: 13px;
+}
+
+.data-table th {
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.chart {
+  display: flex;
+  align-items: end;
+  gap: 8px;
+  height: 160px;
+  padding: 15px 5px 0;
+}
+
+.bar-wrap {
+  height: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: end;
+  align-items: center;
+  gap: 6px;
+}
+
+.bar {
+  width: 70%;
+  min-height: 3px;
+  background: linear-gradient(to top, var(--primary), #aaa5ff);
+  border-radius: 7px 7px 2px 2px;
+}
+
+.bar-label {
+  font-size: 10px;
+  color: var(--muted);
+}
+
+/* =========================================================
+   MODAL
+========================================================= */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(26,28,43,.48);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 500;
+  padding: 18px;
+}
+
+.modal-backdrop.show {
+  display: flex;
+}
+
+.modal {
+  background: white;
+  border-radius: 24px;
+  width: min(100%, 580px);
+  max-height: calc(100vh - 36px);
+  overflow-y: auto;
+  box-shadow: 0 25px 80px rgba(0,0,0,.22);
+  padding: 24px;
+}
+
+.modal h2 {
+  margin: 0 0 20px;
+}
+
+/* =========================================================
+   TOAST
+========================================================= */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translate(-50%, 20px);
+  background: #292b38;
+  color: white;
+  border-radius: 14px;
+  padding: 13px 18px;
+  font-size: 14px;
+  font-weight: 700;
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: .25s;
+  max-width: calc(100% - 30px);
+  text-align: center;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+/* =========================================================
+   EMPTY / LOADING
+========================================================= */
+.empty {
+  padding: 45px 20px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.empty-icon {
+  font-size: 48px;
+  margin-bottom: 10px;
+}
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+@media (max-width: 800px) {
+  .grid-4 {
+    grid-template-columns: repeat(2, minmax(0,1fr));
+  }
+
+  .grid-3 {
+    grid-template-columns: repeat(2, minmax(0,1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .main {
+    width: min(100% - 20px, var(--max-width));
+    padding-top: 16px;
+  }
+
+  .header-inner {
+    width: min(100% - 20px, var(--max-width));
+  }
+
+  .logo span {
+    display: none;
+  }
+
+  .hero {
+    padding: 25px;
+    border-radius: 24px;
+  }
+
+  .card {
+    padding: 18px;
+    border-radius: 19px;
+  }
+
+  .grid-2,
+  .grid-3,
+  .grid-4 {
+    grid-template-columns: 1fr;
+  }
+
+  .options {
+    grid-template-columns: 1fr;
+  }
+
+  .activity-question .emoji {
+    font-size: 85px;
+  }
+
+  .hero-actions {
+    flex-direction: column;
+  }
+
+  .hero-actions .btn {
+    width: 100%;
+  }
+
+  .row-mobile-column {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/* =========================================================
+   PRINT
+========================================================= */
+@media print {
+  .app-header,
+  .no-print,
+  button {
+    display: none !important;
+  }
+
+  .main {
+    width: 100%;
+    padding: 0;
+  }
+
+  .card {
+    box-shadow: none;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div id="app">
+
+  <!-- =====================================================
+       HEADER
+  ====================================================== -->
+  <header class="app-header">
+    <div class="header-inner">
+      <button class="logo btn-ghost" onclick="App.goHome()">
+        <span class="logo-mark">💬</span>
+        <span>말랑말랑 언어놀이</span>
+      </button>
+
+      <div class="header-actions">
+        <button class="btn btn-light" onclick="App.openParentDashboard()">
+          👨‍👩‍👦 보호자
+        </button>
+        <button class="btn btn-light" onclick="App.openTherapistDashboard()">
+          🧑‍⚕️ 치료사
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="main">
+
+    <!-- ===================================================
+         CHILD SELECT
+    ==================================================== -->
+    <section id="screen-child-select" class="screen active">
+      <div class="narrow">
+        <div class="card">
+          <div style="text-align:center;margin-bottom:25px">
+            <div style="font-size:64px">👋</div>
+            <h1 style="margin:8px 0">누구와 함께 놀까요?</h1>
+            <p class="muted">아이를 선택해주세요.</p>
+          </div>
+
+          <div id="child-list" class="grid grid-2"></div>
+
+          <button class="btn btn-primary btn-xl" style="margin-top:18px"
+                  onclick="App.openAddChild()">
+            ＋ 아이 추가하기
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================
+         HOME
+    ==================================================== -->
+    <section id="screen-home" class="screen">
+      <div id="home-content"></div>
+    </section>
+
+    <!-- ===================================================
+         ACTIVITY
+    ==================================================== -->
+    <section id="screen-activity" class="screen">
+      <div class="activity-shell">
+
+        <div class="row-between">
+          <button class="btn btn-light" onclick="Activity.exit()">
+            ← 나가기
+          </button>
+          <div id="activity-counter" class="badge">1 / 5</div>
+        </div>
+
+        <div class="activity-progress">
+          <div id="activity-progress-bar" style="width:20%"></div>
+        </div>
+
+        <div id="activity-content" class="card"></div>
+
+      </div>
+    </section>
+
+    <!-- ===================================================
+         ACTIVITY RESULT
+    ==================================================== -->
+    <section id="screen-result" class="screen">
+      <div class="narrow">
+        <div class="card" style="text-align:center">
+          <div style="font-size:75px">🎉</div>
+          <h1>오늘의 활동을 끝냈어요!</h1>
+          <p class="muted">정말 잘했어요.</p>
+
+          <div id="result-summary" class="grid grid-3" style="margin:25px 0"></div>
+
+          <button class="btn btn-primary btn-xl"
+                  onclick="App.goHome()">
+            🏠 홈으로
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================
+         PARENT DASHBOARD
+    ==================================================== -->
+    <section id="screen-parent" class="screen">
+      <div id="parent-content"></div>
+    </section>
+
+    <!-- ===================================================
+         THERAPIST DASHBOARD
+    ==================================================== -->
+    <section id="screen-therapist" class="screen">
+      <div id="therapist-content"></div>
+    </section>
+
+    <!-- ===================================================
+         SETTINGS
+    ==================================================== -->
+    <section id="screen-settings" class="screen">
+      <div id="settings-content"></div>
+    </section>
+
+  </main>
+</div>
+
+<!-- =======================================================
+     MODAL
+======================================================== -->
+<div id="modal-backdrop" class="modal-backdrop">
+  <div id="modal" class="modal"></div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+"use strict";
+
+/* =========================================================
+   GLOBAL STATE
+========================================================= */
+
+const App = {
+  currentScreen: "child-select",
+  currentChildId: null,
+
+  async init() {
+    try {
+      await DB.init();
+      await Content.seed();
+
+      const children = await DB.getAll("children");
+
+      if (children.length === 0) {
+        App.showScreen("child-select");
+      } else {
+        App.renderChildList(children);
+        App.showScreen("child-select");
+      }
+
+      window.addEventListener("beforeunload", () => {
+        if (Recorder.isRecording) {
+          Recorder.stop();
+        }
+      });
+
+    } catch (error) {
+      console.error(error);
+      UI.toast("앱을 초기화하는 중 문제가 발생했습니다.");
+    }
+  },
+
+  showScreen(id) {
+    document.querySelectorAll(".screen").forEach(el => {
+      el.classList.remove("active");
+    });
+
+    const target = document.getElementById("screen-" + id);
+
+    if (target) {
+      target.classList.add("active");
+      App.currentScreen = id;
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  },
+
+  async goHome() {
+    if (!App.currentChildId) {
+      App.renderChildList(await DB.getAll("children"));
+      App.showScreen("child-select");
+      return;
+    }
+
+    await Home.render();
+    App.showScreen("home");
+  },
+
+  async selectChild(id) {
+    App.currentChildId = id;
+    await App.goHome();
+  },
+
+  renderChildList(children) {
+    const container = document.getElementById("child-list");
+
+    if (!children.length) {
+      container.innerHTML = `
+        <div class="empty" style="grid-column:1/-1">
+          <div class="empty-icon">👦</div>
+          등록된 아이가 없습니다.
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = children.map(child => `
+      <div class="child-card"
+           onclick="App.selectChild('${escapeAttr(child.id)}')">
+        <div class="child-avatar">👦</div>
+        <div style="font-weight:900;font-size:19px">${escapeHtml(child.name)}</div>
+        <div class="muted small">${child.birthDate || ""}</div>
+      </div>
+    `).join("");
+  },
+
+  async openAddChild() {
+    UI.modal(`
+      <h2>👦 아이 추가하기</h2>
+
+      <div class="form-group">
+        <label class="form-label">이름</label>
+        <input id="new-child-name" class="input" placeholder="예: 민준">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">생년월일</label>
+        <input id="new-child-birth" class="input" type="date">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">성별</label>
+        <select id="new-child-gender" class="select">
+          <option value="">선택 안 함</option>
+          <option value="male">남아</option>
+          <option value="female">여아</option>
+        </select>
+      </div>
+
+      <div class="row">
+        <button class="btn btn-light spacer" onclick="UI.closeModal()">취소</button>
+        <button class="btn btn-primary spacer" onclick="App.addChild()">등록</button>
+      </div>
+    `);
+  },
+
+  async addChild() {
+    const name = document.getElementById("new-child-name").value.trim();
+    const birthDate = document.getElementById("new-child-birth").value;
+    const gender = document.getElementById("new-child-gender").value;
+
+    if (!name) {
+      UI.toast("아이 이름을 입력해주세요.");
+      return;
+    }
+
+    const child = {
+      id: Utils.uuid(),
+      name,
+      birthDate,
+      gender,
+      createdAt: Date.now()
+    };
+
+    await DB.add("children", child);
+
+    UI.closeModal();
+
+    App.currentChildId = child.id;
+
+    UI.toast("아이를 등록했습니다.");
+    await App.goHome();
+  },
+
+  async openParentDashboard() {
+    if (!App.currentChildId) {
+      UI.toast("먼저 아이를 선택해주세요.");
+      return;
+    }
+
+    await Parent.render();
+    App.showScreen("parent");
+  },
+
+  async openTherapistDashboard() {
+    await Therapist.render();
+    App.showScreen("therapist");
+  },
+
+  async openSettings() {
+    await Settings.render();
+    App.showScreen("settings");
+  }
+};
+
+
+/* =========================================================
+   INDEXED DB
+========================================================= */
+
+const DB = {
+  name: "SpeechTherapyDB",
+  version: 1,
+  db: null,
+
+  stores: [
+    "children",
+    "goals",
+    "contents",
+    "sessions",
+    "attempts",
+    "recordings",
+    "notes"
+  ],
+
+  init() {
+    return new Promise((resolve, reject) => {
+      if (!window.indexedDB) {
+        reject(new Error("IndexedDB not supported"));
+        return;
+      }
+
+      const request = indexedDB.open(this.name, this.version);
+
+      request.onupgradeneeded = event => {
+        const db = event.target.result;
+
+        if (!db.objectStoreNames.contains("children")) {
+          db.createObjectStore("children", { keyPath: "id" });
+        }
+
+        if (!db.objectStoreNames.contains("goals")) {
+          const store = db.createObjectStore("goals", { keyPath: "id" });
+          store.createIndex("childId", "childId", { unique: false });
+        }
+
+        if (!db.objectStoreNames.contains("contents")) {
+          const store = db.createObjectStore("contents", { keyPath: "id" });
+          store.createIndex("category", "category", { unique: false });
+        }
+
+        if (!db.objectStoreNames.contains("sessions")) {
+          const store = db.createObjectStore("sessions", { keyPath: "id" });
+          store.createIndex("childId", "childId", { unique: false });
+        }
+
+        if (!db.objectStoreNames.contains("attempts")) {
+          const store = db.createObjectStore("attempts", { keyPath: "id" });
+          store.createIndex("sessionId", "sessionId", { unique: false });
+          store.createIndex("childId", "childId", { unique: false });
+        }
+
+        if (!db.objectStoreNames.contains("recordings")) {
+          const store = db.createObjectStore("recordings", { keyPath: "id" });
+          store.createIndex("attemptId", "attemptId", { unique: false });
+        }
+
+        if (!db.objectStoreNames.contains("notes")) {
+          const store = db.createObjectStore("notes", { keyPath: "id" });
+          store.createIndex("childId", "childId", { unique: false });
+        }
+      };
+
+      request.onsuccess = () => {
+        this.db = request.result;
+
+        this.db.onerror = event => {
+          console.error("IndexedDB error:", event);
+        };
+
+        resolve();
+      };
+
+      request.onerror = () => {
+        reject(request.error);
+      };
+    });
+  },
+
+  add(storeName, data) {
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction(storeName, "readwrite");
+      const store = tx.objectStore(storeName);
+      const request = store.add(data);
+
+      request.onsuccess = () => resolve(data);
+      request.onerror = () => reject(request.error);
+    });
+  },
+
+  put(storeName, data) {
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction(storeName, "readwrite");
+      const request = tx.objectStore(storeName).put(data);
+
+      request.onsuccess = () => resolve(data);
+      request.onerror = () => reject(request.error);
+    });
+  },
+
+  get(storeName, id) {
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction(storeName, "readonly");
+      const request = tx.objectStore(storeName).get(id);
+
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(request.error);
+    });
+  },
+
+  getAll(storeName) {
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction(storeName, "readonly");
+      const request = tx.objectStore(storeName).getAll();
+
+      request.onsuccess = () => resolve(request.result || []);
+      request.onerror = () => reject(request.error);
+    });
+  },
+
+  getByIndex(storeName, indexName, value) {
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction(storeName, "readonly");
+      const index = tx.objectStore(storeName).index(indexName);
+      const request = index.getAll(value);
+
+      request.onsuccess = () => resolve(request.result || []);
+      request.onerror = () => reject(request.error);
+    });
+  },
+
+  delete(storeName, id) {
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction(storeName, "readwrite");
+      const request = tx.objectStore(storeName).delete(id);
+
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  },
+
+  clear(storeName) {
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction(storeName, "readwrite");
+      const request = tx.objectStore(storeName).clear();
+
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
+};
+
+
+/* =========================================================
+   CONTENT
+========================================================= */
+
+const Content = {
+  initial: [
+
+    /* ---------- VOCABULARY ---------- */
+
+    {
+      id: "word_apple",
+      category: "vocabulary",
+      level: 1,
+      title: "사과",
+      question: "이건 무엇일까요?",
+      answer: "사과",
+      emoji: "🍎",
+      options: ["사과", "자동차", "강아지", "신발"]
+    },
+
+    {
+      id: "word_banana",
+      category: "vocabulary",
+      level: 1,
+      title: "바나나",
+      question: "이건 무엇일까요?",
+      answer: "바나나",
+      emoji: "🍌",
+      options: ["공", "바나나", "컵", "책"]
+    },
+
+    {
+      id: "word_dog",
+      category: "vocabulary",
+      level: 1,
+      title: "강아지",
+      question: "이건 무엇일까요?",
+      answer: "강아지",
+      emoji: "🐶",
+      options: ["고양이", "자동차", "강아지", "버스"]
+    },
+
+    {
+      id: "word_cat",
+      category: "vocabulary",
+      level: 1,
+      title: "고양이",
+      question: "이건 무엇일까요?",
+      answer: "고양이",
+      emoji: "🐱",
+      options: ["강아지", "고양이", "사과", "신발"]
+    },
+
+    {
+      id: "word_car",
+      category: "vocabulary",
+      level: 1,
+      title: "자동차",
+      question: "이건 무엇일까요?",
+      answer: "자동차",
+      emoji: "🚗",
+      options: ["자동차", "사과", "책", "컵"]
+    },
+
+    {
+      id: "word_bus",
+      category: "vocabulary",
+      level: 1,
+      title: "버스",
+      question: "이건 무엇일까요?",
+      answer: "버스",
+      emoji: "🚌",
+      options: ["버스", "강아지", "공", "바나나"]
+    },
+
+    {
+      id: "word_ball",
+      category: "vocabulary",
+      level: 1,
+      title: "공",
+      question: "이건 무엇일까요?",
+      answer: "공",
+      emoji: "⚽",
+      options: ["컵", "공", "책", "신발"]
+    },
+
+    {
+      id: "word_cup",
+      category: "vocabulary",
+      level: 1,
+      title: "컵",
+      question: "이건 무엇일까요?",
+      answer: "컵",
+      emoji: "🥤",
+      options: ["컵", "공", "자동차", "고양이"]
+    },
+
+    /* ---------- LISTENING ---------- */
+
+    {
+      id: "listen_car",
+      category: "listening",
+      level: 1,
+      title: "자동차 찾기",
+      question: "자동차를 찾아주세요.",
+      answer: "자동차",
+      options: ["🍎 사과", "🚗 자동차", "🐶 강아지", "📚 책"]
+    },
+
+    {
+      id: "listen_dog",
+      category: "listening",
+      level: 1,
+      title: "강아지 찾기",
+      question: "강아지를 찾아주세요.",
+      answer: "강아지",
+      options: ["🍌 바나나", "🐱 고양이", "🐶 강아지", "🚌 버스"]
+    },
+
+    {
+      id: "listen_red",
+      category: "listening",
+      level: 2,
+      title: "빨간 자동차",
+      question: "빨간 자동차를 찾아주세요.",
+      answer: "빨간 자동차",
+      options: ["🔵 파란 자동차", "🔴 빨간 자동차", "🟢 초록 자동차", "🟡 노란 자동차"]
+    },
+
+    {
+      id: "listen_box",
+      category: "listening",
+      level: 2,
+      title: "상자 안",
+      question: "공을 상자 안에 넣어주세요.",
+      answer: "상자 안",
+      options: ["상자 위", "상자 안", "상자 옆", "상자 뒤"]
+    },
+
+    /* ---------- QUESTIONS ---------- */
+
+    {
+      id: "question_what",
+      category: "question",
+      level: 1,
+      title: "무엇",
+      question: "무엇을 먹고 있나요? 🍌",
+      answer: "바나나",
+      options: ["바나나", "공", "책", "신발"]
+    },
+
+    {
+      id: "question_who",
+      category: "question",
+      level: 1,
+      title: "누구",
+      question: "누구인가요? 👦",
+      answer: "아이",
+      options: ["아이", "강아지", "자동차", "사과"]
+    },
+
+    {
+      id: "question_where",
+      category: "question",
+      level: 1,
+      title: "어디",
+      question: "강아지는 어디에 있나요? 🐶🏠",
+      answer: "집",
+      options: ["집", "자동차", "학교", "바다"]
+    },
+
+    {
+      id: "question_action",
+      category: "question",
+      level: 1,
+      title: "무엇을 해",
+      question: "아이는 무엇을 하고 있나요? 🏃",
+      answer: "뛰어요",
+      options: ["뛰어요", "자요", "먹어요", "씻어요"]
+    },
+
+    /* ---------- SENTENCE ---------- */
+
+    {
+      id: "sentence_dog",
+      category: "sentence",
+      level: 1,
+      title: "강아지 문장",
+      question: "그림을 보고 문장을 만들어보세요.",
+      answer: "강아지가 뛰어요.",
+      emoji: "🐶🏃",
+      words: ["강아지가", "뛰어요", "먹어요", "자동차를"]
+    },
+
+    {
+      id: "sentence_child",
+      category: "sentence",
+      level: 1,
+      title: "아이 문장",
+      question: "그림을 보고 문장을 만들어보세요.",
+      answer: "아이가 공을 던져요.",
+      emoji: "👦⚽",
+      words: ["아이가", "공을", "던져요", "먹어요"]
+    },
+
+    {
+      id: "sentence_apple",
+      category: "sentence",
+      level: 2,
+      title: "사과 문장",
+      question: "그림을 보고 문장을 만들어보세요.",
+      answer: "아이가 사과를 먹어요.",
+      emoji: "👦🍎",
+      words: ["아이가", "사과를", "먹어요", "자동차가"]
+    },
+
+    /* ---------- STORY ---------- */
+
+    {
+      id: "story_water",
+      category: "story",
+      level: 1,
+      title: "물 마시기",
+      question: "무슨 일이 있었는지 이야기해볼까요?",
+      answer: "아이가 물을 마셔요.",
+      emoji: "👦🥤",
+      story: [
+        "👦 아이가 컵을 들어요.",
+        "💧 컵에 물을 따라요.",
+        "🥤 물을 마셔요."
+      ]
+    }
+  ],
+
+  async seed() {
+    const existing = await DB.getAll("contents");
+
+    if (existing.length === 0) {
+      for (const item of this.initial) {
+        await DB.add("contents", item);
+      }
+    }
+  },
+
+  async getByCategory(category) {
+    return await DB.getByIndex("contents", "category", category);
+  },
+
+  async getAll() {
+    return await DB.getAll("contents");
+  }
+};
+
+
+/* =========================================================
+   SESSION
+========================================================= */
+
+const Session = {
+  current: null,
+
+  async start(childId) {
+    const session = {
+      id: Utils.uuid(),
+      childId,
+      startedAt: Date.now(),
+      endedAt: null,
+      duration: 0
+    };
+
+    await DB.add("sessions", session);
+    this.current = session;
+
+    return session;
+  },
+
+  async finish() {
+    if (!this.current) return;
+
+    this.current.endedAt = Date.now();
+    this.current.duration =
+      this.current.endedAt - this.current.startedAt;
+
+    await DB.put("sessions", this.current);
+
+    this.current = null;
+  },
+
+  async recordAttempt(data) {
+    const attempt = {
+      id: Utils.uuid(),
+      childId: App.currentChildId,
+      sessionId: this.current?.id || null,
+      createdAt: Date.now(),
+      ...data
+    };
+
+    await DB.add("attempts", attempt);
+
+    return attempt;
+  }
+};
+
+
+/* =========================================================
+   RECORDER
+========================================================= */
+
+const Recorder = {
+  mediaRecorder: null,
+  stream: null,
+  chunks: [],
+  startedAt: null,
+  timer: null,
+  isRecording: false,
+
+  async start() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      UI.toast("이 브라우저에서는 음성 녹음을 사용할 수 없습니다.");
+      return false;
+    }
+
+    if (!window.MediaRecorder) {
+      UI.toast("이 브라우저에서는 음성 녹음을 지원하지 않습니다.");
+      return false;
+    }
+
+    try {
+      this.stream = await navigator.mediaDevices.getUserMedia({
+        audio: true
+      });
+
+      this.chunks = [];
+
+      this.mediaRecorder = new MediaRecorder(this.stream);
+
+      this.mediaRecorder.ondataavailable = event => {
+        if (event.data.size > 0) {
+          this.chunks.push(event.data);
+        }
+      };
+
+      this.mediaRecorder.start();
+
+      this.isRecording = true;
+      this.startedAt = Date.now();
+
+      this.timer = setInterval(() => {
+        const seconds = Math.floor(
+          (Date.now() - this.startedAt) / 1000
+        );
+
+        const timerEl = document.getElementById("record-timer");
+
+        if (timerEl) {
+          timerEl.textContent = Utils.formatTime(seconds);
+        }
+      }, 250);
+
+      this.updateUI();
+
+      return true;
+
+    } catch (error) {
+      console.error(error);
+      UI.toast(
+        "마이크를 사용할 수 없습니다. 브라우저의 마이크 권한을 확인해주세요."
+      );
+
+      return false;
+    }
+  },
+
+  stop() {
+    return new Promise(resolve => {
+
+      if (!this.mediaRecorder || !this.isRecording) {
+        resolve(null);
+        return;
+      }
+
+      this.mediaRecorder.onstop = async () => {
+
+        clearInterval(this.timer);
+
+        const duration = Math.floor(
+          (Date.now() - this.startedAt) / 1000
+        );
+
+        const mimeType =
+          this.mediaRecorder.mimeType || "audio/webm";
+
+        const blob = new Blob(this.chunks, {
+          type: mimeType
+        });
+
+        if (this.stream) {
+          this.stream.getTracks().forEach(track => track.stop());
+        }
+
+        this.isRecording = false;
+
+        this.mediaRecorder = null;
+        this.stream = null;
+
+        this.updateUI();
+
+        resolve({
+          blob,
+          mimeType,
+          duration
+        });
+      };
+
+      this.mediaRecorder.stop();
+    });
+  },
+
+  updateUI() {
+    const indicator = document.getElementById("record-indicator");
+    const button = document.getElementById("record-button");
+
+    if (indicator) {
+      indicator.classList.toggle(
+        "recording",
+        this.isRecording
+      );
+    }
+
+    if (button) {
+      button.textContent = this.isRecording
+        ? "■ 녹음 종료"
+        : "🎙️ 내 목소리 녹음";
+    }
+  }
+};
+
+
+/* =========================================================
+   ACTIVITY ENGINE
+========================================================= */
+
+const Activity = {
+  items: [],
+  index: 0,
+  results: [],
+  currentStart: null,
+  currentRecording: null,
+
+  async start() {
+    if (!App.currentChildId) {
+      UI.toast("먼저 아이를 선택해주세요.");
+      return;
+    }
+
+    await Session.start(App.currentChildId);
+
+    this.index = 0;
+    this.results = [];
+    this.currentRecording = null;
+
+    const vocabulary = await Content.getByCategory("vocabulary");
+    const listening = await Content.getByCategory("listening");
+    const sentence = await Content.getByCategory("sentence");
+    const question = await Content.getByCategory("question");
+    const story = await Content.getByCategory("story");
+
+    this.items = [
+      Utils.pick(vocabulary),
+      Utils.pick(listening),
+      Utils.pick(sentence),
+      Utils.pick(question),
+      Utils.pick(story)
+    ].filter(Boolean);
+
+    this.renderCurrent();
+    App.showScreen("activity");
+  },
+
+  async renderCurrent() {
+    if (this.index >= this.items.length) {
+      await this.finish();
+      return;
+    }
+
+    const item = this.items[this.index];
+
+    this.currentStart = Date.now();
+    this.currentRecording = null;
+
+    document.getElementById("activity-counter").textContent =
+      `${this.index + 1} / ${this.items.length}`;
+
+    document.getElementById("activity-progress-bar").style.width =
+      `${((this.index + 1) / this.items.length) * 100}%`;
+
+    const container =
+      document.getElementById("activity-content");
+
+    switch (item.category) {
+      case "vocabulary":
+        this.renderVocabulary(container, item);
+        break;
+
+      case "listening":
+        this.renderListening(container, item);
+        break;
+
+      case "sentence":
+        this.renderSentence(container, item);
+        break;
+
+      case "question":
+        this.renderQuestion(container, item);
+        break;
+
+      case "story":
+        this.renderStory(container, item);
+        break;
+    }
+  },
+
+  baseHeader(item, category) {
+    const labels = {
+      vocabulary: "🗣️ 단어 말하기",
+      listening: "👂 듣고 행동하기",
+      sentence: "🧩 문장 만들기",
+      question: "❓ 질문에 대답하기",
+      story: "📖 이야기하기"
+    };
+
+    return `
+      <div class="row-between wrap">
+        <div class="badge">${labels[category]}</div>
+        <div class="badge warning">Level ${item.level}</div>
+      </div>
+    `;
+  },
+
+  renderVocabulary(container, item) {
+    container.innerHTML = `
+      ${this.baseHeader(item, "vocabulary")}
+
+      <div class="activity-question">
+        <div class="emoji">${item.emoji}</div>
+
+        <div class="question-text">
+          ${escapeHtml(item.question)}
+        </div>
+
+        <div class="recorder">
+          <div>
+            <span id="record-indicator"
+                  class="record-indicator"></span>
+            <strong id="record-status">
+              준비됐어요
+            </strong>
+          </div>
+
+          <div id="record-timer" class="timer">
+            00:00
+          </div>
+
+          <button id="record-button"
+                  class="btn btn-primary btn-lg"
+                  onclick="Activity.toggleRecording()">
+            🎙️ 내 목소리 녹음
+          </button>
+
+          <div id="record-player" style="margin-top:15px"></div>
+        </div>
+
+        <div class="options" style="margin-top:22px">
+          ${item.options.map(option => `
+            <button class="option-btn"
+                    onclick="Activity.answerVocabulary('${escapeAttr(option)}')">
+              ${escapeHtml(option)}
+            </button>
+          `).join("")}
+        </div>
+      </div>
+    `;
+  },
+
+  async answerVocabulary(answer) {
+    const item = this.items[this.index];
+
+    const correct = answer === item.answer;
+
+    await this.recordResult(correct, correct ? 0 : 3);
+
+    const buttons =
+      document.querySelectorAll(".option-btn");
+
+    buttons.forEach(btn => {
+      btn.disabled = true;
+
+      if (btn.textContent.trim() === item.answer) {
+        btn.classList.add("correct");
+      }
+
+      if (
+        btn.textContent.trim() === answer &&
+        !correct
+      ) {
+        btn.classList.add("wrong");
+      }
+    });
+
+    this.showFeedback(
+      correct,
+      correct
+        ? "정답이에요! 정말 잘했어요! 🌟"
+        : `괜찮아요. "${item.answer}"이에요. 한 번 더 해볼까요?`
+    );
+  },
+
+  renderListening(container, item) {
+    container.innerHTML = `
+      ${this.baseHeader(item, "listening")}
+
+      <div class="activity-question">
+        <div class="emoji">👂</div>
+
+        <div class="question-text">
+          ${escapeHtml(item.question)}
+        </div>
+
+        <div class="hint-box">
+          천천히 듣고 알맞은 그림을 찾아주세요.
+        </div>
+
+        <div class="options" style="margin-top:20px">
+          ${item.options.map(option => `
+            <button class="option-btn"
+                    onclick="Activity.answerListening('${escapeAttr(option)}')">
+              <span style="font-size:38px;display:block;margin-bottom:8px">
+                ${option.split(" ")[0]}
+              </span>
+              ${escapeHtml(option.substring(option.indexOf(" ") + 1))}
+            </button>
+          `).join("")}
+        </div>
+      </div>
+    `;
+  },
+
+  async answerListening(answer) {
+    const item = this.items[this.index];
+
+    const normalized = answer.replace(/^[^\s]+\s/, "").trim();
+    const correct = normalized === item.answer;
+
+    await this.recordResult(correct, correct ? 0 : 1);
+
+    const buttons =
+      document.querySelectorAll(".option-btn");
+
+    buttons.forEach(btn => {
+      btn.disabled = true;
+    });
+
+    this.showFeedback(
+      correct,
+      correct
+        ? "잘 찾았어요! 👏"
+        : `다시 생각해볼까요? 정답은 ${item.answer}예요.`
+    );
+  },
+
+  renderSentence(container, item) {
+    const words = item.words || [];
+
+    container.innerHTML = `
+      ${this.baseHeader(item, "sentence")}
+
+      <div class="activity-question">
+        <div class="emoji">${item.emoji}</div>
+
+        <div class="question-text">
+          ${escapeHtml(item.question)}
+        </div>
+
+        <div class="sentence-area">
+          <div id="sentence-result"
+               class="sentence-result">
+            단어를 순서대로 눌러주세요.
+          </div>
+        </div>
+
+        <div>
+          ${words.map((word, index) => `
+            <button class="word-chip"
+                    data-word-index="${index}"
+                    onclick="Activity.selectWord(this, '${escapeAttr(word)}')">
+              ${escapeHtml(word)}
+            </button>
+          `).join("")}
+        </div>
+
+        <div class="row" style="margin-top:22px">
+          <button class="btn btn-light spacer"
+                  onclick="Activity.resetSentence()">
+            다시 하기
+          </button>
+
+          <button class="btn btn-primary spacer"
+                  onclick="Activity.submitSentence()">
+            문장 완성
+          </button>
+        </div>
+
+        <div class="recorder">
+          <div>
+            <span id="record-indicator"
+                  class="record-indicator"></span>
+            <strong>문장을 말해보세요.</strong>
+          </div>
+
+          <div id="record-timer" class="timer">00:00</div>
+
+          <button id="record-button"
+                  class="btn btn-primary"
+                  onclick="Activity.toggleRecording()">
+            🎙️ 녹음하기
+          </button>
+
+          <div id="record-player" style="margin-top:15px"></div>
+        </div>
+      </div>
+    `;
+
+    this.selectedWords = [];
+  },
+
+  selectedWords: [],
+
+  selectWord(button, word) {
+    button.classList.toggle("selected");
+
+    if (button.classList.contains("selected")) {
+      this.selectedWords.push(word);
+    } else {
+      this.selectedWords =
+        this.selectedWords.filter(
+          (item, index) =>
+            !(item === word &&
+              index === this.selectedWords.indexOf(word))
+        );
+    }
+
+    const result =
+      document.getElementById("sentence-result");
+
+    result.textContent =
+      this.selectedWords.length
+        ? this.selectedWords.join(" ")
+        : "단어를 순서대로 눌러주세요.";
+  },
+
+  resetSentence() {
+    this.selectedWords = [];
+
+    document.querySelectorAll(".word-chip")
+      .forEach(el => el.classList.remove("selected"));
+
+    const result =
+      document.getElementById("sentence-result");
+
+    if (result) {
+      result.textContent = "단어를 순서대로 눌러주세요.";
+    }
+  },
+
+  async submitSentence() {
+    const item = this.items[this.index];
+
+    const sentence =
+      this.selectedWords.join(" ");
+
+    if (!sentence) {
+      UI.toast("단어를 선택해주세요.");
+      return;
+    }
+
+    const normalize = text =>
+      text.replace(/[.,!?]/g, "").replace(/\s+/g, " ").trim();
+
+    const correct =
+      normalize(sentence) === normalize(item.answer);
+
+    await this.recordResult(correct, correct ? 0 : 2);
+
+    this.showFeedback(
+      correct,
+      correct
+        ? "멋진 문장이에요! 🌟"
+        : `좋아요! 목표 문장은 "${item.answer}"예요.`
+    );
+  },
+
+  renderQuestion(container, item) {
+    container.innerHTML = `
+      ${this.baseHeader(item, "question")}
+
+      <div class="activity-question">
+        <div class="emoji">🤔</div>
+
+        <div class="question-text">
+          ${escapeHtml(item.question)}
+        </div>
+
+        <div class="options">
+          ${item.options.map(option => `
+            <button class="option-btn"
+                    onclick="Activity.answerQuestion('${escapeAttr(option)}')">
+              ${escapeHtml(option)}
+            </button>
+          `).join("")}
+        </div>
+      </div>
+    `;
+  },
+
+  async answerQuestion(answer) {
+    const item = this.items[this.index];
+    const correct = answer === item.answer;
+
+    await this.recordResult(correct, correct ? 0 : 2);
+
+    document.querySelectorAll(".option-btn")
+      .forEach(btn => btn.disabled = true);
+
+    this.showFeedback(
+      correct,
+      correct
+        ? "정말 잘 대답했어요! 🎉"
+        : `괜찮아요. 정답은 "${item.answer}"예요.`
+    );
+  },
+
+  renderStory(container, item) {
+    container.innerHTML = `
+      ${this.baseHeader(item, "story")}
+
+      <div class="activity-question">
+        <div class="question-text">
+          ${escapeHtml(item.question)}
+        </div>
+
+        <div class="grid" style="gap:10px;margin:20px 0">
+          ${(item.story || []).map((part, index) => `
+            <div class="card"
+                 style="padding:18px;text-align:left;box-shadow:none;background:#f7f7fa">
+              <div class="badge" style="margin-bottom:8px">
+                ${index + 1}
+              </div>
+              <div style="font-size:24px;font-weight:900">
+                ${escapeHtml(part)}
+              </div>
+            </div>
+          `).join("")}
+        </div>
+
+        <div class="hint-box">
+          그림을 순서대로 보고 어떤 일이 있었는지 이야기해보세요.
+        </div>
+
+        <div class="recorder">
+          <div>
+            <span id="record-indicator"
+                  class="record-indicator"></span>
+            <strong>이야기를 녹음해보세요.</strong>
+          </div>
+
+          <div id="record-timer" class="timer">00:00</div>
+
+          <button id="record-button"
+                  class="btn btn-primary btn-lg"
+                  onclick="Activity.toggleRecording()">
+            🎙️ 이야기 녹음하기
+          </button>
+
+          <div id="record-player" style="margin-top:15px"></div>
+        </div>
+
+        <button class="btn btn-success btn-xl"
+                style="margin-top:20px"
+                onclick="Activity.submitStory()">
+          이야기했어요 ✓
+        </button>
+      </div>
+    `;
+  },
+
+  async submitStory() {
+    await this.recordResult(true, 0);
+
+    this.showFeedback(
+      true,
+      "이야기를 잘 들려줬어요! 👏"
+    );
+  },
+
+  async toggleRecording() {
+    if (Recorder.isRecording) {
+      const result = await Recorder.stop();
+
+      if (result) {
+        this.currentRecording = result;
+
+        const player =
+          document.getElementById("record-player");
+
+        if (player) {
+          const url = URL.createObjectURL(result.blob);
+
+          player.innerHTML = `
+            <audio controls src="${url}"></audio>
+          `;
+        }
+
+        UI.toast("녹음을 저장할 준비가 됐어요.");
+      }
+
+    } else {
+      await Recorder.start();
+    }
+  },
+
+  async recordResult(result, promptLevel) {
+    const item = this.items[this.index];
+
+    const attempt =
+      await Session.recordAttempt({
+        contentId: item.id,
+        activityType: item.category,
+        result: result ? "success" : "retry",
+        promptLevel,
+        responseTime: Date.now() - this.currentStart
+      });
+
+    if (this.currentRecording) {
+      const recording = {
+        id: Utils.uuid(),
+        attemptId: attempt.id,
+        mimeType: this.currentRecording.mimeType,
+        blob: this.currentRecording.blob,
+        duration: this.currentRecording.duration,
+        createdAt: Date.now()
+      };
+
+      await DB.add("recordings", recording);
+
+      this.currentRecording = null;
+    }
+
+    this.results.push({
+      result,
+      promptLevel
+    });
+  },
+
+  showFeedback(correct, message) {
+    const container =
+      document.getElementById("activity-content");
+
+    const existing =
+      container.querySelector(".feedback");
+
+    if (existing) {
+      existing.remove();
+    }
+
+    container.insertAdjacentHTML(
+      "beforeend",
+      `
+        <div class="feedback ${correct ? "success" : "retry"}">
+          ${escapeHtml(message)}
+        </div>
+
+        <button class="btn btn-primary btn-xl"
+                style="margin-top:18px"
+                onclick="Activity.next()">
+          ${this.index === this.items.length - 1
+            ? "활동 끝내기 🎉"
+            : "다음 활동 →"}
+        </button>
+      `
+    );
+  },
+
+  async next() {
+    if (Recorder.isRecording) {
+      const result = await Recorder.stop();
+
+      if (result) {
+        this.currentRecording = result;
+      }
+    }
+
+    this.index++;
+    await this.renderCurrent();
+  },
+
+  async finish() {
+    await Session.finish();
+
+    const total = this.results.length;
+    const success =
+      this.results.filter(x => x.result).length;
+
+    document.getElementById("result-summary").innerHTML = `
+      <div class="stat-card">
+        <div class="stat-icon">🎯</div>
+        <div class="stat-number">${total}</div>
+        <div class="stat-label">활동 수</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon">⭐</div>
+        <div class="stat-number">${success}</div>
+        <div class="stat-label">성공 활동</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon">💪</div>
+        <div class="stat-number">
+          ${total ? Math.round(success / total * 100) : 0}%
+        </div>
+        <div class="stat-label">앱 활동 수행률</div>
+      </div>
+    `;
+
+    App.showScreen("result");
+  },
+
+  exit() {
+    if (Recorder.isRecording) {
+      Recorder.stop();
+    }
+
+    Session.finish();
+
+    App.goHome();
+  }
+};
+
+
+/* =========================================================
+   HOME
+========================================================= */
+
+const Home = {
+
+  async render() {
+    const child =
+      await DB.get("children", App.currentChildId);
+
+    if (!child) {
+      App.currentChildId = null;
+      App.showScreen("child-select");
+      return;
+    }
+
+    const attempts =
+      await DB.getByIndex(
+        "attempts",
+        "childId",
+        child.id
+      );
+
+    const today = new Date();
+    today.setHours(0,0,0,0);
+
+    const todayAttempts =
+      attempts.filter(
+        x => x.createdAt >= today.getTime()
+      );
+
+    const successful =
+      todayAttempts.filter(
+        x => x.result === "success"
+      ).length;
+
+    document.getElementById("home-content").innerHTML = `
+      <div class="hero">
+        <h1>안녕, ${escapeHtml(child.name)}! 👋</h1>
+        <p>
+          오늘도 재미있는 언어놀이를 해볼까요?
+          천천히 말해도 괜찮아요.
+        </p>
+
+        <div class="hero-actions">
+          <button class="btn btn-primary btn-lg"
+                  onclick="Activity.start()">
+            🎮 오늘의 미션 시작
+          </button>
+
+          <button class="btn btn-light btn-lg"
+                  onclick="App.openSettings()">
+            ⚙️ 설정
+          </button>
+        </div>
+      </div>
+
+      <div class="grid grid-3" style="margin-top:18px">
+        <div class="stat-card">
+          <div class="stat-icon">🎯</div>
+          <div class="stat-number">${todayAttempts.length}</div>
+          <div class="stat-label">오늘 시도</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon">⭐</div>
+          <div class="stat-number">${successful}</div>
+          <div class="stat-label">오늘 성공</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon">🔥</div>
+          <div class="stat-number">
+            ${Math.min(todayAttempts.length, 5)}
+          </div>
+          <div class="stat-label">오늘의 진행</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:18px">
+        <div class="row-between">
+          <h2 class="section-title" style="margin:0">
+            오늘의 활동
+          </h2>
+
+          <span class="badge">
+            약 5~10분
+          </span>
+        </div>
+
+        <div class="grid grid-3">
+          <div class="activity-card">
+            <div class="activity-icon"
+                 style="background:#fff0e3">🗣️</div>
+            <h3>단어 말하기</h3>
+            <p>그림을 보고 이름을 말해봐요.</p>
+          </div>
+
+          <div class="activity-card">
+            <div class="activity-icon"
+                 style="background:#e8f5ff">👂</div>
+            <h3>듣고 행동하기</h3>
+            <p>말을 듣고 알맞은 그림을 찾아요.</p>
+          </div>
+
+          <div class="activity-card">
+            <div class="activity-icon"
+                 style="background:#eeeaff">🧩</div>
+            <h3>문장 만들기</h3>
+            <p>단어를 모아 문장을 만들어요.</p>
+          </div>
+
+          <div class="activity-card">
+            <div class="activity-icon"
+                 style="background:#e8f9ee">❓</div>
+            <h3>질문에 답하기</h3>
+            <p>질문을 듣고 대답해요.</p>
+          </div>
+
+          <div class="activity-card">
+            <div class="activity-icon"
+                 style="background:#fff0f4">📖</div>
+            <h3>이야기하기</h3>
+            <p>그림을 보고 이야기를 만들어봐요.</p>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+};
+
+
+/* =========================================================
+   PARENT DASHBOARD
+========================================================= */
+
+const Parent = {
+
+  async render() {
+    const child =
+      await DB.get("children", App.currentChildId);
+
+    if (!child) return;
+
+    const attempts =
+      await DB.getByIndex(
+        "attempts",
+        "childId",
+        child.id
+      );
+
+    const sessions =
+      await DB.getByIndex(
+        "sessions",
+        "childId",
+        child.id
+      );
+
+    const recordings =
+      await DB.getAll("recordings");
+
+    const childAttempts =
+      attempts.sort(
+        (a,b) => b.createdAt - a.createdAt
+      );
+
+    const success =
+      attempts.filter(
+        x => x.result === "success"
+      ).length;
+
+    const independent =
+      attempts.filter(
+        x => x.promptLevel === 0
+      ).length;
+
+    const percentage =
+      attempts.length
+        ? Math.round(success / attempts.length * 100)
+        : 0;
+
+    const childRecordings =
+      recordings.filter(recording =>
+        attempts.some(
+          attempt =>
+            attempt.id === recording.attemptId
+        )
+      );
+
+    const chart =
+      this.makeWeeklyChart(attempts);
+
+    document.getElementById("parent-content").innerHTML = `
+      <div class="row-between wrap" style="margin-bottom:20px">
+        <div>
+          <div class="badge">보호자 모드</div>
+          <h1 style="margin:8px 0">
+            ${escapeHtml(child.name)}의 활동 기록
+          </h1>
+          <p class="muted">
+            앱에서 수행한 활동을 확인할 수 있어요.
+          </p>
+        </div>
+
+        <button class="btn btn-light"
+                onclick="App.goHome()">
+          ← 아이 화면
+        </button>
+      </div>
+
+      <div class="grid grid-4">
+        <div class="stat-card">
+          <div class="stat-icon">🎯</div>
+          <div class="stat-number">${attempts.length}</div>
+          <div class="stat-label">총 시도</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon">⭐</div>
+          <div class="stat-number">${success}</div>
+          <div class="stat-label">성공</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon">💪</div>
+          <div class="stat-number">${independent}</div>
+          <div class="stat-label">독립 수행</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon">📈</div>
+          <div class="stat-number">${percentage}%</div>
+          <div class="stat-label">앱 활동 성공 비율</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="section-title">최근 활동</h2>
+
+        ${attempts.length
+          ? `
+            <div class="chart">
+              ${chart}
+            </div>
+          `
+          : `
+            <div class="empty">
+              <div class="empty-icon">📊</div>
+              아직 활동 기록이 없습니다.
+            </div>
+          `
+        }
+      </div>
+
+      <div class="card">
+        <div class="row-between">
+          <h2 class="section-title" style="margin:0">
+            최근 수행
+          </h2>
+
+          <span class="badge">
+            ${attempts.length}건
+          </span>
+        </div>
+
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>날짜</th>
+                <th>활동</th>
+                <th>결과</th>
+                <th>도움 수준</th>
+                <th>반응 시간</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              ${childAttempts.slice(0, 20).map(attempt => `
+                <tr>
+                  <td>${Utils.formatDate(attempt.createdAt)}</td>
+                  <td>${this.activityLabel(attempt.activityType)}</td>
+                  <td>
+                    ${attempt.result === "success"
+                      ? '<span class="badge success">성공</span>'
+                      : '<span class="badge danger">다시 시도</span>'
+                    }
+                  </td>
+                  <td>${this.promptLabel(attempt.promptLevel)}</td>
+                  <td>${Math.round(attempt.responseTime / 1000)}초</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="row-between">
+          <h2 class="section-title" style="margin:0">
+            🎙️ 녹음
+          </h2>
+          <span class="muted small">
+            ${childRecordings.length}개
+          </span>
+        </div>
+
+        ${childRecordings.length
+          ? childRecordings.slice(0, 10).map((recording, index) => {
+              const url =
+                URL.createObjectURL(recording.blob);
+
+              const attempt =
+                attempts.find(
+                  a => a.id === recording.attemptId
+                );
+
+              return `
+                <div class="card"
+                     style="padding:15px;background:#f8f8fa;box-shadow:none">
+                  <div class="row-between wrap">
+                    <div>
+                      <strong>
+                        녹음 ${childRecordings.length - index}
+                      </strong>
+                      <div class="small muted">
+                        ${attempt
+                          ? this.activityLabel(attempt.activityType)
+                          : ""}
+                        · ${Utils.formatDate(recording.createdAt)}
+                      </div>
+                    </div>
+                    <audio controls src="${url}"></audio>
+                  </div>
+                </div>
+              `;
+            }).join("")
+          : `
+            <div class="empty">
+              <div class="empty-icon">🎙️</div>
+              저장된 녹음이 없습니다.
+            </div>
+          `
+        }
+      </div>
+
+      <div class="card">
+        <h2 class="section-title">📝 보호자 메모</h2>
+
+        <textarea id="parent-note"
+                  class="textarea"
+                  placeholder="오늘 아이가 실제 생활에서 사용한 표현이나 관찰 내용을 적어주세요."></textarea>
+
+        <button class="btn btn-primary"
+                style="margin-top:10px"
+                onclick="Parent.saveNote()">
+          메모 저장
+        </button>
+      </div>
+
+      <div class="card">
+        <h2 class="section-title">📦 데이터 관리</h2>
+
+        <p class="muted">
+          데이터는 이 브라우저의 IndexedDB에 로컬로 저장됩니다.
+        </p>
+
+        <div class="row wrap">
+          <button class="btn btn-secondary"
+                  onclick="Backup.export()">
+            ⬇️ 백업하기
+          </button>
+
+          <button class="btn btn-light"
+                  onclick="Backup.importFile()">
+            ⬆️ 백업 복원
+          </button>
+
+          <button class="btn btn-danger"
+                  onclick="Settings.confirmDeleteChild()">
+            🗑️ 아이 삭제
+          </button>
+        </div>
+      </div>
+    `;
+  },
+
+  activityLabel(type) {
+    return {
+      vocabulary: "단어 말하기",
+      listening: "듣고 행동하기",
+      sentence: "문장 만들기",
+      question: "질문에 대답하기",
+      story: "이야기하기"
+    }[type] || type;
+  },
+
+  promptLabel(level) {
+    return {
+      0: "독립 수행",
+      1: "간단한 힌트",
+      2: "선택지 제공",
+      3: "모델링",
+      4: "따라 말하기"
+    }[level] || "기록 없음";
+  },
+
+  makeWeeklyChart(attempts) {
+    const days = [];
+
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setHours(0,0,0,0);
+      d.setDate(d.getDate() - i);
+
+      const start = d.getTime();
+      const end = start + 86400000;
+
+      const count = attempts.filter(
+        a => a.createdAt >= start && a.createdAt < end
+      ).length;
+
+      days.push({
+        label: `${d.getMonth()+1}/${d.getDate()}`,
+        count
+      });
+    }
+
+    const max =
+      Math.max(...days.map(d => d.count), 1);
+
+    return days.map(day => `
+      <div class="bar-wrap">
+        <div class="bar"
+             style="height:${Math.max(3, day.count / max * 120)}px"
+             title="${day.count}회"></div>
+        <div class="bar-label">${day.label}</div>
+      </div>
+    `).join("");
+  },
+
+  async saveNote() {
+    const text =
+      document.getElementById("parent-note").value.trim();
+
+    if (!text) {
+      UI.toast("메모 내용을 입력해주세요.");
+      return;
+    }
+
+    await DB.add("notes", {
+      id: Utils.uuid(),
+      childId: App.currentChildId,
+      text,
+      createdAt: Date.now()
+    });
+
+    document.getElementById("parent-note").value = "";
+
+    UI.toast("메모를 저장했습니다.");
+  }
+};
+
+
+/* =========================================================
+   THERAPIST DASHBOARD
+========================================================= */
+
+const Therapist = {
+
+  async render() {
+    const children =
+      await DB.getAll("children");
+
+    const selectedChild =
+      App.currentChildId
+        ? await DB.get("children", App.currentChildId)
+        : null;
+
+    document.getElementById("therapist-content").innerHTML = `
+      <div class="row-between wrap" style="margin-bottom:20px">
+        <div>
+          <div class="badge">치료사 모드</div>
+          <h1 style="margin:8px 0">치료 목표 관리</h1>
+          <p class="muted">
+            아동별 목표와 활동 수행을 확인합니다.
+          </p>
+        </div>
+
+        <button class="btn btn-light"
+                onclick="App.goHome()">
+          ← 돌아가기
+        </button>
+      </div>
+
+      <div class="card">
+        <h2 class="section-title">아동 선택</h2>
+
+        <select id="therapist-child"
+                class="select"
+                onchange="Therapist.changeChild(this.value)">
+          <option value="">아동을 선택하세요</option>
+          ${children.map(child => `
+            <option value="${escapeAttr(child.id)}"
+              ${selectedChild?.id === child.id ? "selected" : ""}>
+              ${escapeHtml(child.name)}
+            </option>
+          `).join("")}
+        </select>
+      </div>
+
+      <div id="therapist-detail">
+        ${selectedChild
+          ? await this.detailHTML(selectedChild)
+          : `
+            <div class="card">
+              <div class="empty">
+                <div class="empty-icon">🧑‍⚕️</div>
+                아동을 선택하면 치료 목표를 관리할 수 있습니다.
+              </div>
+            </div>
+          `
+        }
+      </div>
+    `;
+  },
+
+  async changeChild(id) {
+    if (!id) {
+      App.currentChildId = null;
+      await this.render();
+      return;
+    }
+
+    App.currentChildId = id;
+    await this.render();
+  },
+
+  async detailHTML(child) {
+    const goals =
+      await DB.getByIndex(
+        "goals",
+        "childId",
+        child.id
+      );
+
+    const attempts =
+      await DB.getByIndex(
+        "attempts",
+        "childId",
+        child.id
+      );
+
+    return `
+      <div class="card">
+        <div class="row-between wrap">
+          <div>
+            <h2 class="section-title" style="margin:0">
+              ${escapeHtml(child.name)}의 치료 목표
+            </h2>
+            <p class="muted small">
+              앱에서 사용할 목표를 설정합니다.
+            </p>
+          </div>
+
+          <button class="btn btn-primary"
+                  onclick="Therapist.addGoal()">
+            ＋ 목표 추가
+          </button>
+        </div>
+
+        ${
+          goals.length
+          ? `
+            <div class="grid">
+              ${goals.map(goal => `
+                <div class="card"
+                     style="padding:18px;background:#f8f8fa;box-shadow:none">
+                  <div class="row-between wrap">
+                    <div>
+                      <span class="badge">${escapeHtml(goal.category)}</span>
+                      <h3 style="margin:8px 0">
+                        ${escapeHtml(goal.title)}
+                      </h3>
+                      <div class="muted small">
+                        목표: ${escapeHtml(goal.target)}
+                        · Level ${goal.level}
+                      </div>
+                    </div>
+
+                    <button class="btn btn-danger"
+                            onclick="Therapist.deleteGoal('${escapeAttr(goal.id)}')">
+                      삭제
+                    </button>
+                  </div>
+                </div>
+              `).join("")}
+            </div>
+          `
+          : `
+            <div class="empty">
+              <div class="empty-icon">🎯</div>
+              등록된 치료 목표가 없습니다.
+            </div>
+          `
+        }
+      </div>
+
+      <div class="card">
+        <div class="row-between">
+          <h2 class="section-title" style="margin:0">
+            수행 요약
+          </h2>
+          <span class="badge">${attempts.length}건</span>
+        </div>
+
+        <div class="grid grid-3">
+          ${["vocabulary","listening","sentence","question","story"].map(type => {
+            const items =
+              attempts.filter(
+                a => a.activityType === type
+              );
+
+            const success =
+              items.filter(
+                a => a.result === "success"
+              ).length;
+
+            const pct =
+              items.length
+                ? Math.round(success / items.length * 100)
+                : 0;
+
+            return `
+              <div class="stat-card">
+                <div style="font-weight:900;margin-bottom:8px">
+                  ${Parent.activityLabel(type)}
+                </div>
+
+                <div class="stat-number">${pct}%</div>
+
+                <div class="progress-bar" style="margin-top:10px">
+                  <div style="width:${pct}%"></div>
+                </div>
+
+                <div class="small muted" style="margin-top:8px">
+                  ${items.length}회 시도
+                </div>
+              </div>
+            `;
+          }).join("")}
+        </div>
+      </div>
+    `;
+  },
+
+  async addGoal() {
+    if (!App.currentChildId) {
+      UI.toast("아동을 먼저 선택해주세요.");
+      return;
+    }
+
+    UI.modal(`
+      <h2>🎯 치료 목표 추가</h2>
+
+      <div class="form-group">
+        <label class="form-label">영역</label>
+        <select id="goal-category" class="select">
+          <option>표현언어</option>
+          <option>언어이해</option>
+          <option>어휘</option>
+          <option>문장</option>
+          <option>질문</option>
+          <option>이야기</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">목표 이름</label>
+        <input id="goal-title"
+               class="input"
+               placeholder="예: 3어절 문장 사용">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">구체적인 목표</label>
+        <textarea id="goal-target"
+                  class="textarea"
+                  placeholder="예: 그림을 보고 주어+목적어+동사 형태의 문장을 표현한다."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">난이도</label>
+        <select id="goal-level" class="select">
+          <option value="1">Level 1</option>
+          <option value="2">Level 2</option>
+          <option value="3">Level 3</option>
+          <option value="4">Level 4</option>
+        </select>
+      </div>
+
+      <div class="row">
+        <button class="btn btn-light spacer"
+                onclick="UI.closeModal()">
+          취소
+        </button>
+
+        <button class="btn btn-primary spacer"
+                onclick="Therapist.saveGoal()">
+          저장
+        </button>
+      </div>
+    `);
+  },
+
+  async saveGoal() {
+    const title =
+      document.getElementById("goal-title").value.trim();
+
+    const target =
+      document.getElementById("goal-target").value.trim();
+
+    if (!title || !target) {
+      UI.toast("목표 이름과 내용을 입력해주세요.");
+      return;
+    }
+
+    await DB.add("goals", {
+      id: Utils.uuid(),
+      childId: App.currentChildId,
+      category:
+        document.getElementById("goal-category").value,
+      title,
+      target,
+      level:
+        Number(document.getElementById("goal-level").value),
+      createdAt: Date.now()
+    });
+
+    UI.closeModal();
+    UI.toast("치료 목표를 저장했습니다.");
+
+    await Therapist.render();
+  },
+
+  async deleteGoal(id) {
+    const ok =
+      confirm("이 치료 목표를 삭제할까요?");
+
+    if (!ok) return;
+
+    await DB.delete("goals", id);
+
+    UI.toast("치료 목표를 삭제했습니다.");
+
+    await Therapist.render();
+  }
+};
+
+
+/* =========================================================
+   SETTINGS
+========================================================= */
+
+const Settings = {
+
+  async render() {
+    const children =
+      await DB.getAll("children");
+
+    const current =
+      App.currentChildId
+        ? await DB.get("children", App.currentChildId)
+        : null;
+
+    document.getElementById("settings-content").innerHTML = `
+      <div class="row-between">
+        <div>
+          <div class="badge">설정</div>
+          <h1>앱 설정</h1>
+        </div>
+
+        <button class="btn btn-light"
+                onclick="App.goHome()">
+          ← 돌아가기
+        </button>
+      </div>
+
+      <div class="card">
+        <h2 class="section-title">현재 아동</h2>
+
+        <select class="select"
+                onchange="Settings.changeChild(this.value)">
+          ${children.map(child => `
+            <option value="${escapeAttr(child.id)}"
+              ${current?.id === child.id ? "selected" : ""}>
+              ${escapeHtml(child.name)}
+            </option>
+          `).join("")}
+        </select>
+      </div>
+
+      <div class="card">
+        <h2 class="section-title">데이터 관리</h2>
+
+        <p class="muted">
+          모든 데이터는 이 브라우저의 IndexedDB에 저장됩니다.
+          인터넷이나 서버로 전송하지 않습니다.
+        </p>
+
+        <div class="row wrap">
+          <button class="btn btn-primary"
+                  onclick="Backup.export()">
+            ⬇️ 전체 데이터 백업
+          </button>
+
+          <button class="btn btn-light"
+                  onclick="Backup.importFile()">
+            ⬆️ 데이터 복원
+          </button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="section-title">⚠️ 데이터 삭제</h2>
+
+        <p class="muted">
+          삭제한 데이터는 복구할 수 없습니다.
+          삭제 전에 백업하는 것을 권장합니다.
+        </p>
+
+        <div class="row wrap">
+          <button class="btn btn-danger"
+                  onclick="Settings.confirmDeleteChild()">
+            현재 아동 삭제
+          </button>
+
+          <button class="btn btn-danger"
+                  onclick="Settings.confirmClearAll()">
+            전체 데이터 삭제
+          </button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="section-title">앱 정보</h2>
+
+        <div class="small muted">
+          말랑말랑 언어놀이<br>
+          Offline Speech Therapy Assistant<br>
+          데이터베이스: IndexedDB
+        </div>
+      </div>
+    `;
+  },
+
+  async changeChild(id) {
+    App.currentChildId = id;
+    await this.render();
+  },
+
+  async confirmDeleteChild() {
+    if (!App.currentChildId) {
+      UI.toast("선택된 아동이 없습니다.");
+      return;
+    }
+
+    const child =
+      await DB.get("children", App.currentChildId);
+
+    if (!child) return;
+
+    if (!confirm(
+      `"${child.name}"의 정보를 삭제할까요?\n\n관련 활동 기록도 함께 삭제됩니다.`
+    )) {
+      return;
+    }
+
+    const attempts =
+      await DB.getByIndex(
+        "attempts",
+        "childId",
+        child.id
+      );
+
+    const sessions =
+      await DB.getByIndex(
+        "sessions",
+        "childId",
+        child.id
+      );
+
+    const goals =
+      await DB.getByIndex(
+        "goals",
+        "childId",
+        child.id
+      );
+
+    const notes =
+      await DB.getByIndex(
+        "notes",
+        "childId",
+        child.id
+      );
+
+    for (const x of attempts) {
+      await DB.delete("attempts", x.id);
+    }
+
+    for (const x of sessions) {
+      await DB.delete("sessions", x.id);
+    }
+
+    for (const x of goals) {
+      await DB.delete("goals", x.id);
+    }
+
+    for (const x of notes) {
+      await DB.delete("notes", x.id);
+    }
+
+    await DB.delete("children", child.id);
+
+    App.currentChildId = null;
+
+    UI.toast("아동 정보와 관련 기록을 삭제했습니다.");
+
+    App.renderChildList(
+      await DB.getAll("children")
+    );
+
+    App.showScreen("child-select");
+  },
+
+  async confirmClearAll() {
+    if (!confirm(
+      "모든 아동 정보, 활동 기록, 녹음, 치료 목표가 삭제됩니다.\n\n정말 삭제할까요?"
+    )) {
+      return;
+    }
+
+    for (const store of DB.stores) {
+      await DB.clear(store);
+    }
+
+    App.currentChildId = null;
+
+    UI.toast("모든 데이터가 삭제되었습니다.");
+
+    App.renderChildList([]);
+
+    App.showScreen("child-select");
+  }
+};
+
+
+/* =========================================================
+   BACKUP
+========================================================= */
+
+const Backup = {
+
+  async export() {
+    try {
+      const data = {
+        format: "SpeechTherapyBackup",
+        version: 1,
+        exportedAt: Date.now(),
+        children: await DB.getAll("children"),
+        goals: await DB.getAll("goals"),
+        contents: await DB.getAll("contents"),
+        sessions: await DB.getAll("sessions"),
+        attempts: await DB.getAll("attempts"),
+        notes: await DB.getAll("notes"),
+        recordings: []
+      };
+
+      const recordings =
+        await DB.getAll("recordings");
+
+      /*
+       * Blob은 JSON으로 직접 저장할 수 없기 때문에
+       * 녹음은 Base64 형태로 변환한다.
+       */
+      for (const recording of recordings) {
+        const base64 =
+          await Utils.blobToBase64(recording.blob);
+
+        data.recordings.push({
+          id: recording.id,
+          attemptId: recording.attemptId,
+          mimeType: recording.mimeType,
+          duration: recording.duration,
+          createdAt: recording.createdAt,
+          data: base64
+        });
+      }
+
+      const json =
+        JSON.stringify(data);
+
+      const blob =
+        new Blob([json], {
+          type: "application/json"
+        });
+
+      const url =
+        URL.createObjectURL(blob);
+
+      const a =
+        document.createElement("a");
+
+      const date =
+        new Date().toISOString()
+          .slice(0, 10);
+
+      a.href = url;
+      a.download =
+        `speech-therapy-backup-${date}.json`;
+
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      setTimeout(
+        () => URL.revokeObjectURL(url),
+        1000
+      );
+
+      UI.toast("백업 파일을 만들었습니다.");
+
+    } catch (error) {
+      console.error(error);
+      UI.toast("백업 중 문제가 발생했습니다.");
+    }
+  },
+
+  importFile() {
+    const input =
+      document.createElement("input");
+
+    input.type = "file";
+    input.accept = ".json,application/json";
+
+    input.onchange = async event => {
+      const file = event.target.files[0];
+
+      if (!file) return;
+
+      try {
+        const text =
+          await file.text();
+
+        const data =
+          JSON.parse(text);
+
+        if (
+          data.format !==
+          "SpeechTherapyBackup"
+        ) {
+          throw new Error("Invalid backup");
+        }
+
+        if (!confirm(
+          "백업 데이터를 복원합니다.\n\n현재 데이터가 같은 ID의 데이터로 대체될 수 있습니다. 계속할까요?"
+        )) {
+          return;
+        }
+
+        for (const store of [
+          "children",
+          "goals",
+          "contents",
+          "sessions",
+          "attempts",
+          "notes"
+        ]) {
+          if (Array.isArray(data[store])) {
+            for (const item of data[store]) {
+              await DB.put(store, item);
+            }
+          }
+        }
+
+        if (Array.isArray(data.recordings)) {
+          for (const item of data.recordings) {
+            const blob =
+              await Utils.base64ToBlob(
+                item.data,
+                item.mimeType
+              );
+
+            await DB.put("recordings", {
+              id: item.id,
+              attemptId: item.attemptId,
+              mimeType: item.mimeType,
+              blob,
+              duration: item.duration,
+              createdAt: item.createdAt
+            });
+          }
+        }
+
+        UI.toast("백업 데이터를 복원했습니다.");
+
+        App.renderChildList(
+          await DB.getAll("children")
+        );
+
+        App.showScreen("child-select");
+
+      } catch (error) {
+        console.error(error);
+        UI.toast(
+          "백업 파일을 읽을 수 없습니다."
+        );
+      }
+    };
+
+    input.click();
+  }
+};
+
+
+/* =========================================================
+   UI
+========================================================= */
+
+const UI = {
+
+  modal(html) {
+    document.getElementById("modal").innerHTML = html;
+    document
+      .getElementById("modal-backdrop")
+      .classList.add("show");
+  },
+
+  closeModal() {
+    document
+      .getElementById("modal-backdrop")
+      .classList.remove("show");
+  },
+
+  toast(message) {
+    const toast =
+      document.getElementById("toast");
+
+    toast.textContent = message;
+    toast.classList.add("show");
+
+    clearTimeout(this.toastTimer);
+
+    this.toastTimer =
+      setTimeout(() => {
+        toast.classList.remove("show");
+      }, 2600);
+  }
+};
+
+
+/* =========================================================
+   UTILITIES
+========================================================= */
+
+const Utils = {
+
+  uuid() {
+    if (crypto?.randomUUID) {
+      return crypto.randomUUID();
+    }
+
+    return (
+      Date.now().toString(36) +
+      Math.random().toString(36).slice(2)
+    );
+  },
+
+  pick(array) {
+    if (!array || !array.length) {
+      return null;
+    }
+
+    return array[
+      Math.floor(Math.random() * array.length)
+    ];
+  },
+
+  formatTime(seconds) {
+    const min =
+      Math.floor(seconds / 60)
+        .toString()
+        .padStart(2, "0");
+
+    const sec =
+      (seconds % 60)
+        .toString()
+        .padStart(2, "0");
+
+    return `${min}:${sec}`;
+  },
+
+  formatDate(timestamp) {
+    if (!timestamp) return "";
+
+    const d =
+      new Date(timestamp);
+
+    return `${d.getFullYear()}-${
+      String(d.getMonth()+1).padStart(2,"0")
+    }-${
+      String(d.getDate()).padStart(2,"0")
+    } ${
+      String(d.getHours()).padStart(2,"0")
+    }:${
+      String(d.getMinutes()).padStart(2,"0")
+    }`;
+  },
+
+  blobToBase64(blob) {
+    return new Promise((resolve, reject) => {
+      const reader =
+        new FileReader();
+
+      reader.onloadend = () => {
+        resolve(reader.result);
+      };
+
+      reader.onerror = reject;
+
+      reader.readAsDataURL(blob);
+    });
+  },
+
+  async base64ToBlob(base64, mimeType) {
+    const response =
+      await fetch(base64);
+
+    return await response.blob();
+  }
+};
+
+
+/* =========================================================
+   SECURITY HELPERS
+========================================================= */
+
+function escapeHtml(value) {
+  if (value === null || value === undefined) {
+    return "";
+  }
+
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function escapeAttr(value) {
+  return escapeHtml(value)
+    .replace(/`/g, "&#096;");
+}
+
+
+/* =========================================================
+   MODAL CLOSE
+========================================================= */
+
+document
+  .getElementById("modal-backdrop")
+  .addEventListener("click", event => {
+    if (event.target.id === "modal-backdrop") {
+      UI.closeModal();
+    }
+});
+
+
+/* =========================================================
+   START
+========================================================= */
+
+document.addEventListener("DOMContentLoaded", () => {
+  App.init();
+});
+
+</script>
+</body>
+</html>
