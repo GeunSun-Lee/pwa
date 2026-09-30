@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>말놀이 친구</title>
+    <style>
+        /* 기본 변수 및 디자인 토큰 */
+        :root {
+            --primary: #FF7B54;
+            --primary-light: #FFE5AD;
+            --secondary: #FFB26B;
+            --accent: #93C6E7;
+            --green: #4E9F3D;
+            --bg-color: #FFF9F0;
+            --card-bg: #FFFFFF;
+            --text-dark: #333333;
+            --radius-lg: 24px;
+            --radius-md: 16px;
+            --shadow: 0 8px 20px rgba(0,0,0,0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Pretendard', 'Malgun Gothic', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-dark);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* 헤더 스타일링 */
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .logo {
+            font-size: 1.6rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .badge-container {
+            display: flex;
+            gap: 12px;
+        }
+
+        .badge {
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(4px);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.95rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* 네비게이션 탭 */
+        nav {
+            display: flex;
+            background: white;
+            padding: 8px;
+            margin: 16px;
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            gap: 8px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 14px 8px;
+            border: none;
+            background: transparent;
+            border-radius: 14px;
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tab-btn.active {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 10px rgba(255, 123, 84, 0.3);
+        }
+
+        /* 메인 컨테이너 */
+        main {
+            flex: 1;
+            padding: 0 16px 24px 16px;
+            max-width: 900px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* UI 버튼 스타일 */
+        .btn {
+            padding: 14px 28px;
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .btn:active {
+            transform: scale(0.96);
+        }
+
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-secondary { background: var(--accent); color: white; }
+        .btn-success { background: var(--green); color: white; }
+        .btn-disabled { background: #ccc; cursor: not-allowed; }
+
+        /* AAC 문장 연습 탭 스타일 */
+        .sentence-builder-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .sentence-display {
+            background: white;
+            border: 4px dashed var(--secondary);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            min-height: 140px;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            gap: 12px;
+            box-shadow: var(--shadow);
+        }
+
+        .slot {
+            flex: 1;
+            min-height: 100px;
+            border: 2px dashed #ddd;
+            border-radius: var(--radius-md);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #fafafa;
+            position: relative;
+            transition: all 0.2s;
+        }
+
+        .slot-title {
+            position: absolute;
+            top: -12px;
+            background: var(--secondary);
+            color: white;
+            padding: 2px 10px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .word-card {
+            background: white;
+            border: 3px solid var(--primary-light);
+            border-radius: var(--radius-md);
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+            width: 100%;
+            height: 100%;
+        }
+
+        .word-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--primary);
+            box-shadow: 0 6px 14px rgba(0,0,0,0.12);
+        }
+
+        .word-card .emoji {
+            font-size: 2.5rem;
+            margin-bottom: 4px;
+        }
+
+        .word-card .label {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--text-dark);
+        }
+
+        .category-selector {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        .category-box {
+            background: white;
+            border-radius: var(--radius-md);
+            padding: 16px;
+            box-shadow: var(--shadow);
+        }
+
+        .category-header {
+            font-size: 1.1rem;
+            font-weight: 800;
+            margin-bottom: 12px;
+            color: var(--primary);
+            text-align: center;
+            border-bottom: 2px solid var(--bg-color);
+            padding-bottom: 6px;
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 10px;
+            max-height: 240px;
+            overflow-y: auto;
+            padding: 4px;
+        }
+
+        .action-bar {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 10px;
+        }
+
+        /* 음성 녹음 피드백 섹션 */
+        .speech-practice-box {
+            background: white;
+            border-radius: var(--radius-md);
+            padding: 16px;
+            margin-top: 16px;
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+
+        .mic-btn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            border: none;
+            font-size: 1.8rem;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(255, 123, 84, 0.4);
+            transition: all 0.2s;
+            margin: 10px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mic-btn.recording {
+            background: #E74C3C;
+            animation: pulse 1.2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); }
+            70% { transform: scale(1.1); box-shadow: 0 0 0 15px rgba(231, 76, 60, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
+        }
+
+        .speech-result {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--green);
+            min-height: 28px;
+            margin-top: 8px;
+        }
+
+        /* 스티커북 탭 스타일 */
+        .sticker-container {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .sticker-palette {
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            padding: 8px 4px;
+            border-bottom: 2px solid var(--bg-color);
+        }
+
+        .sticker-item {
+            font-size: 2.2rem;
+            padding: 8px 12px;
+            background: var(--bg-color);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .sticker-item.selected {
+            border-color: var(--primary);
+            background: var(--primary-light);
+            transform: scale(1.1);
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            width: 100%;
+            height: 380px;
+            border: 3px solid var(--primary-light);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            background: #FAFAFA;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+        }
+
+        .canvas-tools {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* 대시보드 및 설정 스타일 */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        .card {
+            background: white;
+            border-radius: var(--radius-md);
+            padding: 20px;
+            box-shadow: var(--shadow);
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stat-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background: var(--bg-color);
+            border-radius: 8px;
+            font-weight: bold;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+
+        .form-group label {
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .form-group input, .form-group select {
+            padding: 10px 14px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            border-color: var(--primary);
+        }
+
+        .log-list {
+            max-height: 180px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            font-size: 0.9rem;
+        }
+
+        .log-item {
+            padding: 6px 10px;
+            background: #F5F5F5;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* 모달 팝업 */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 28px;
+            max-width: 360px;
+            width: 90%;
+            text-align: center;
+            transform: scale(0.8);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .modal-overlay.active .modal {
+            transform: scale(1);
+        }
+
+        .reward-emoji {
+            font-size: 4rem;
+            animation: bounce 0.6s infinite alternate;
+            margin: 12px 0;
+        }
+
+        @keyframes bounce {
+            from { transform: translateY(0); }
+            to { transform: translateY(-15px); }
+        }
+
+        /* 반응형 모바일 최적화 */
+        @media (max-width: 680px) {
+            .category-selector {
+                grid-template-columns: 1fr;
+            }
+            .cards-grid {
+                grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+            }
+            .sentence-display {
+                padding: 12px;
+                gap: 6px;
+            }
+            .word-card .emoji { font-size: 1.8rem; }
+            .word-card .label { font-size: 0.95rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 헤더 섹션 -->
+    <header>
+        <div class="logo">
+            <span>🗣️</span>
+            <span>말놀이 친구</span>
+        </div>
+        <div class="badge-container">
+            <div class="badge">
+                <span>⭐ 스티커</span>
+                <span id="header-sticker-count">0</span>개
+            </div>
+        </div>
+    </header>
+
+    <!-- 네비게이션 탭 -->
+    <nav>
+        <button class="tab-btn active" onclick="switchTab('aac-tab')">💬 문장 만들기</button>
+        <button class="tab-btn" onclick="switchTab('sticker-tab')">🎨 스티커북</button>
+        <button class="tab-btn" onclick="switchTab('dashboard-tab')">📊 보호자 모드</button>
+    </nav>
+
+    <!-- 메인 콘텐츠 영역 -->
+    <main>
+        <!-- 1. AAC 문장 만들기 탭 -->
+        <section id="aac-tab" class="tab-content active">
+            <div class="sentence-builder-container">
+                <!-- 완성된 문장 조합 영역 -->
+                <div class="sentence-display">
+                    <div class="slot" id="slot-subject">
+                        <span class="slot-title">1. 누가</span>
+                        <div class="slot-content"></div>
+                    </div>
+                    <div class="slot" id="slot-object">
+                        <span class="slot-title">2. 무엇을</span>
+                        <div class="slot-content"></div>
+                    </div>
+                    <div class="slot" id="slot-verb">
+                        <span class="slot-title">3. 해요</span>
+                        <div class="slot-content"></div>
+                    </div>
+                </div>
+
+                <!-- 컨트롤 버튼 -->
+                <div class="action-bar">
+                    <button class="btn btn-primary" onclick="speakSentence()">🔊 문장 들어보기</button>
+                    <button class="btn btn-secondary" onclick="resetSentence()">🔄 다시 하기</button>
+                </div>
+
+                <!-- 단어 선택 영역 -->
+                <div class="category-selector">
+                    <!-- 주어 카테고리 -->
+                    <div class="category-box">
+                        <div class="category-header">1. 누가 (주어)</div>
+                        <div class="cards-grid" id="grid-subject"></div>
+                    </div>
+                    <!-- 목적어 카테고리 -->
+                    <div class="category-box">
+                        <div class="category-header">2. 무엇을 (목적어)</div>
+                        <div class="cards-grid" id="grid-object"></div>
+                    </div>
+                    <!-- 서술어 카테고리 -->
+                    <div class="category-box">
+                        <div class="category-header">3. 해요 (동사)</div>
+                        <div class="cards-grid" id="grid-verb"></div>
+                    </div>
+                </div>
+
+                <!-- 음성 따라하기 마이크 섹션 -->
+                <div class="speech-practice-box">
+                    <p style="font-weight: bold; color: #555;">마이크를 누르고 전체 문장을 직접 따라 말해보세요!</p>
+                    <button class="mic-btn" id="mic-btn" onclick="toggleSpeechRecognition()">🎤</button>
+                    <div class="speech-result" id="speech-result">음성을 기다리는 중...</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. 내 스티커북 탭 -->
+        <section id="sticker-tab" class="tab-content">
+            <div class="sticker-container">
+                <div class="sticker-palette" id="sticker-palette">
+                    <!-- 획득한 스티커 리스트가 동적으로 삽입됨 -->
+                </div>
+                <div class="canvas-wrapper">
+                    <canvas id="sticker-canvas"></canvas>
+                </div>
+                <div class="canvas-tools">
+                    <span style="font-size: 0.9rem; color: #666;">💡 스티커 선택 후 화면을 터치하여 붙여보세요!</span>
+                    <button class="btn btn-secondary" onclick="clearCanvas()">🧹 캔버스 비우기</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. 보호자 / 학습 대시보드 탭 -->
+        <section id="dashboard-tab" class="tab-content">
+            <div class="dashboard-grid">
+                <!-- 학습 통계 카드 -->
+                <div class="card">
+                    <div class="card-title">📈 학습 현황 리포트</div>
+                    <div class="stat-list">
+                        <div class="stat-item">
+                            <span>총 완성 문장 수</span>
+                            <span id="stat-sentences">0회</span>
+                        </div>
+                        <div class="stat-item">
+                            <span>보유한 스티커</span>
+                            <span id="stat-stickers">0개</span>
+                        </div>
+                    </div>
+                    <h4 style="margin-top: 16px; margin-bottom: 8px; font-size: 0.95rem;">최근 학습 문장 기록</h4>
+                    <div class="log-list" id="log-list">
+                        <!-- 학습 로그 리스트 -->
+                    </div>
+                </div>
+
+                <!-- 커스텀 카드 등록 카드 -->
+                <div class="card">
+                    <div class="card-title">➕ 단어 카드 추가하기</div>
+                    <form id="custom-word-form" onsubmit="addCustomWord(event)">
+                        <div class="form-group">
+                            <label for="word-category">카테고리 선택</label>
+                            <select id="word-category" required>
+                                <option value="subject">1. 누가 (주어)</option>
+                                <option value="object">2. 무엇을 (목적어)</option>
+                                <option value="verb">3. 해요 (동사)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="word-label">단어명</label>
+                            <input type="text" id="word-label" placeholder="예: 아빠가, 과자를, 만들어요" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="word-emoji">대표 이모지</label>
+                            <input type="text" id="word-emoji" placeholder="예: 👨, 🍪, 👨‍🍳" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 8px;">카드 추가 저장</button>
+                    </form>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 보상 모달 팝업 -->
+    <div class="modal-overlay" id="reward-modal">
+        <div class="modal">
+            <h2>🎉 참 잘했어요!</h2>
+            <p style="margin-top: 8px; color: #555;">문장을 멋지게 완성했어요!</p>
+            <div class="reward-emoji" id="reward-emoji-display">🎁</div>
+            <p style="font-weight: bold; color: var(--primary);" id="reward-name-display">새로운 스티커 획득!</p>
+            <button class="btn btn-success" style="margin-top: 16px; width: 100%;" onclick="closeRewardModal()">스티커북에 붙이러 가기</button>
+        </div>
+    </div>
+
+    <script>
+        /* ==========================================================
+           1. 기본 데이터베이스 및 애플리케이션 상태 관리 (IndexedDB)
+           ========================================================== */
+        const DB_NAME = 'ChildSpeechDB';
+        const DB_VERSION = 1;
+        let db = null;
+
+        // 선택된 AAC 문장 상태
+        let currentSentence = {
+            subject: null,
+            object: null,
+            verb: null
+        };
+
+        // 앱 상태 데이터
+        let appState = {
+            completedCount: 0,
+            stickers: ['🚗', '🦖', '🐶', '⭐'], // 기본 스티커
+            selectedSticker: '🚗',
+            logs: []
+        };
+
+        // 기본 단어 데이터베이스
+        const defaultWords = {
+            subject: [
+                { id: 's1', label: '아이가', emoji: '👦' },
+                { id: 's2', label: '엄마가', emoji: '👩' },
+                { id: 's3', label: '강아지가', emoji: '🐶' },
+                { id: 's4', label: '고양이가', emoji: '🐱' }
+            ],
+            object: [
+                { id: 'o1', label: '사과를', emoji: '🍎' },
+                { id: 'o2', label: '물은', emoji: '💧' },
+                { id: 'o3', label: '공을', emoji: '⚽' },
+                { id: 'o4', label: '밥을', emoji: '🍚' }
+            ],
+            verb: [
+                { id: 'v1', label: '먹어요', emoji: '😋' },
+                { id: 'v2', label: '마셔요', emoji: '🥤' },
+                { id: 'v3', label: '던져요', emoji: '🖐️' },
+                { id: 'v4', label: '좋아해요', emoji: '❤️' }
+            ]
+        };
+
+        let wordsData = JSON.parse(JSON.stringify(defaultWords));
+
+        // IndexedDB 데이터베이스 초기화
+        function initDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+                request.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains('userState')) {
+                        db.createObjectStore('userState', { keyPath: 'id' });
+                    }
+                    if (!db.objectStoreNames.contains('customWords')) {
+                        db.createObjectStore('customWords', { keyPath: 'id' });
+                    }
+                };
+
+                request.onsuccess = (e) => {
+                    db = e.target.result;
+                    loadStateFromDB().then(resolve);
+                };
+
+                request.onerror = (e) => {
+                    console.error('IndexedDB error:', e);
+                    resolve(); // 에러 시에도 기본 메모리 상태로 계속 진행
+                };
+            });
+        }
+
+        // IndexedDB 데이터 불러오기
+        async function loadStateFromDB() {
+            if (!db) return;
+            try {
+                // 사용자 상태 로드
+                const tx = db.transaction('userState', 'readonly');
+                const store = tx.objectStore('userState');
+                const req = store.get('mainState');
+                
+                req.onsuccess = () => {
+                    if (req.result) {
+                        appState = { ...appState, ...req.result.data };
+                        updateUIStats();
+                    }
+                };
+
+                // 커스텀 단어 로드
+                const txWords = db.transaction('customWords', 'readonly');
+                const wordsStore = txWords.objectStore('customWords');
+                const wordsReq = wordsStore.getAll();
+
+                wordsReq.onsuccess = () => {
+                    if (wordsReq.result && wordsReq.result.length > 0) {
+                        wordsReq.result.forEach(item => {
+                            if (wordsData[item.category]) {
+                                wordsData[item.category].push(item);
+                            }
+                        });
+                    }
+                    renderAACCards();
+                };
+            } catch (err) {
+                console.error("데이터 로드 실패:", err);
+            }
+        }
+
+        // IndexedDB 상태 저장
+        function saveStateToDB() {
+            if (!db) return;
+            const tx = db.transaction('userState', 'readwrite');
+            const store = tx.objectStore('userState');
+            store.put({ id: 'mainState', data: appState });
+        }
+
+        /* ==========================================================
+           2. Web Audio API 기반 오디오 효과음 합성 엔진
+           ========================================================== */
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'click') {
+                // 짧은 탭음
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, now);
+                osc.frequency.exponentialRampToValueAtTime(800, now + 0.08);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+                osc.start(now);
+                osc.stop(now + 0.08);
+            } else if (type === 'success') {
+                // 성공 축하용 3음 아르페지오 (C5 - E5 - G5)
+                const notes = [523.25, 659.25, 783.99, 1046.50];
+                notes.forEach((freq, index) => {
+                    const noteOsc = audioCtx.createOscillator();
+                    const noteGain = audioCtx.createGain();
+                    noteOsc.connect(noteGain);
+                    noteGain.connect(audioCtx.destination);
+
+                    const noteTime = now + (index * 0.1);
+                    noteOsc.type = 'triangle';
+                    noteOsc.frequency.setValueAtTime(freq, noteTime);
+
+                    noteGain.gain.setValueAtTime(0.3, noteTime);
+                    noteGain.gain.exponentialRampToValueAtTime(0.01, noteTime + 0.25);
+
+                    noteOsc.start(noteTime);
+                    noteOsc.stop(noteTime + 0.25);
+                });
+            }
+        }
+
+        /* ==========================================================
+           3. TTS 음성 합성 및 Speech Recognition (음성 인식)
+           ========================================================== */
+        function speakText(text) {
+            if (!('speechSynthesis' in window)) return;
+
+            window.speechSynthesis.cancel(); // 이전 재생 중단
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'ko-KR';
+            utterance.rate = 0.85; // 아동 학습용 속도 감속 (약 85%)
+            utterance.pitch = 1.1; // 또박또박 명확한 피치
+
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // 음성 인식 (Web Speech API)
+        let recognition = null;
+        let isRecording = false;
+
+        function initSpeechRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                document.getElementById('speech-result').innerText = "이 브라우저는 음성 인식을 지원하지 않습니다.";
+                return;
+            }
+
+            recognition = new SpeechRecognition();
+            recognition.lang = 'ko-KR';
+            recognition.continuous = false;
+            recognition.interimResults = false;
+
+            recognition.onstart = () => {
+                isRecording = true;
+                const micBtn = document.getElementById('mic-btn');
+                micBtn.classList.add('recording');
+                document.getElementById('speech-result').innerText = "듣고 있어요! 말해 보세요...";
+            };
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                document.getElementById('speech-result').innerText = `인식된 소리: "${transcript}"`;
+                
+                // 칭찬 피드백
+                setTimeout(() => {
+                    speakText("정말 잘했어요! 최고예요!");
+                    playSound('success');
+                }, 500);
+            };
+
+            recognition.onerror = (event) => {
+                document.getElementById('speech-result').innerText = "음성을 정확히 듣지 못했어요. 다시 시도해주세요!";
+            };
+
+            recognition.onend = () => {
+                isRecording = false;
+                document.getElementById('mic-btn').classList.remove('recording');
+            };
+        }
+
+        function toggleSpeechRecognition() {
+            if (!recognition) initSpeechRecognition();
+            if (!recognition) return;
+
+            if (isRecording) {
+                recognition.stop();
+            } else {
+                playSound('click');
+                recognition.start();
+            }
+        }
+
+        /* ==========================================================
+           4. AAC 문장 조합 및 카드 렌더링
+           ========================================================== */
+        function renderAACCards() {
+            ['subject', 'object', 'verb'].forEach(category => {
+                const grid = document.getElementById(`grid-${category}`);
+                grid.innerHTML = '';
+
+                wordsData[category].forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = 'word-card';
+                    card.onclick = () => selectWord(category, item);
+
+                    card.innerHTML = `
+                        <div class="emoji">${item.emoji}</div>
+                        <div class="label">${item.label}</div>
+                    `;
+                    grid.appendChild(card);
+                });
+            });
+        }
+
+        function selectWord(category, wordItem) {
+            playSound('click');
+            currentSentence[category] = wordItem;
+
+            // 해당 슬롯 UI 업데이트
+            const slot = document.getElementById(`slot-${category}`);
+            const slotContent = slot.querySelector('.slot-content');
+            slotContent.innerHTML = `
+                <div class="word-card" style="border:none; box-shadow:none;">
+                    <div class="emoji">${wordItem.emoji}</div>
+                    <div class="label">${wordItem.label}</div>
+                </div>
+            `;
+
+            // 개별 단어 음성 출력
+            speakText(wordItem.label);
+        }
+
+        function resetSentence() {
+            playSound('click');
+            currentSentence = { subject: null, object: null, verb: null };
+            ['subject', 'object', 'verb'].forEach(cat => {
+                const slot = document.getElementById(`slot-${cat}`);
+                slot.querySelector('.slot-content').innerHTML = '';
+            });
+            document.getElementById('speech-result').innerText = "음성을 기다리는 중...";
+        }
+
+        function speakSentence() {
+            const { subject, object, verb } = currentSentence;
+
+            if (!subject || !object || !verb) {
+                speakText("카드를 세 개 모두 선택해주세요!");
+                return;
+            }
+
+            const fullText = `${subject.label} ${object.label} ${verb.label}`;
+            speakText(fullText);
+
+            // 보상 부여 및 학습 로그 등록
+            setTimeout(() => {
+                triggerReward(fullText);
+            }, 1200);
+        }
+
+        /* ==========================================================
+           5. 보상 및 스티커 시스템
+           ========================================================== */
+        const rewardStickersList = ['🚗', '🦖', '🐶', '🐱', '🚀', '🦁', '🍎', '⭐', '🎈', '🤖'];
+
+        function triggerReward(sentenceText) {
+            playSound('success');
+
+            // 새 스티커 뽑기
+            const randomSticker = rewardStickersList[Math.floor(Math.random() * rewardStickersList.length)];
+            
+            if (!appState.stickers.includes(randomSticker)) {
+                appState.stickers.push(randomSticker);
+            }
+
+            appState.completedCount += 1;
+            appState.logs.unshift({
+                text: sentenceText,
+                date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            });
+
+            saveStateToDB();
+            updateUIStats();
+            renderStickerPalette();
+
+            // 모달 표시
+            document.getElementById('reward-emoji-display').innerText = randomSticker;
+            document.getElementById('reward-name-display').innerText = `"${randomSticker}" 스티커를 받았어요!`;
+            document.getElementById('reward-modal').classList.add('active');
+        }
+
+        function closeRewardModal() {
+            playSound('click');
+            document.getElementById('reward-modal').classList.remove('active');
+            switchTab('sticker-tab');
+        }
+
+        /* ==========================================================
+           6. 스티커북 HTML5 Canvas 드로잉 및 배치
+           ========================================================== */
+        let canvas, ctx;
+        let placedStickers = [];
+
+        function initCanvas() {
+            canvas = document.getElementById('sticker-canvas');
+            ctx = canvas.getContext('2d');
+
+            // 캔버스 레티나/고해상도 대응
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+
+            renderStickerCanvas();
+
+            // 이벤트 리스너 (터치/클릭)
+            canvas.addEventListener('pointerdown', handleCanvasClick);
+        }
+
+        function handleCanvasClick(e) {
+            if (!appState.selectedSticker) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            placedStickers.push({
+                emoji: appState.selectedSticker,
+                x: x,
+                y: y
+            });
+
+            playSound('click');
+            renderStickerCanvas();
+        }
+
+        function renderStickerCanvas() {
+            if (!ctx) return;
+            // 배경 지우기
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 간단한 안내 배경 그리기
+            ctx.fillStyle = "#FAFAFA";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 스티커 그리기
+            ctx.font = '40px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            placedStickers.forEach(stk => {
+                ctx.fillText(stk.emoji, stk.x, stk.y);
+            });
+        }
+
+        function clearCanvas() {
+            playSound('click');
+            placedStickers = [];
+            renderStickerCanvas();
+        }
+
+        function renderStickerPalette() {
+            const palette = document.getElementById('sticker-palette');
+            palette.innerHTML = '';
+
+            appState.stickers.forEach(stk => {
+                const item = document.createElement('div');
+                item.className = `sticker-item ${appState.selectedSticker === stk ? 'selected' : ''}`;
+                item.innerText = stk;
+                item.onclick = () => {
+                    playSound('click');
+                    appState.selectedSticker = stk;
+                    renderStickerPalette();
+                };
+                palette.appendChild(item);
+            });
+        }
+
+        /* ==========================================================
+           7. 보호자 대시보드 및 커스텀 단어 등록
+           ========================================================== */
+        function updateUIStats() {
+            document.getElementById('header-sticker-count').innerText = appState.stickers.length;
+            document.getElementById('stat-sentences').innerText = `${appState.completedCount}회`;
+            document.getElementById('stat-stickers').innerText = `${appState.stickers.length}개`;
+
+            // 로그 업데이트
+            const logContainer = document.getElementById('log-list');
+            logContainer.innerHTML = '';
+            
+            if (appState.logs.length === 0) {
+                logContainer.innerHTML = '<div class="log-item">아직 학습 기록이 없습니다.</div>';
+            } else {
+                appState.logs.forEach(log => {
+                    const item = document.createElement('div');
+                    item.className = 'log-item';
+                    item.innerHTML = `<span>${log.text}</span><span style="color:#888;">${log.date}</span>`;
+                    logContainer.appendChild(item);
+                });
+            }
+        }
+
+        function addCustomWord(e) {
+            e.preventDefault();
+            const category = document.getElementById('word-category').value;
+            const label = document.getElementById('word-label').value.trim();
+            const emoji = document.getElementById('word-emoji').value.trim();
+
+            if (!label || !emoji) return;
+
+            const newWord = {
+                id: 'custom_' + Date.now(),
+                category: category,
+                label: label,
+                emoji: emoji
+            };
+
+            wordsData[category].push(newWord);
+
+            // IndexedDB에 저장
+            if (db) {
+                const tx = db.transaction('customWords', 'readwrite');
+                tx.objectStore('customWords').put(newWord);
+            }
+
+            // UI 업데이트 및 초기화
+            renderAACCards();
+            document.getElementById('word-label').value = '';
+            document.getElementById('word-emoji').value = '';
+            playSound('success');
+            alert('새로운 단어 카드가 등록되었습니다!');
+        }
+
+        /* ==========================================================
+           8. 탭 전환 관리
+           ========================================================== */
+        function switchTab(tabId) {
+            playSound('click');
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+            event.currentTarget.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+
+            if (tabId === 'sticker-tab') {
+                setTimeout(initCanvas, 100);
+            }
+        }
+
+        /* ==========================================================
+           9. 앱 초기화
+           ========================================================== */
+        window.onload = async () => {
+            await initDB();
+            renderAACCards();
+            renderStickerPalette();
+            updateUIStats();
+            initSpeechRecognition();
+
+            // 윈도우 리사이즈 시 캔버스 조정
+            window.addEventListener('resize', () => {
+                if (canvas) {
+                    const rect = canvas.parentElement.getBoundingClientRect();
+                    canvas.width = rect.width;
+                    canvas.height = rect.height;
+                    renderStickerCanvas();
+                }
+            });
+        };
+    </script>
+</body>
+</html>
