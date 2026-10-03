@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NES Emulator (Sound & Keyboard Support)</title>
+    <!-- 검증된 JSNES 코어 라이브러리 로드 -->
+    <script src="https://unpkg.com/jsnes/dist/jsnes.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #0d0e15;
+            --panel-bg: #1a1d28;
+            --accent-color: #e50914;
+            --text-color: #ffffff;
+            --text-dim: #9aa0a6;
+            --border-color: #2a2e3d;
+        }
+
+        * { box-sizing: border-box; user-select: none; margin: 0; padding: 0; }
+        body {
+            background-color: var(--bg-color); color: var(--text-color);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            display: flex; justify-content: center; align-items: flex-start;
+            min-height: 100vh; padding: 12px;
+        }
+
+        .container { width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 10px; }
+        .header {
+            display: flex; justify-content: space-between; align-items: center;
+            background: var(--panel-bg); padding: 10px 14px; border-radius: 10px;
+            border: 1px solid var(--border-color);
+        }
+        .title { font-weight: 800; font-size: 1.1rem; color: var(--accent-color); }
+        .scale-btns { display: flex; gap: 4px; }
+        .btn-s {
+            background: #282c3c; border: none; color: var(--text-dim);
+            padding: 4px 8px; border-radius: 4px; font-weight: bold; cursor: pointer;
+        }
+        .btn-s.active { background: var(--accent-color); color: #fff; }
+
+        .screen-wrapper {
+            background: #000; border-radius: 10px; overflow: hidden;
+            border: 2px solid var(--border-color); width: 100%; aspect-ratio: 256/240;
+            display: flex; justify-content: center; align-items: center; position: relative;
+        }
+        canvas { width: 100%; height: 100%; image-rendering: pixelated; display: block; }
+
+        .overlay {
+            position: absolute; top:0; left:0; right:0; bottom:0;
+            background: rgba(0,0,0,0.85); display: flex; flex-direction: column;
+            justify-content: center; align-items: center; gap: 10px; cursor: pointer;
+            font-weight: bold; color: #fff; text-align: center; padding: 20px;
+        }
+
+        .panel {
+            background: var(--panel-bg); border-radius: 10px; padding: 12px;
+            border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 8px;
+        }
+        .btn-row { display: flex; gap: 6px; }
+        .btn {
+            background: #282c3c; color: #fff; border: none; padding: 10px 12px;
+            border-radius: 6px; font-weight: bold; font-size: 0.85rem; cursor: pointer;
+            flex: 1; text-align: center;
+        }
+        .btn-red { background: var(--accent-color); }
+
+        .info-table {
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px;
+            font-size: 0.8rem; color: var(--text-dim); background: rgba(0,0,0,0.2);
+            padding: 8px; border-radius: 6px;
+        }
+        .info-table span { color: #fff; font-weight: bold; }
+
+        .key-guide {
+            font-size: 0.75rem; color: var(--text-dim); text-align: center;
+            background: rgba(0,0,0,0.3); padding: 6px; border-radius: 6px;
+        }
+
+        .pad-container { display: flex; flex-direction: column; gap: 12px; padding: 10px 0; }
+        .pad-main { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        
+        .dpad { display: grid; grid-template-columns: repeat(3, 38px); grid-template-rows: repeat(3, 38px); gap: 4px; justify-content: center; }
+        .btn-d { background: #282c3c; border-radius: 6px; border: none; color: white; font-weight: bold; }
+        .btn-d:active { background: var(--accent-color); }
+        
+        .action-btns { display: flex; gap: 10px; align-items: center; justify-content: center; }
+        .btn-round { width: 48px; height: 48px; border-radius: 50%; background: #282c3c; border: none; color: white; font-weight: bold; }
+        .btn-round:active { background: var(--accent-color); }
+
+        .center-btns { display: flex; justify-content: center; gap: 12px; }
+        .btn-pill {
+            background: #282c3c; color: #fff; border: none; padding: 8px 18px;
+            border-radius: 16px; font-weight: bold; font-size: 0.75rem; cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        .btn-pill:active { background: var(--accent-color); }
+
+        input[type="file"] { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <div class="title">🎮 NES Emulator</div>
+        <div class="scale-btns">
+            <button class="btn-s active" onclick="setScale(1)">1x</button>
+            <button class="btn-s" onclick="setScale(2)">2x</button>
+            <button class="btn-s" onclick="setScale(3)">3x</button>
+            <button class="btn-s" onclick="toggleFS()">📺</button>
+        </div>
+    </div>
+
+    <div class="screen-wrapper" id="screenWrap">
+        <canvas id="nesCanvas" width="256" height="240"></canvas>
+        <div class="overlay" id="touchOverlay" onclick="startAudioAndEmulator()">
+            <span>👆 화면을 터치하여 실행</span>
+            <span style="font-size: 0.8rem; color: #aaa;">(오디오 및 게임 엔진 활성화)</span>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="btn-row">
+            <button class="btn btn-red" onclick="document.getElementById('fileInput').click()">📁 ROM 열기</button>
+            <button class="btn" onclick="togglePause()" id="pauseBtn">⏸ Pause</button>
+            <button class="btn" onclick="resetNES()">🔄 Reset</button>
+        </div>
+        <div class="btn-row">
+            <button class="btn" onclick="saveState()">💾 Save State</button>
+            <button class="btn" onclick="loadState()">📂 Load State</button>
+        </div>
+        <input type="file" id="fileInput" accept=".nes" onchange="handleFile(this.files[0])">
+    </div>
+
+    <div class="panel">
+        <div class="info-table">
+            <div>ROM: <span id="romName">None</span></div>
+            <div>Mapper: <span id="mapperId">-</span></div>
+            <div>PRG Size: <span id="prgSize">-</span></div>
+            <div>CHR Size: <span id="chrSize">-</span></div>
+            <div>Audio: <span id="audioStatus">Ready</span></div>
+            <div>Status: <span id="emuStatus">Ready</span></div>
+        </div>
+        <div class="key-guide">
+            ⌨️ 키보드: 방향키(이동) | Z(A) | X(B) | Shift(Select) | Enter(Start)
+        </div>
+    </div>
+
+    <!-- 터치 패드 -->
+    <div class="panel pad-container">
+        <div class="pad-main">
+            <div class="dpad">
+                <div></div><button class="btn-d" id="btn-up">▲</button><div></div>
+                <button class="btn-d" id="btn-left">◀</button><div></div><button class="btn-d" id="btn-right">▶</button>
+                <div></div><button class="btn-d" id="btn-down">▼</button><div></div>
+            </div>
+            <div class="action-btns">
+                <button class="btn-round" id="btn-b">B</button>
+                <button class="btn-round" id="btn-a">A</button>
+            </div>
+        </div>
+        <div class="center-btns">
+            <button class="btn-pill" id="btn-select">SELECT</button>
+            <button class="btn-pill" id="btn-start">START</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// Canvas & Image Context Setup
+const canvas = document.getElementById('nesCanvas');
+const ctx = canvas.getContext('2d', { willReadFrequently: true });
+const imgData = ctx.createImageData(256, 240);
+const buf32 = new Uint32Array(imgData.data.buffer);
+
+let audioCtx = null;
+let scriptNode = null;
+let audioBuffer = [];
+const AUDIO_BUFFER_SIZE = 4096;
+
+let isStarted = false, isPaused = false, romLoaded = false;
+let romRawData = null;
+
+// Audio System Setup
+function initAudio() {
+    if (audioCtx) return;
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    audioCtx = new AudioContext();
+    
+    // ScriptProcessor Node for Realtime Audio Stream
+    scriptNode = audioCtx.createScriptProcessor(AUDIO_BUFFER_SIZE, 0, 2);
+    scriptNode.onaudioprocess = function(e) {
+        const left = e.outputBuffer.getChannelData(0);
+        const right = e.outputBuffer.getChannelData(1);
+        
+        for (let i = 0; i < AUDIO_BUFFER_SIZE; i++) {
+            if (audioBuffer.length >= 2) {
+                left[i] = audioBuffer.shift();
+                right[i] = audioBuffer.shift();
+            } else {
+                left[i] = 0;
+                right[i] = 0;
+            }
+        }
+    };
+    
+    scriptNode.connect(audioCtx.destination);
+    document.getElementById('audioStatus').innerText = 'Enabled';
+}
+
+// JSNES Core Setup
+const nes = new jsnes.NES({
+    onFrame: function(frameBuffer) {
+        for (let i = 0; i < 256 * 240; i++) {
+            buf32[i] = 0xFF000000 | frameBuffer[i];
+        }
+        ctx.putImageData(imgData, 0, 0);
+    },
+    onAudioSample: function(left, right) {
+        if (audioBuffer.length < AUDIO_BUFFER_SIZE * 4) {
+            audioBuffer.push(left);
+            audioBuffer.push(right);
+        }
+    }
+});
+
+function startAudioAndEmulator() {
+    initAudio();
+    if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+    document.getElementById('touchOverlay').style.display = 'none';
+    isStarted = true;
+    document.getElementById('emuStatus').innerText = romLoaded ? 'Running' : 'Ready';
+}
+
+function handleFile(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const bytes = new Uint8Array(e.target.result);
+        if (bytes[0] !== 0x4E || bytes[1] !== 0x45 || bytes[2] !== 0x53 || bytes[3] !== 0x1A) {
+            alert('유효한 iNES ROM 파일이 아닙니다.');
+            return;
+        }
+
+        let prgBanks = bytes[4];
+        let chrBanks = bytes[5];
+        let mapper = (bytes[6] >> 4) | (bytes[7] & 0xF0);
+
+        let binaryStr = "";
+        for (let i = 0; i < bytes.length; i++) {
+            binaryStr += String.fromCharCode(bytes[i]);
+        }
+        romRawData = binaryStr;
+
+        document.getElementById('romName').innerText = file.name;
+        document.getElementById('mapperId').innerText = mapper;
+        document.getElementById('prgSize').innerText = (prgBanks * 16) + ' KB';
+        document.getElementById('chrSize').innerText = (chrBanks * 8) + ' KB';
+
+        romLoaded = true;
+        resetNES();
+        if (isStarted) startLoop();
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+function resetNES() {
+    if (romLoaded && romRawData) {
+        audioBuffer = [];
+        nes.loadROM(romRawData);
+        document.getElementById('emuStatus').innerText = 'Running';
+    }
+}
+
+let animId = null;
+function startLoop() {
+    if (animId) cancelAnimationFrame(animId);
+    function loop() {
+        if (romLoaded && !isPaused && isStarted) {
+            nes.frame();
+        }
+        animId = requestAnimationFrame(loop);
+    }
+    animId = requestAnimationFrame(loop);
+}
+
+function togglePause() {
+    isPaused = !isPaused;
+    document.getElementById('pauseBtn').innerText = isPaused ? '▶ Play' : '⏸ Pause';
+    document.getElementById('emuStatus').innerText = isPaused ? 'Paused' : 'Running';
+}
+
+function setScale(sc) {
+    document.querySelectorAll('.btn-s').forEach((b, i) => {
+        if (i + 1 === sc) b.classList.add('active');
+        else b.classList.remove('active');
+    });
+    const wrap = document.getElementById('screenWrap');
+    wrap.style.width = (256 * sc) + 'px';
+    wrap.style.height = (240 * sc) + 'px';
+}
+
+function toggleFS() {
+    const wrap = document.getElementById('screenWrap');
+    if (!document.fullscreenElement) wrap.requestFullscreen().catch(e => alert(e.message));
+    else document.exitFullscreen();
+}
+
+function saveState() {
+    if (!romLoaded) return;
+    localStorage.setItem('nes_jsnes_state', JSON.stringify(nes.toJSON()));
+    alert('상태가 저장되었습니다.');
+}
+
+function loadState() {
+    let d = localStorage.getItem('nes_jsnes_state');
+    if (d) {
+        nes.fromJSON(JSON.parse(d));
+        alert('상태를 불러왔습니다.');
+    } else alert('저장된 데이터가 없습니다.');
+}
+
+// Controller Button Codes Mapping
+const jsnesKeys = {
+    0: jsnes.Controller.BUTTON_RIGHT,
+    1: jsnes.Controller.BUTTON_LEFT,
+    2: jsnes.Controller.BUTTON_DOWN,
+    3: jsnes.Controller.BUTTON_UP,
+    4: jsnes.Controller.BUTTON_START,
+    5: jsnes.Controller.BUTTON_SELECT,
+    6: jsnes.Controller.BUTTON_B,
+    7: jsnes.Controller.BUTTON_A
+};
+
+// Keyboard Mapping
+const keyMap = {
+    'ArrowRight': 0,
+    'ArrowLeft': 1,
+    'ArrowDown': 2,
+    'ArrowUp': 3,
+    'Enter': 4,
+    'Shift': 5,
+    'x': 6, 'X': 6,
+    'z': 7, 'Z': 7
+};
+
+window.addEventListener('keydown', e => {
+    if (keyMap[e.key] !== undefined) {
+        e.preventDefault();
+        if (!isStarted) startAudioAndEmulator();
+        nes.buttonDown(1, jsnesKeys[keyMap[e.key]]);
+    }
+});
+
+window.addEventListener('keyup', e => {
+    if (keyMap[e.key] !== undefined) {
+        e.preventDefault();
+        nes.buttonUp(1, jsnesKeys[keyMap[e.key]]);
+    }
+});
+
+function bindBtn(id, btnCode) {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    
+    const press = (e) => {
+        e.preventDefault();
+        if (!isStarted) startAudioAndEmulator();
+        nes.buttonDown(1, jsnesKeys[btnCode]);
+    };
+    
+    const release = (e) => {
+        e.preventDefault();
+        nes.buttonUp(1, jsnesKeys[btnCode]);
+    };
+
+    btn.addEventListener('touchstart', press);
+    btn.addEventListener('touchend', release);
+    btn.addEventListener('mousedown', press);
+    btn.addEventListener('mouseup', release);
+}
+
+bindBtn('btn-up', 3); bindBtn('btn-down', 2); bindBtn('btn-left', 1); bindBtn('btn-right', 0);
+bindBtn('btn-a', 7); bindBtn('btn-b', 6);
+bindBtn('btn-select', 5); bindBtn('btn-start', 4);
+</script>
+</body>
+</html>
