@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, maximum-scale=1.0,-scalable=no">
+    <title>냠냠 과일 받기 🍎</title>
+    <style>
+        :root {
+            --bg-color: #e0f7fa;
+            --primary-color: #ffeb3b;
+            --accent-color: #ff5722;
+            --text-color: #333;
+            --powerup-color: #4caf50;
+            --shop-bg: #fff9c4;
+            --learn-color: #ce93d8;
+            --fever-color: #ff00ff;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Nanum Gothic', 'Malgun Gothic', sans-serif;
+            background-color: var(--bg-color);
+            -select: none;
+            -webkit--select: none;
+            touch-action: none;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas {
+            display: block;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            cursor: none;
+        }
+
+        #hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 15px 20px;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        .stats-group {
+            display: flex;
+            gap: 10px;
+            pointer-events: none;
+        }
+
+        .stat-box {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 8px 15px;
+            border-radius: 20px;
+            border: 3px solid #fff;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #333;
+            text-shadow: 1px 1px 2px white;
+            white-space: nowrap;
+        }
+
+        #sound-toggle {
+            pointer-events: auto;
+            width: 45px;
+            height: 45px;
+            font-size: 1.2rem;
+            background: white;
+            border-radius: 50%;
+            border: 3px solid #ccc;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        /* 피버 게이지 스타일 */
+        #fever-container {
+            position: absolute;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 250px;
+            height: 15px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            border: 2px solid white;
+            overflow: hidden;
+            z-index: 100;
+        }
+
+        #fever-bar {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(to right, #ff00ff, #ffeb3b);
+            transition: width 0.2s ease-out;
+        }
+
+        #quiz-container {
+            position: absolute;
+            top: 95px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px 30px;
+            border-radius: 50px;
+            border: 4px solid var(--learn-color);
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #6a1b9a;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            z-index: 100;
+            pointer-events: none;
+            display: none;
+        }
+
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.6);
+            color: white;
+            z-index: 110;
+            text-align: center;
+        }
+
+        .hidden { display: none !important; }
+
+        h1 { font-size: 3rem; margin-bottom: 1rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+        p { font-size: 1.2rem; margin-bottom: 2rem; line-height: 1.6; }
+
+        .btn {
+            padding: 15px 40px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #333;
+            background-color: var(--primary-color);
+            border: 5px solid #fbc02d;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin: 10px;
+        }
+
+        .btn:hover { transform: scale(1.1); }
+        .btn-learn { background-color: var(--learn-color); color: white; border-color: #ab47bc; }
+
+        #shop-overlay { background-color: var(--shop-bg); color: #333; z-index: 120; }
+        .shop-header { font-size: 2rem; font-weight: bold; margin-bottom: 10px; color: #f57c00; }
+        .total-points-display { font-size: 1.5rem; margin-bottom: 20px; background: #fff; padding: 10px 20px; border-radius: 30px; border: 3px solid #ffe082; font-weight: bold; }
+        .basket-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; max-width: 500px; margin-bottom: 30px; }
+        .basket-item { background: white; padding: 15px; border-radius: 20px; border: 4px solid #ddd; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+        .basket-item.owned { border-color: #4caf50; }
+        .basket-item.equipped { border-color: #2196f3; background-color: #e3f2fd; box-shadow: 0 0 10px #2196f3; }
+        .basket-icon { font-size: 3rem; }
+        .basket-price { font-weight: bold; color: #666; }
+        .shop-btn { padding: 8px 20px; font-size: 1rem; border-radius: 20px; border: none; cursor: pointer; font-weight: bold; }
+        .buy-btn { background: #ffeb3b; color: #333; }
+        .equip-btn { background: #2196f3; color: white; }
+
+        #powerup-bar-container {
+            position: absolute;
+            top: 160px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 20px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            border: 2px solid white;
+            overflow: hidden;
+            z-index: 5;
+        }
+
+        #powerup-bar-fill { width: 0%; height: 100%; background: var(--powerup-color); }
+        #powerup-name { position: absolute; top: 185px; left: 50%; transform: translateX(-50%); color: white; font-weight: bold; text-shadow: 1px 1px 2px black; z-index: 5; }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <div id="hud" class="hidden">
+            <div class="stats-group">
+                <div class="stat-box">점수: <span id="score">0</span></div>
+                <div class="stat-box">생명: <span id="lives">❤️❤️❤️</span></div>
+            </div>
+            <button id="sound-toggle" onclick="audio.toggle()">🔊</button>
+        </div>
+
+        <div id="fever-container" class="hidden">
+            <div id="fever-bar"></div>
+        </div>
+
+        <div id="quiz-container"></div>
+
+        <div id="powerup-bar-container" class="hidden">
+            <div id="powerup-bar-fill"></div>
+        </div>
+        <div id="powerup-name" class="hidden"></div>
+
+        <div id="start-screen" class="overlay">
+            <h1>🍎 냠냠 과일 받기 🍌</h1>
+            <p>과일을 연속으로 받으면 콤보가 쌓여요!<br>게이지가 가득 차면 화려한 <b>피버 타임</b> 시작!</p>
+            <button class="btn" onclick="game.start('fun')">신나게 놀기!</button>
+            <button class="btn btn-learn" onclick="game.start('learn')">똑똑하게 배우기!</button>
+            <button class="btn" style="background: #fff; border-color: #ccc;" onclick="shop.open()">바구니 꾸미기 🧺</button>
+        </div>
+
+        <div id="shop-overlay" class="overlay hidden">
+            <div class="shop-header">✨ 바구니 상점 ✨</div>
+            <div class="total-points-display">나의 총 점수: <span id="total-points">0</span>점</div>
+            <div class="basket-list" id="basket-list"></div>
+            <button class="btn" onclick="shop.close()">돌아가기</button>
+        </div>
+
+        <div id="game-over-screen" class="overlay hidden">
+            <h1>게임 끝! 😢</h1>
+            <p id="final-result">최종 점수: 0점</p>
+            <p id="high-score-text">최고 점수: 0점</p>
+            <button class="btn" onclick="game.start('fun')">다시 도전!</button>
+        </div>
+
+        <canvas id="gameCanvas"></canvas>
+    </div>
+
+    <script>
+        /**
+         * Audio System
+         */
+        const audio = {
+            ctx: null, enabled: true,
+            init() { if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); },
+            toggle() { this.enabled = !this.enabled; document.getElementById('sound-toggle').innerText = this.enabled ? '🔊' : '🔇'; },
+            play(type) {
+                if (!this.enabled || !this.ctx) return;
+                if (this.ctx.state === 'suspended') this.ctx.resume();
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain); gain.connect(this.ctx.destination);
+                const now = this.ctx.currentTime;
+                if (type === 'fruit') {
+                    osc.type = 'sine'; osc.frequency.setValueAtTime(400, now); osc.frequency.exponentialRampToValueAtTime(800, now + 0.1);
+                    gain.gain.setValueAtTime(0.3, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                    osc.start(); osc.stop(now + 0.1);
+                } else if (type === 'bomb') {
+                    osc.type = 'sawtooth'; osc.frequency.setValueAtTime(200, now); osc.frequency.exponentialRampToValueAtTime(40, now + 0.3);
+                    gain.gain.setValueAtTime(0.5, now); gain.gain.linearRampToValueAtTime(0, now + 0.3);
+                    osc.start(); osc.stop(now + 0.3);
+                } else if (type === 'powerup') {
+                    osc.type = 'triangle'; osc.frequency.setValueAtTime(523, now); osc.frequency.setValueAtTime(1046, now + 0.3);
+                    gain.gain.setValueAtTime(0.2, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                    osc.start(); osc.stop(now + 0.4);
+                } else if (type === 'fever') {
+                    osc.type = 'square'; osc.frequency.setValueAtTime(440, now); osc.frequency.setValueAtTime(880, now + 0.1); osc.frequency.setValueAtTime(1320, now + 0.2);
+                    gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    osc.start(); osc.stop(now + 0.3);
+                }
+            }
+        };
+
+        /**
+         * Quiz Manager
+         */
+        const quizManager = {
+            words: [
+                {word: '사과', blank: '사_과', answer: '과'}, {word: '포도', blank: '포_ ', answer: '도'},
+                {word: '나비', blank: '나_ ', answer: '비'}, {word: '우유', blank: '우_ ', answer: '유'},
+                {word: '기차', blank: '기_ ', answer: '차'}, {word: '오이', blank: '오_ ', answer: '이'},
+                {word: '하늘', blank: '하_ ', answer: '늘'}, {word: '바다', blank: '바_ ', answer: '다'},
+            ],
+            currentQuiz: null,
+            generate() {
+                if (Math.random() < 0.5) {
+                    const a = Math.floor(Math.random() * 5) + 1;
+                    const b = Math.floor(Math.random() * 5) + 1;
+                    this.currentQuiz = { question: `${a} + ${b} = ?`, answer: (a + b).toString(), type: 'math' };
+                } else {
+                    const item = this.words[Math.floor(Math.random() * this.words.length)];
+                    this.currentQuiz = { question: item.blank, answer: item.answer, type: 'lang' };
+                }
+                document.getElementById('quiz-container').innerText = this.currentQuiz.question;
+            }
+        };
+
+        /**
+         * IndexedDB Manager
+         */
+        const DB_NAME = 'FruitGameDB_V8';
+        const STORE_NAME = 'gameData';
+        const dbManager = {
+            db: null,
+            async init() {
+                return new Promise((resolve) => {
+                    const request = indexedDB.open(DB_NAME, 1);
+                    request.onupgradeneeded = (e) => {
+                        const db = e.target.result;
+                        if (!db.objectStoreNames.contains(STORE_NAME)) db.createObjectStore(STORE_NAME);
+                    };
+                    request.onsuccess = (e) => { this.db = e.target.result; resolve(); };
+                });
+            },
+            async save(key, value) {
+                const tx = this.db.transaction(STORE_NAME, 'readwrite');
+                tx.objectStore(STORE_NAME).put(value, key);
+            },
+            async get(key) {
+                return new Promise((resolve) => {
+                    const tx = this.db.transaction(STORE_NAME, 'readonly');
+                    const request = tx.objectStore(STORE_NAME).get(key);
+                    request.onsuccess = () => resolve(request.result);
+                });
+            }
+        };
+
+        /**
+         * Shop System
+         */
+        const BASKETS = [
+            { id: 'b1', icon: '🧺', price: 0, name: '기본 바구니' },
+            { id: 'b2', icon: '🛒', price: 500, name: '쇼핑 카트' },
+            { id: 'b3', icon: '🎁', price: 1000, name: '선물 상자' },
+            { id: 'b4', icon: '💎', price: 5000, name: '보석 상자' },
+            { id: 'b5', icon: '🏆', price: 10000, name: '우승 트로피' },
+        ];
+
+        const shop = {
+            totalPoints: 0, inventory: ['b1'], equipped: 'b1',
+            async load() {
+                this.totalPoints = (await dbManager.get('totalPoints')) || 0;
+                this.inventory = (await dbManager.get('inventory')) || ['b1'];
+                this.equipped = (await dbManager.get('equipped')) || 'b1';
+            },
+            async save() {
+                await dbManager.save('totalPoints', this.totalPoints);
+                await dbManager.save('inventory', this.inventory);
+                await dbManager.save('equipped', this.equipped);
+            },
+            open() {
+                document.getElementById('start-screen').classList.add('hidden');
+                document.getElementById('shop-overlay').classList.remove('hidden');
+                this.render();
+            },
+            close() {
+                document.getElementById('shop-overlay').classList.add('hidden');
+                document.getElementById('start-screen').classList.remove('hidden');
+            },
+            async buy(id, price) {
+                if (this.totalPoints >= price && !this.inventory.includes(id)) {
+                    this.totalPoints -= price; this.inventory.push(id);
+                    await this.save(); this.render();
+                } else { alert("점수가 부족해요! 과일을 더 많이 모아보세요! 🍎"); }
+            },
+            async equip(id) { this.equipped = id; await this.save(); this.render(); },
+            render() {
+                document.getElementById('total-points').innerText = this.totalPoints;
+                const list = document.getElementById('basket-list');
+                list.innerHTML = '';
+                BASKETS.forEach(b => {
+                    const isOwned = this.inventory.includes(b.id);
+                    const isEquipped = this.equipped === b.id;
+                    const item = document.createElement('div');
+                    item.className = `basket-item ${isOwned ? 'owned' : ''} ${isEquipped ? 'equipped' : ''}`;
+                    item.innerHTML = `
+                        <div class="basket-icon">${b.icon}</div>
+                        <div style="font-weight:bold">${b.name}</div>
+                        <div class="basket-price">${b.price === 0 ? '무료' : b.price + '점'}</div>
+                        ${isOwned ? `<button class="shop-btn equip-btn" onclick="shop.equip('${b.id}')">${isEquipped ? '장착 중' : '장착하기'}</button>` : `<button class="shop-btn buy-btn" onclick="shop.buy('${b.id}', ${b.price})">구매하기</button>`}
+                    `;
+                    list.appendChild(item);
+                });
+            }
+        };
+
+        /**
+         * Particle System
+         */
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x; this.y = y; this.color = color;
+                this.size = Math.random() * 5 + 2;
+                this.vx = (Math.random() - 0.5) * 10; this.vy = (Math.random() - 0.5) * 10;
+                this.alpha = 1; this.decay = Math.random() * 0.02 + 0.02;
+            }
+            update() { this.x += this.vx; this.y += this.vy; this.alpha -= this.decay; }
+            draw(ctx) {
+                ctx.save(); ctx.globalAlpha = this.alpha; ctx.fillStyle = this.color;
+                ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+            }
+        }
+
+        const game = {
+            canvas: document.getElementById('gameCanvas'),
+            ctx: null, width: 0, height: 0, score: 0, lives: 3, isPlaying: false,
+            mode: 'fun', items: [], particles: [],
+            basket: { x: 0, y: 0, w: 100, h: 60, originalW: 100 },
+            lastSpawnTime: 0, spawnInterval: 1200, difficultyMultiplier: 1, shakeTime: 0,
+            activePowerUp: null, powerUpTimer: 0, powerUpMaxDuration: 7000, timeScale: 1,
+            
+            // [신규] 심화 시스템 상태
+            combo: 0,
+            feverGauge: 0,
+            isFever: false,
+            feverTimer: 0,
+            stage: 1,
+
+            init() {
+                this.ctx = this.canvas.getContext('2d');
+                this.resize();
+                window.addEventListener('resize', () => this.resize());
+                window.addEventListener('mousemove', (e) => this.updateBasketPos(e.clientX));
+                window.addEventListener('touchmove', (e) => {
+                    e.preventDefault(); this.updateBasketPos(e.touches[0].clientX);
+                }, { passive: false });
+                dbManager.init().then(async () => { await shop.load(); });
+            },
+
+            resize() {
+                this.width = window.innerWidth; this.height = window.innerHeight;
+                this.canvas.width = this.width; this.canvas.height = this.height;
+                this.basket.y = this.height - 80;
+            },
+
+            updateBasketPos(clientX) {
+                const rect = this.canvas.getBoundingClientRect();
+                const rootX = clientX - rect.left;
+                this.basket.x = rootX - this.basket.w / 2;
+                if (this.basket.x < 0) this.basket.x = 0;
+                if (this.basket.x + this.basket.w > this.width) this.basket.x = this.width - this.basket.w;
+            },
+
+            async start(selectedMode) {
+                audio.init();
+                this.mode = selectedMode;
+                this.score = 0; this.lives = 3; this.items = []; this.particles = [];
+                this.spawnInterval = 1200; this.difficultyMultiplier = 1;
+                this.activePowerUp = null; this.powerUpTimer = 0; this.timeScale = 1;
+                this.shakeTime = 0; this.basket.w = this.basket.originalW;
+                this.isPlaying = true;
+                
+                // 심화 시스템 초기화
+                this.combo = 0; this.feverGauge = 0; this.isFever = false; this.feverTimer = 0; this.stage = 1;
+
+                document.getElementById('start-screen').classList.add('hidden');
+                document.getElementById('game-over-screen').classList.add('hidden');
+                document.getElementById('shop-overlay').classList.add('hidden');
+                document.getElementById('hud').classList.remove('hidden');
+                document.getElementById('fever-container').classList.remove('hidden');
+                document.getElementById('powerup-bar-container').classList.add('hidden');
+                document.getElementById('powerup-name').classList.add('hidden');
+                
+                const quizDiv = document.getElementById('quiz-container');
+                if (this.mode === 'learn') { quizDiv.style.display = 'block'; quizManager.generate(); } 
+                else { quizDiv.style.display = 'none'; }
+
+                this.updateHUD();
+                this.loop();
+            },
+
+            updateHUD() {
+                document.getElementById('score').innerText = this.score;
+                document.getElementById('lives').innerText = '❤️'.repeat(this.lives);
+                document.getElementById('fever-bar').style.width = this.feverGauge + '%';
+            },
+
+            createParticles(x, y, color) {
+                for (let i = 0; i < 12; i++) this.particles.push(new Particle(x, y, color));
+            },
+
+            applyPowerUp(type) {
+                audio.play('powerup');
+                this.activePowerUp = type; this.powerUpTimer = this.powerUpMaxDuration;
+                const bar = document.getElementById('powerup-bar-container');
+                const fill = document.getElementById('powerup-bar-fill');
+                const name = document.getElementById('powerup-name');
+                bar.classList.remove('hidden'); name.classList.remove('hidden');
+                if (type === 'magnet') { name.innerText = "🧲 자석 모드!"; fill.style.backgroundColor = "#2196f3"; }
+                else if (type === 'giant') { name.innerText = "📦 거대 바구니!"; fill.style.backgroundColor = "#ff9800"; this.basket.w = this.basket.originalW * 2; }
+                else if (type === 'slow') { name.innerText = "❄️ 슬로우 모드!"; fill.style.backgroundColor = "#00bcd4"; this.timeScale = 0.5; }
+            },
+
+            removePowerUp() {
+                if (this.activePowerUp === 'giant') this.basket.w = this.basket.originalW;
+                if (this.activePowerUp === 'slow') this.timeScale = 1;
+                this.activePowerUp = null; this.powerUpTimer = 0;
+                document.getElementById('powerup-bar-container').classList.add('hidden');
+                document.getElementById('powerup-name').classList.add('hidden');
+            },
+
+            spawnItem() {
+                const types = [
+                    { emoji: '🍎', score: 10, type: 'fruit', color: '#ff4d4d' },
+                    { emoji: '🍌', score: 10, type: 'fruit', color: '#ffeb3b' },
+                    { emoji: '🍇', score: 10, type: 'fruit', color: '#9c27b0' },
+                    { emoji: '🍊', score: 10, type: 'fruit', color: '#ff9800' },
+                    { emoji: '🌟', score: 50, type: 'gold', color: '#ffd700' },
+                    { emoji: '💣', score: 0, type: 'bomb', color: '#333' },
+                    { emoji: '🧲', score: 0, type: 'power_magnet', color: '#2196f3' },
+                    { emoji: '📦', score: 0, type: 'power_giant', color: '#795548' },
+                    { emoji: '❄️', score: 0, type: 'power_slow', color: '#b2ebf2' },
+                ];
+                
+                const rand = Math.random();
+                let itemData;
+
+                if (this.isFever) {
+                    // [핵심] 피버 모드: 폭탄 제거, 황금 과일/파워업 빈도 대폭 상승
+                    if (rand < 0.5) itemData = types[Math.floor(Math.random() * 4)]; // 일반 과일
+                    else if (rand < 0.8) itemData = types[4]; // 황금 과일
+                    else itemData = types[6 + Math.floor(Math.random() * 3)]; // 파워업
+                } else {
+                    if (rand < 0.60) itemData = types[Math.floor(Math.random() * 4)]; 
+                    else if (rand < 0.70) itemData = types[4]; 
+                    else if (rand < 0.90) itemData = types[5]; 
+                    else itemData = types[6 + Math.floor(Math.random() * 3)]; 
+                }
+
+                let label = null;
+                if (this.mode === 'learn' && itemData.type === 'fruit') {
+                    const isCorrect = Math.random() < 0.3;
+                    if (isCorrect) label = quizManager.currentQuiz.answer;
+                    else {
+                        label = quizManager.currentQuiz.type === 'math' 
+                            ? (Math.floor(Math.random() * 10) + 1).toString() 
+                            : ['가', '나', '다', '라', '마', '바', '사'][Math.floor(Math.random() * 7)];
+                    }
+                }
+
+                this.items.push({
+                    x: Math.random() * (this.width - 50) + 25, y: -50,
+                    emoji: itemData.emoji, score: itemData.score, type: itemData.type, color: itemData.color,
+                    label: label, speed: (Math.random() * 2 + 3) * this.difficultyMultiplier, size: 40
+                });
+            },
+
+            async gameOver() {
+                this.isPlaying = false;
+                shop.totalPoints += this.score; await shop.save();
+                await dbManager.save('bestScore', Math.max(this.score, (await dbManager.get('bestScore')) || 0));
+                const best = await dbManager.get('bestScore');
+                document.getElementById('game-over-screen').classList.remove('hidden');
+                document.getElementById('hud').classList.add('hidden');
+                document.getElementById('quiz-container').style.display = 'none';
+                document.getElementById('fever-container').classList.add('hidden');
+                document.getElementById('final-result').innerText = `최종 점수: ${this.score}점`;
+                document.getElementById('high-score-text').innerText = `최고 점수: ${best}점`;
+            },
+
+            update(deltaTime) {
+                const now = Date.now();
+                if (now - this.lastSpawnTime > this.spawnInterval) {
+                    this.spawnItem(); this.lastSpawnTime = now;
+                    this.difficultyMultiplier += 0.005; this.spawnInterval = Math.max(600, 1200 - (this.score / 10));
+                }
+
+                // [신규] 스테이지 업데이트
+                if (this.score > 3000) this.stage = 4;
+                else if (this.score > 1500) this.stage = 3;
+                else if (this.score > 500) this.stage = 2;
+
+                // [신규] 피버 모드 타이머
+                if (this.isFever) {
+                    this.feverTimer -= deltaTime;
+                    if (this.feverTimer <= 0) {
+                        this.isFever = false;
+                        this.feverGauge = 0;
+                    }
+                }
+
+                if (this.activePowerUp) {
+                    this.powerUpTimer -= deltaTime;
+                    document.getElementById('powerup-bar-fill').style.width = Math.max(0, (this.powerUpTimer / this.powerUpMaxDuration) * 100) + '%';
+                    if (this.powerUpTimer <= 0) this.removePowerUp();
+                }
+
+                for (let i = this.particles.length - 1; i >= 0; i--) {
+                    this.particles[i].update();
+                    if (this.particles[i].alpha <= 0) this.particles.splice(i, 1);
+                }
+                if (this.shakeTime > 0) this.shakeTime--;
+
+                for (let i = this.items.length - 1; i >= 0; i--) {
+                    const item = this.items[i];
+                    item.y += item.speed * this.timeScale;
+
+                    if (this.activePowerUp === 'magnet' && item.type !== 'bomb') {
+                        const basketCenterX = this.basket.x + this.basket.w / 2;
+                        item.x += (basketCenterX - item.x) * 0.05; 
+                    }
+
+                    if (item.y + item.size/2 > this.basket.y && item.y < this.basket.y + this.basket.h &&
+                        item.x > this.basket.x && item.x < this.basket.x + this.basket.w) {
+                        
+                        // 콤보 및 피버 게이지 증가 로직
+                        const isCorrectFruit = (item.type === 'fruit' || item.type === 'gold');
+                        
+                        if (this.mode === 'learn' && item.label !== null) {
+                            if (item.label === quizManager.currentQuiz.answer) {
+                                audio.play('fruit'); 
+                                this.combo++;
+                                this.feverGauge = Math.min(100, this.feverGauge + 5);
+                                this.score += 20 * (this.combo > 10 ? 2 : 1);
+                                this.createParticles(item.x, item.y, item.color);
+                                quizManager.generate();
+                            } else {
+                                audio.play('bomb'); this.shakeTime = 15; this.combo = 0;
+                                this.createParticles(item.x, item.y, '#333');
+                                this.score = Math.max(0, this.score - 10);
+                            }
+                        } else if (item.type === 'bomb') {
+                            audio.play('bomb'); this.shakeTime = 15; this.combo = 0;
+                            this.createParticles(item.x, item.y, '#333');
+                            this.lives--; this.updateHUD(); if (this.lives <= 0) this.gameOver();
+                        } else if (item.type.startsWith('power_')) {
+                            this.applyPowerUp(item.type.split('_')[1]); this.createParticles(item.x, item.y, item.color);
+                        } else {
+                            audio.play('fruit'); 
+                            if (isCorrectFruit) {
+                                this.combo++;
+                                this.feverGauge = Math.min(100, this.feverGauge + 3);
+                                this.score += item.score * (this.combo > 10 ? 2 : 1);
+                            }
+                            this.updateHUD(); this.createParticles(item.x, item.y, item.color);
+                        }
+
+                        // 피버 발동 체크
+                        if (this.feverGauge >= 100 && !this.isFever) {
+                            this.isFever = true;
+                            this.feverTimer = 7000;
+                            audio.play('fever');
+                        }
+
+                        this.updateHUD();
+                        this.items.splice(i, 1); continue;
+                    }
+                    
+                    // 과일을 놓쳤을 때 콤보 초기화
+                    if (item.y > this.height + 50) {
+                        if (item.type === 'fruit' || item.type === 'gold') this.combo = 0;
+                        this.items.splice(i, 1);
+                    }
+                }
+            },
+
+            draw() {
+                this.ctx.save();
+                if (this.shakeTime > 0) this.ctx.translate((Math.random() - 0.5) * 15, (Math.random() - 0.5) * 15);
+                
+                // [신규] 스테이지별 배경색 변경
+                let bgGrad = ['#87CEEB', '#e0f7fa'];
+                if (this.stage === 2) bgGrad = ['#2e7d32', '#a5d6a7'];
+                else if (this.stage === 3) bgGrad = ['#4a148c', '#ce93d8'];
+                else if (this.stage === 4) bgGrad = ['#000000', '#311b92'];
+                
+                const gradient = this.ctx.createLinearGradient(0, 0, 0, this.height);
+                gradient.addColorStop(0, bgGrad[0]);
+                gradient.addColorStop(1, bgGrad[1]);
+                this.ctx.fillStyle = gradient;
+                this.ctx.fillRect(0, 0, this.width, this.height);
+
+                if (this.activePowerUp === 'magnet') {
+                    this.ctx.beginPath(); this.ctx.arc(this.basket.x + this.basket.w / 2, this.basket.y + 30, 70, 0, Math.PI * 2);
+                    this.ctx.strokeStyle = 'rgba(33, 150, 243, 0.5)'; this.ctx.lineWidth = 5; this.ctx.stroke();
+                    this.ctx.fillStyle = 'rgba(33, 150, 243, 0.1)'; this.ctx.fill();
+                }
+
+                const equippedBasket = BASKETS.find(b => b.id === shop.equipped).icon;
+                const basketFontSize = (this.basket.w / 100) * 70;
+                this.ctx.font = `${basketFontSize}px Arial`;
+                this.ctx.textAlign = 'center';
+                this.ctx.fillText(equippedBasket, this.basket.x + this.basket.w / 2, this.basket.y + 50);
+                
+                this.ctx.font = '40px Arial';
+                this.items.forEach(item => {
+                    this.ctx.fillText(item.emoji, item.x, item.y);
+                    if (item.label) {
+                        this.ctx.font = 'bold 24px Arial'; this.ctx.fillStyle = 'white'; this.ctx.strokeStyle = 'black';
+                        this.ctx.lineWidth = 3; this.ctx.strokeText(item.label, item.x, item.y - 10);
+                        this.ctx.fillText(item.label, item.x, item.y - 10);
+                        this.ctx.font = '40px Arial';
+                    }
+                });
+
+                // [신규] 콤보 텍스트 표시
+                if (this.combo > 1) {
+                    this.ctx.font = 'bold 40px Arial';
+                    this.ctx.fillStyle = '#ffeb3b';
+                    this.ctx.strokeStyle = '#ff5722';
+                    this.ctx.lineWidth = 4;
+                    this.ctx.strokeText(`COMBO x${this.combo}!`, this.width / 2, this.height / 2);
+                    this.ctx.fillText(`COMBO x${this.combo}!`, this.width / 2, this.height / 2);
+                }
+
+                // [신규] 피버 모드 시각 효과
+                if (this.isFever) {
+                    this.ctx.font = 'bold 80px Arial';
+                    this.ctx.fillStyle = `hsl(${Date.now() % 360}, 100%, 50%)`;
+                    this.ctx.textAlign = 'center';
+                    this.ctx.fillText('✨ FEVER TIME! ✨', this.width / 2, 150);
+                }
+
+                // [신규] 스테이지 표시
+                this.ctx.font = 'bold 20px Arial';
+                this.ctx.fillStyle = 'white';
+                this.ctx.textAlign = 'right';
+                const stageNames = ['', 'Stage 1: 초원', 'Stage 2: 숲속', 'Stage 3: 구름 나라', 'Stage 4: 우주'];
+                this.ctx.fillText(stageNames[this.stage], this.width - 20, 120);
+
+                this.particles.forEach(p => p.draw(this.ctx));
+                this.ctx.restore();
+            },
+
+            loop() {
+                if (!this.isPlaying) return;
+                const now = Date.now();
+                const deltaTime = now - (this.lastFrameTime || now);
+                this.lastFrameTime = now;
+                this.update(deltaTime); this.draw();
+                requestAnimationFrame(() => this.loop());
+            }
+        };
+
+        game.init();
+    </script>
+</body>
+</html>
