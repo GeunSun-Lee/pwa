@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>숲속 동물 모험 🐾</title>
+    <style>
+        :root {
+            --bg-color: #eef9ff;
+            --primary-color: #ffeb3b;
+            --secondary-color: #ff9800;
+            --accent-color: #4caf50;
+            --card-back: #ffccbc;
+            --text-color: #5d4037;
+            --locked-color: #ccc;
+        }
+
+        body {
+            font-family: 'Nanum Gothic', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            touch-action: manipulation;
+            -select: none;
+            overflow-x: hidden;
+        }
+
+        .screen { display: none; width: 100%; max-width: 500px; flex-direction: column; align-items: center; padding: 20px; box-sizing: border-box; }
+        .screen.active { display: flex; }
+
+        header { text-align: center; margin-bottom: 30px; }
+        h1 { font-size: 2rem; text-shadow: 2px 2px 0px white; }
+
+        .level-map {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            width: 100%;
+            margin-bottom: 30px;
+        }
+
+        .level-card {
+            background: white;
+            padding: 20px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 6px 0 #ddd;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            border: 4px solid transparent;
+        }
+
+        .level-card.unlocked { border-color: var(--accent-color); }
+        .level-card.locked { background: #eee; color: #aaa; cursor: not-allowed; box-shadow: 0 6px 0 #bbb; }
+        .level-card.locked::after { content: '🔒'; position: absolute; top: 10px; right: 10px; font-size: 1.2rem; }
+        .level-card:active:not(.locked) { transform: translateY(4px); box-shadow: none; }
+
+        .level-num { font-size: 1.2rem; font-weight: bold; color: var(--secondary-color); }
+        .level-name { font-size: 1.5rem; font-weight: bold; margin: 10px 0; }
+
+        .badge-gallery {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            background: white;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+
+        .badge {
+            width: 60px; height: 60px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2rem;
+            filter: grayscale(1); opacity: 0.3;
+            transition: all 0.5s;
+        }
+
+        .badge.earned { filter: grayscale(0); opacity: 1; transform: scale(1.2); }
+
+        .status-bar {
+            display: flex; gap: 20px; font-size: 1.2rem; font-weight: bold;
+            margin-bottom: 15px; background: white; padding: 10px 20px;
+            border-radius: 30px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .game-board { display: grid; gap: 12px; padding: 15px; perspective: 1000px; }
+
+        .card {
+            width: 70px; height: 70px; position: relative;
+            transform-style: preserve-3d; transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+        .card.flipped { transform: rotateY(180deg); }
+        .card.matched { animation: popOut 0.6s forwards; pointer-events: none; }
+        .card.shake { animation: shake 0.4s ease-in-out; }
+
+        @keyframes popOut {
+            0% { transform: rotateY(180deg) scale(1); }
+            50% { transform: rotateY(180deg) scale(1.2); opacity: 1; }
+            100% { transform: rotateY(180deg) scale(0); opacity: 0; }
+        }
+        @keyframes shake {
+            0%, 100% { transform: rotateY(180deg) translateX(0); }
+            25% { transform: rotateY(180deg) translateX(-8px); }
+            75% { transform: rotateY(180deg) translateX(8px); }
+        }
+
+        .card-face {
+            position: absolute; width: 100%; height: 100%;
+            backface-visibility: hidden; display: flex; align-items: center; justify-content: center;
+            font-size: 2rem; border-radius: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); border: 4px solid white;
+        }
+        .card-front { background-color: white; transform: rotateY(180deg); }
+        .card-back { background-color: var(--card-back); background-image: radial-gradient(var(--secondary-color) 20%, transparent 20%); background-size: 20px 20px; }
+
+        .modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 100;
+        }
+        .modal-content {
+            background: white; padding: 30px; border-radius: 30px; text-align: center;
+            animation: popUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); max-width: 80%;
+        }
+        @keyframes popUp { from { transform: scale(0); } to { transform: scale(1); } }
+
+        button {
+            padding: 12px 24px; font-size: 1.1rem; border: none; border-radius: 15px;
+            cursor: pointer; transition: all 0.2s; margin: 5px; font-weight: bold;
+            box-shadow: 0 4px 0 #bbb;
+        }
+        button:active { transform: translateY(4px); box-shadow: none; }
+        .btn-main { background-color: var(--secondary-color); color: white; box-shadow: 0 4px 0 #c67100; }
+        .btn-sub { background-color: #ddd; color: #666; }
+
+        .stars { font-size: 3rem; color: #ffd700; margin: 15px 0; }
+        .confetti { position: absolute; width: 10px; height: 10px; animation: fall 3s linear infinite; z-index: 101; }
+        @keyframes fall { to { transform: translateY(100vh) rotate(360deg); } }
+        #preview-msg {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.7); color: white; padding: 15px 30px;
+            border-radius: 50px; font-size: 1.5rem; font-weight: bold; display: none; z-index: 10; pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="preview-msg">잘 기억하세요! 👀</div>
+
+    <div id="screen-lobby" class="screen active">
+        <header>
+            <h1>🐾 동물 모험 지도 🐾</h1>
+            <p>모든 레벨을 깨고 전설의 배지를 모으세요!</p>
+        </header>
+        <div class="level-map" id="level-map"></div>
+        <div style="text-align:center; margin-bottom: 20px;">
+            <h3>나의 배지함 🏆</h3>
+            <div class="badge-gallery" id="badge-gallery">
+                <div class="badge" id="badge-1" title="첫 승리!">🥉</div>
+                <div class="badge" id="badge-2" title="기억력 천재">🥈</div>
+                <div class="badge" id="badge-3" title="동물 박사">🥇</div>
+                <div class="badge" id="badge-4" title="전설의 모험가">💎</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="screen-game" class="screen">
+        <header>
+            <h1 id="game-title">레벨 1</h1>
+            <div class="status-bar">
+                <span>시도: <span id="move-count">0</span></span>
+                <span>시간: <span id="timer">0</span>초</span>
+            </div>
+            <button class="btn-sub" onclick="goToLobby()">🏠 로비로</button>
+        </header>
+        <div class="game-board" id="board"></div>
+    </div>
+
+    <div class="modal" id="resultModal">
+        <div class="modal-content">
+            <h2 id="result-title">🎉 레벨 클리어! 🎉</h2>
+            <div class="stars" id="stars">⭐⭐⭐</div>
+            <p id="final-stat"></p>
+            <div id="badge-reward" style="display:none; margin-bottom:20px;">
+                <p>새로운 배지를 얻었어요!</p>
+                <div style="font-size: 3rem;" id="reward-badge-icon">🥇</div>
+            </div>
+            <button class="btn-main" id="btn-next-level" onclick="nextLevel()">다음 레벨로!</button>
+            <!-- [수정 포인트] goToLobby() 대신 closeModal()을 호출하여 팝업을 먼저 닫도록 수정 -->
+            <button class="btn-sub" onclick="closeModal()">로비로 가기</button>
+        </div>
+    </div>
+
+    <script>
+        /** [사운드 시스템] **/
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        const audioCtx = new AudioCtx();
+        function playTone(freq, type, duration, volume = 0.1) {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(volume, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + duration);
+        }
+        const SFX = {
+            flip: () => playTone(400, 'sine', 0.1),
+            match: () => { playTone(523.25, 'sine', 0.2); setTimeout(() => playTone(659.25, 'sine', 0.3), 100); },
+            wrong: () => { playTone(200, 'triangle', 0.3); setTimeout(() => playTone(150, 'triangle', 0.3), 150); },
+            win: () => { const notes = [523, 659, 783, 1046]; notes.forEach((n, i) => setTimeout(() => playTone(n, 'sine', 0.4), i * 150)); },
+            unlock: () => { playTone(880, 'sine', 0.1); setTimeout(() => playTone(1108, 'sine', 0.2), 100); }
+        };
+
+        /** [데이터 및 설정] **/
+        const ANIMALS = ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵', '🐔', '🐧', '🐦'];
+        const LEVEL_CONFIG = {
+            1: { rows: 2, cols: 2, pairCount: 2, name: "아기 동물" },
+            2: { rows: 2, cols: 4, pairCount: 4, name: "숲속 친구들" },
+            3: { rows: 3, cols: 4, pairCount: 6, name: "정글 탐험" },
+            4: { rows: 4, cols: 4, pairCount: 8, name: "바다 여행" },
+            5: { rows: 4, cols: 6, pairCount: 12, name: "사막 모험" },
+            6: { rows: 6, cols: 6, pairCount: 18, name: "동물 왕국" },
+        };
+
+        let currentLevel = 1;
+        let flippedCards = [];
+        let matchedPairs = 0;
+        let moves = 0;
+        let timerInterval = null;
+        let seconds = 0;
+        let isLock = false;
+
+        /** [IndexedDB] **/
+        const DB_NAME = 'AnimalAdventureDB';
+        const STORE_NAME = 'progress';
+        async function initDB() {
+            return new Promise((resolve) => {
+                const request = indexedDB.open(DB_NAME, 1);
+                request.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains(STORE_NAME)) db.createObjectStore(STORE_NAME);
+                };
+                request.onsuccess = () => resolve(request.result);
+            });
+        }
+        async function saveState(state) {
+            const db = await initDB();
+            const tx = db.transaction(STORE_NAME, 'readwrite');
+            tx.objectStore(STORE_NAME).put(state, 'gameState');
+        }
+        async function getState() {
+            const db = await initDB();
+            return new Promise((resolve) => {
+                const tx = db.transaction(STORE_NAME, 'readonly');
+                const request = tx.objectStore(STORE_NAME).get('gameState');
+                request.onsuccess = () => resolve(request.result || { unlockedLevel: 1, badges: [] });
+            });
+        }
+
+        /** [화면 제어] **/
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        async function updateLobby() {
+            const state = await getState();
+            const map = document.getElementById('level-map');
+            map.innerHTML = '';
+            for (let i = 1; i <= 6; i++) {
+                const isUnlocked = i <= state.unlockedLevel;
+                const card = document.createElement('div');
+                card.className = `level-card ${isUnlocked ? 'unlocked' : 'locked'}`;
+                card.innerHTML = `<div class="level-num">Level ${i}</div><div class="level-name">${LEVEL_CONFIG[i].name}</div>`;
+                if (isUnlocked) card.onclick = () => startGame(i);
+                map.appendChild(card);
+            }
+            state.badges.forEach(b => {
+                const el = document.getElementById(`badge-${b}`);
+                if (el) el.classList.add('earned');
+            });
+        }
+
+        function goToLobby() {
+            clearInterval(timerInterval);
+            showScreen('screen-lobby');
+            updateLobby();
+        }
+
+        /** [팝업 닫기] **/
+        function closeModal() {
+            document.getElementById('resultModal').style.display = 'none';
+            goToLobby();
+        }
+
+        /** [게임 로직] **/
+        async function startGame(lvl) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            currentLevel = lvl;
+            const { cols, pairCount } = LEVEL_CONFIG[lvl];
+            clearInterval(timerInterval);
+            seconds = 0; moves = 0; matchedPairs = 0;
+            flippedCards = []; isLock = true;
+            document.getElementById('move-count').innerText = '0';
+            document.getElementById('timer').innerText = '0';
+            document.getElementById('game-title').innerText = `Level ${lvl}: ${LEVEL_CONFIG[lvl].name}`;
+            showScreen('screen-game');
+            const board = document.getElementById('board');
+            board.innerHTML = '';
+            board.style.gridTemplateColumns = `repeat(${cols}, ${cols > 4 ? '70px' : '80px'})`;
+            const gameAnimals = ANIMALS.slice(0, pairCount);
+            const deck = [...gameAnimals, ...gameAnimals].sort(() => Math.random() - 0.5);
+            deck.forEach((animal) => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.dataset.animal = animal;
+                card.innerHTML = `<div class="card-face card-back"></div><div class="card-face card-front">${animal}</div>`;
+                card.onclick = () => flipCard(card);
+                board.appendChild(card);
+            });
+            const allCards = document.querySelectorAll('.card');
+            const previewMsg = document.getElementById('preview-msg');
+            previewMsg.style.display = 'block';
+            allCards.forEach(c => c.classList.add('flipped'));
+            setTimeout(() => {
+                allCards.forEach(c => c.classList.remove('flipped'));
+                previewMsg.style.display = 'none';
+                setTimeout(() => { isLock = false; startTimer(); }, 600);
+            }, 2000);
+        }
+
+        function flipCard(card) {
+            if (isLock || card.classList.contains('flipped') || card.classList.contains('matched')) return;
+            SFX.flip();
+            card.classList.add('flipped');
+            flippedCards.push(card);
+            if (flippedCards.length === 2) {
+                moves++;
+                document.getElementById('move-count').innerText = moves;
+                checkMatch();
+            }
+        }
+
+        function checkMatch() {
+            isLock = true;
+            const [card1, card2] = flippedCards;
+            const isMatch = card1.dataset.animal === card2.dataset.animal;
+            if (isMatch) {
+                setTimeout(() => {
+                    SFX.match();
+                    card1.classList.add('matched');
+                    card2.classList.add('matched');
+                    matchedPairs++;
+                    flippedCards = [];
+                    isLock = false;
+                    if (matchedPairs === LEVEL_CONFIG[currentLevel].pairCount) endGame();
+                }, 600);
+            } else {
+                setTimeout(() => {
+                    SFX.wrong();
+                    card1.classList.add('shake'); card2.classList.add('shake');
+                    setTimeout(() => {
+                        card1.classList.remove('flipped', 'shake');
+                        card2.classList.remove('flipped', 'shake');
+                        flippedCards = []; isLock = false;
+                    }, 500);
+                }, 1000);
+            }
+        }
+
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                seconds++;
+                document.getElementById('timer').innerText = seconds;
+            }, 1000);
+        }
+
+        async function endGame() {
+            clearInterval(timerInterval);
+            SFX.win();
+            const pairCount = LEVEL_CONFIG[currentLevel].pairCount;
+            let stars = '⭐';
+            if (moves <= pairCount * 1.2) stars = '⭐⭐⭐';
+            else if (moves <= pairCount * 1.8) stars = '⭐⭐';
+            document.getElementById('stars').innerText = stars;
+            document.getElementById('final-stat').innerText = `${seconds}초 동안 ${moves}번 만에 모두 찾았어요!`;
+            let state = await getState();
+            let newBadge = null;
+            if (currentLevel === state.unlockedLevel && currentLevel < 6) {
+                state.unlockedLevel++;
+                SFX.unlock();
+            }
+            if (currentLevel === 1 && !state.badges.includes(1)) {
+                state.badges.push(1);
+                newBadge = { id: 1, icon: '🥉' };
+            } else if (currentLevel === 3 && !state.badges.includes(2)) {
+                state.badges.push(2);
+                newBadge = { id: 2, icon: '🥈' };
+            } else if (currentLevel === 6 && !state.badges.includes(3)) {
+                state.badges.push(3);
+                newBadge = { id: 3, icon: '🥇' };
+            } else if (currentLevel === 6 && stars === '⭐⭐⭐' && !state.badges.includes(4)) {
+                state.badges.push(4);
+                newBadge = { id: 4, icon: '💎' };
+            }
+            await saveState(state);
+            const rewardDiv = document.getElementById('badge-reward');
+            if (newBadge) {
+                rewardDiv.style.display = 'block';
+                document.getElementById('reward-badge-icon').innerText = newBadge.icon;
+            } else {
+                rewardDiv.style.display = 'none';
+            }
+            document.getElementById('btn-next-level').style.display = currentLevel < 6 ? 'inline-block' : 'none';
+            document.getElementById('resultModal').style.display = 'flex';
+            createConfetti();
+        }
+
+        function nextLevel() {
+            document.getElementById('resultModal').style.display = 'none';
+            startGame(currentLevel + 1);
+        }
+
+        function createConfetti() {
+            for (let i = 0; i < 60; i++) {
+                const conf = document.createElement('div');
+                conf.className = 'confetti';
+                conf.style.left = Math.random() * 100 + 'vw';
+                conf.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 50%)`;
+                conf.style.animationDelay = Math.random() * 2 + 's';
+                document.body.appendChild(conf);
+                setTimeout(() => conf.remove(), 3000);
+            }
+        }
+
+        window.onload = async () => {
+            await updateLobby();
+        };
+    </script>
+</body>
+</html>
